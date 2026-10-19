@@ -34,7 +34,7 @@ Run on 2026-10-18 on Windows 11, Node 25.6, Chrome (headless, software WebGL via
 | 19 | Perks change gameplay and visible equipment | ✅ pass | logic A19 · browser (new desk appears) |
 | 20 | Save/load after refresh | ✅ pass | logic A20 · browser A20 |
 | 21 | One click/tap reliably works | ✅ pass | browser — 8 trials, 0 misfires |
-| 22 | Mobile UI usable | ✅ pass (emulated iPhone 16, portrait + landscape) | browser A22/A22b |
+| 22 | Mobile UI usable | ⚠️ the phone layout was rewritten (landscape corner docks, rotate card). Tests A22/A22b/Layouts were rewritten to match but **not re-run yet** (no Node on the machine that made the change); checked by screenshot at 874×402, 874×335 and 667×375 | browser A22/A22b/Layouts |
 | 23 | 3D scene renders, not an image | ✅ pass | browser A1/A23 (pixel sampling) |
 | 24 | Desktop fits with no scrolling | ✅ pass at 1366×768, 1440×900, 1920×1080 | browser A24 |
 
@@ -78,3 +78,6 @@ Caveats: the scripted player buys few extra PCs (so its late-day numbers are pes
 ## Not covered by any test
 
 Real devices (60 FPS desktop / 30 FPS mobile targets are unmeasured), audible quality of the sounds, human balance, and visual polish beyond the screenshots in `tests/screenshots/`.
+
+## Main menu page, floating layout, living home (not run by the test runner yet)
+Added browser tests: **Home** (menu is a page; Play / Continue / Restart flow with confirm), **Home extras** (the demo shop animates and never touches the real shop, daily tip, Kredit, menu music), **Terapung** (Settings choice, applies live, remembered, Klasik restores the old layout, phones are not offered it), and updated **A20** (a reload lands on the menu; Sambung Main resumes the paused shift). They were written on a machine without Node, so they have **not been run**. What was checked instead, in headless Chrome driven by script: the whole Play → pause → Menu utama → reload → Continue → Restart (Batal / confirm) flow, the layout switch and its persistence, the demo shop stepping 60 s with the real state unchanged, and screenshots at 1366×768, 874×402, 874×335, 667×375 and 720×900. Run `node --test tests/browser.test.mjs` to confirm.

@@ -229,6 +229,7 @@
         if (ev) { title = `${EVENTS[ev.type].emoji} ${EVENTS[ev.type].title}`; timerId = String(ev.id); timer = ev.time; hint = EVENTS[ev.type].say; }
       }
     }
+    if (ns.Layout?.current() === 'phone') opts = opts.map((o) => (o.sub ? { ...o, sub: o.sub.replace(/ · tekan [A-Z0-9]/, '') } : o)); // no keyboard on a phone
     const key = menuKey(sel);
     const show = (opts.length > 0 || (showEmpty && title && UI.menuTapped === key)) && UI.menuDismissed !== key;
     if (!show) {
@@ -252,7 +253,7 @@
     const s = UI.s;
     if (!UI.settings.hints || s.phase !== 'active') return null;
     const waiting = State.inQueue(s).filter((c) => c.status === 'waiting');
-    if (s.pendingCustomerId) return s.pendingDuration ? ['3', 'Tap PC kosong yang berkelip hijau'] : ['2', 'Pilih tempoh sewaan (1 / 2 / 3)'];
+    if (s.pendingCustomerId) return s.pendingDuration ? ['3', 'Tap PC kosong yang berkelip hijau'] : ['2', ns.Layout?.current() === 'phone' ? 'Pilih tempoh sewaan' : 'Pilih tempoh sewaan (1 / 2 / 3)'];
     if ((s.worldEvents || []).length) return ['!', 'Ada kejadian — tap benda yang berdenyut dalam bilik'];
     if ((s.activeIssues || []).length) return ['!', 'Tap PC yang bertanda ❗ sebelum masa tamat!'];
     if (s.pcs.some((p) => p.status === 'fault')) return ['!', 'PC rosak! Tap PC → pilih cara baiki'];

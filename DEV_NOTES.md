@@ -28,3 +28,21 @@ User decision: **update the game** (ALPHA_12, ALPHA_11 untouched), scope **"all 
 - [x] M2 renderer DONE (lighting.js, anim.js, props.js, characters.js, picking.js, scene.js, engine upgrades). NOT done: static scene caching.
 - [x] M3 UI DONE (js/ui/*.js, CSS sections 10–11). Phone dock puts Desk first; sticky modal buttons.
 - [x] M4 DONE: 46 logic + 21 browser tests pass; README, TEST_RESULTS, ../Requirements_Alignment_ALPHA_12.md written; dist built. Static scene cache deliberately skipped (JS build ≈1.6 ms).
+
+## Phone layout (one game, two layouts)
+- `js/ui/layout.js` sets `<html data-layout="phone|desktop">` once at start (touch screen with short side ≤ 600 px → phone; `?layout=phone|desktop` overrides). On "phone" it moves the existing panel nodes into four corner docks inside `#viewport` (`.dock-tl/tr/bl/br`) and puts them back on "desktop" (`ABCC.Layout.apply(name)`), so ids and listeners never change.
+- All phone styling lives in `css/phone.css`, every rule under `html[data-layout="phone"]`; `style.css` (desktop) is untouched. The scene is full-bleed behind the docks, so the room is height-limited (≈ 40 % bigger than the old sidebar layout on an iPhone 16 Pro).
+- Designed for 874×402 (iPhone 16 Pro sideways, safe-area insets via `env()`); also checked at 874×335 (Safari with toolbar) and 667×375.
+- Upright: `.rotate-hint` card (pure CSS) + `layout.js` pauses the shift on the orientation change. Android Chrome gets fullscreen + landscape lock on the first tap; iOS can't lock, so it only has the card.
+- Screenshots for this were taken with a headless Chrome driven over CDP from PowerShell (no Node on that machine); `tests/browser.test.mjs` A22 / A22b / Layouts were rewritten but not run there.
+
+## Main menu page
+- The menu is no longer a pop-up: phase `menu` shows `#home` (`js/ui/home.js`, `css/home.css`) over the live 3D scene (`<html data-screen="home">` hides the HUD/sidebar/docks and shifts the canvas right). Every other phase sets `data-screen="game"`.
+- The game always **boots into `menu`**. A stored session is kept in `s.resumeTo` (the phase it was in; `active` becomes `paused`): "Sambung Main" calls `resumeSession()` in `modals.js`. "Menu utama" from the pause dialog sets `resumeTo` the same way, so Continue now resumes the paused shift instead of restarting the day. `UI.hasSession(s)` decides whether Continue / Main Semula show.
+- Tiles are plain `<button data-modal="…">`, handled by `UI.handleModal`. Restart and "Padam save" use an in-page confirm dialog (`renderConfirm`) instead of the browser's `confirm()`.
+- Icons are inline SVG from `js/ui/icons.js` (`UI.icon(name, px, tint?)`): play, resume, restart, guide, collection, settings, home. They replace the ▶ / ? / emoji glyphs, which look different on every system.
+
+## Float layout, living home, tip, credits
+- **Float** = the phone corner-dock layout on a PC. `layout.js` now knows three layouts (`desktop` | `float` | `phone`); `phone.css` shares its dock rules between phone and float via `html:is([data-layout="phone"], [data-layout="float"])`, float adds `--z: 1.3` (docks are drawn with `zoom`) and keeps the desktop-size hint / toast / world menu. Settings → Susun atur (`UI.settings.layout` = `classic` | `float`, read by `layout.js` straight from localStorage at boot; `Layout.set(pref)` applies it live; phones ignore it). `?layout=float` forces it.
+- **Living home**: while `phase === 'menu'`, `main.js` draws `UI.homeScene.step(real, dt)` (js/ui/homescene.js) instead of the real state. It is a throw-away shop built with `State.create()` + `startShift()` (same PC count and perks as the real one), seated by `State.quickSeat`, with trouble/events/fx stripped. Nothing of it is saved or heard; the real session is never touched.
+- **Music** plays on the menu page (`UI.Sound.music({night:false})` in `refresh`) once the browser has had a tap. **Tip**: `TIPS` in home.js, one a day by date, tap for the next. **Kredit**: `CREDITS` block in modals.js (edit it to change the makers / lines).

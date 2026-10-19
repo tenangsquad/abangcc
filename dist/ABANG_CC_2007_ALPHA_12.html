@@ -731,6 +731,282 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .perf-hud.slow { color: #ffd23f; } .perf-hud.bad { color: #ff8a8a; }
 
 </style>
+<style>
+/* ==========================================================================
+   ABANG CC: 2007 — PHONE LAYOUT (landscape)
+   --------------------------------------------------------------------------
+   Only active when js/ui/layout.js sets <html data-layout="phone">. The desktop layout in style.css is untouched.
+   The 3D scene fills the whole screen; the panels sit in its four corners ("docks"):
+       top-left      phase · cash · clock            top-right     countdown · target · buttons
+       bottom-left   alerts · waiting queue          bottom-right  Abang's tasks · shop status
+   Sized for an iPhone 16 Pro held sideways (874 × 402 CSS px) and kept clear of the notch / home bar.
+   ========================================================================== */
+
+html:is([data-layout="phone"], [data-layout="float"]) {
+  --dk: 8px; /* gap between a dock and the screen edge */
+  --z: 1; /* docks are drawn this much bigger (the PC "float" layout uses 1.3) */
+  --sl: max(var(--dk), env(safe-area-inset-left, 0px));
+  --sr: max(var(--dk), env(safe-area-inset-right, 0px));
+  --st: max(6px, env(safe-area-inset-top, 0px));
+  --sb: max(6px, env(safe-area-inset-bottom, 0px));
+}
+
+/* ---- the scene is the page ---- */
+html:is([data-layout="phone"], [data-layout="float"]) #app { display: block; padding: 0; gap: 0; }
+html:is([data-layout="phone"], [data-layout="float"]) .topbar,
+html:is([data-layout="phone"], [data-layout="float"]) .ticker,
+html:is([data-layout="phone"], [data-layout="float"]) .sidebar { display: none; }
+html[data-layout="phone"] .zoom-ctl { display: none; }
+html:is([data-layout="phone"], [data-layout="float"]) .stage { position: absolute; inset: 0; display: block; }
+html:is([data-layout="phone"], [data-layout="float"]) .viewport { position: absolute; inset: 0; border: 0; border-radius: 0; box-shadow: none; }
+html:is([data-layout="phone"], [data-layout="float"]) .vp-top { display: none; }
+
+/* ---- the four corner docks ---- */
+html:is([data-layout="phone"], [data-layout="float"]) .dock { position: absolute; z-index: 4; display: flex; flex-direction: column; gap: 4px; pointer-events: none; zoom: var(--z); max-height: calc((100% - var(--st) - var(--sb)) / var(--z)); }
+html:is([data-layout="phone"], [data-layout="float"]) .dock > * { pointer-events: auto; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock-tl { left: var(--sl); top: var(--st); align-items: flex-start; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock-tr { right: var(--sr); top: var(--st); align-items: flex-end; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock-bl { left: var(--sl); bottom: var(--sb); justify-content: flex-end; align-items: flex-start; width: 182px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock-br { right: var(--sr); bottom: var(--sb); justify-content: flex-end; align-items: flex-end; width: 192px; }
+
+/* top docks: slim pills */
+html:is([data-layout="phone"], [data-layout="float"]) .dock .chip { font-size: 10px; padding: 2px 9px; border-width: 2px; box-shadow: 0 2px 0 var(--ink); letter-spacing: .02em; max-width: 190px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .chip-timer { font-size: 12px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .hud-pill { flex: none; padding: 2px 9px; gap: 7px; border-width: 2px; border-radius: 11px; box-shadow: 0 2px 0 var(--ink); }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .pill-icon, html:is([data-layout="phone"], [data-layout="float"]) .dock .hud-pill.clock .sky { font-size: 17px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .pill-label { font-size: 8px; letter-spacing: .05em; overflow: hidden; text-overflow: ellipsis; max-width: 96px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .hud-pill strong { font-size: 15px; line-height: 1.1; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .hud-pill.cash { min-width: 0; } html:is([data-layout="phone"], [data-layout="float"]) .dock .hud-pill.cash strong { font-size: 18px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .hud-pill.clock { min-width: 0; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .hud-pill.goal { flex: none; width: 184px; padding: 3px 9px 4px; gap: 2px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .goal-top { display: none; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .goal-bar { height: 8px; border-width: 2px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .goal-foot { font-size: 10px; white-space: nowrap; } html:is([data-layout="phone"], [data-layout="float"]) .dock .goal-foot strong { font-size: 13px; } html:is([data-layout="phone"], [data-layout="float"]) .dock .goal-foot .rest { font-size: 10px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .top-actions { margin: 0; gap: 5px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .btn-icon { width: 34px; height: 34px; font-size: 14px; border-width: 2px; border-radius: 10px; box-shadow: 0 2px 0 var(--ink); }
+
+/* bottom docks: compact cards */
+html:is([data-layout="phone"], [data-layout="float"]) .dock .card { flex: none; width: 100%; min-height: 0; padding: 4px 7px 6px; border-width: 2px; border-radius: 12px; box-shadow: 0 2px 0 var(--ink); background: rgba(255, 248, 234, .95); }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .card-title { margin: 0 0 3px; font-size: 9.5px; letter-spacing: .03em; white-space: nowrap; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .card-title > span:first-child { overflow: hidden; text-overflow: ellipsis; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .count { min-width: 18px; padding: 0 5px; font-size: 10px; border-width: 2px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .card.alerts { background: #ffe9e4; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .card.alerts.calm { display: none; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .crisis-list, html:is([data-layout="phone"], [data-layout="float"]) .dock .queue-list { flex-direction: column; gap: 3px; max-height: 98px; padding: 0 2px 3px 0; overflow-x: hidden; overflow-y: auto; scrollbar-width: none; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .crisis-list { max-height: 64px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .crisis { grid-template-columns: 26px 1fr auto; gap: 6px; padding: 2px 6px 2px 4px; min-width: 0; width: 100%; border-width: 2px; border-radius: 10px; box-shadow: 0 2px 0 var(--ink); }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .crisis .ico { width: 26px; height: 26px; font-size: 14px; border-width: 2px; } html:is([data-layout="phone"], [data-layout="float"]) .dock .crisis .ico span { width: 18px; height: 18px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .crisis b { font-size: 11px; line-height: 1.15; } html:is([data-layout="phone"], [data-layout="float"]) .dock .crisis small { display: none; } html:is([data-layout="phone"], [data-layout="float"]) .dock .crisis .look { padding: 0 6px; font-size: 9px; border-width: 1.5px; letter-spacing: .03em; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .queue-item { grid-template-columns: 24px 1fr; gap: 6px; padding: 1px 6px 2px 3px; min-width: 0; width: 100%; border-width: 2px; border-radius: 10px; box-shadow: 0 2px 0 var(--ink); }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .queue-avatar { width: 24px; height: 24px; font-size: 13px; border-width: 2px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .queue-name { font-size: 12px; gap: 3px; } html:is([data-layout="phone"], [data-layout="float"]) .dock .want { font-size: 9px; padding: 0 5px; border-width: 1.5px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .patience { height: 5px; margin-top: 2px; border-width: 1.5px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .queue-list .empty { margin: 0; padding: 2px 0; font-size: 11px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .card.queue { flex: none; display: block; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .card.jobs.idle { display: none; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .job-list { gap: 3px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .meter-row { grid-template-columns: 1fr 1fr; gap: 3px 8px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .meter { gap: 1px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .meter-head { font-size: 10px; white-space: nowrap; } html:is([data-layout="phone"], [data-layout="float"]) .dock .meter-head span { overflow: hidden; text-overflow: ellipsis; } html:is([data-layout="phone"], [data-layout="float"]) .dock .meter-head b { font-size: 11px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .meter-track { height: 6px; border-width: 1.5px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .combo { font-size: 10px; }
+
+/* ---- things that float over the scene ---- */
+html[data-layout="phone"] .hint { left: 50%; transform: translateX(-50%); bottom: var(--sb); max-width: calc(100% - 360px); padding: 3px 11px; font-size: 11px; border-width: 2px; }
+html[data-layout="phone"] .hint .step { width: 18px; height: 18px; font-size: 11px; }
+html[data-layout="phone"] .toast-root { bottom: 40px; width: min(60%, 360px); }
+html[data-layout="phone"] .toast { font-size: 12px; padding: 4px 11px; border-width: 2px; border-radius: 12px; box-shadow: 0 2px 0 var(--ink); }
+html[data-layout="phone"] .crisis-overlay { top: var(--st); }
+html[data-layout="phone"] .world-alert { font-size: 12px; padding: 3px 11px; border-width: 2px; box-shadow: 0 2px 0 var(--ink); }
+html[data-layout="phone"] .world-menu { width: min(268px, calc(100% - 12px)); }
+html:is([data-layout="phone"], [data-layout="float"]) .breakdown { position: fixed; left: 50%; right: auto; top: auto; bottom: var(--sb); width: min(420px, 60vw); transform: translateX(-50%); z-index: 9; }
+html[data-layout="phone"] .pc-chip .tag { font-size: 10px; } html[data-layout="phone"] .pc-chip .prog { width: 56px; height: 6px; }
+html[data-layout="phone"] .person-tag .bub { font-size: 11px; }
+
+/* ---- pop-ups and menus: short screen, keep them inside it ---- */
+html[data-layout="phone"] .modal-root { padding: var(--st) var(--sr) var(--sb) var(--sl); }
+html[data-layout="phone"] .modal-card { max-height: calc(100dvh - var(--st) - var(--sb)); padding: 14px 18px 16px; border-radius: 22px; }
+html[data-layout="phone"] .modal-card > .modal-actions { margin: 8px -18px -16px; padding: 8px 18px 14px; }
+
+/* ---- held upright: ask for a turn (js/ui/layout.js also pauses the shift) ---- */
+.rotate-hint { display: none; position: fixed; inset: 0; z-index: 200; place-content: center; text-align: center; padding: 24px; color: var(--white);
+  background: radial-gradient(circle at 50% 30%, #5a3fc0, #1e1456 75%); font-family: var(--font-display); }
+.rotate-hint b { display: block; margin-top: 14px; font-size: 24px; text-shadow: 0 3px 0 var(--ink); }
+.rotate-hint small { display: block; margin-top: 6px; font: 700 14px var(--font-body); color: #d9d0ff; }
+.rh-phone { display: block; font-size: 84px; line-height: 1; animation: rh-turn 2.4s ease-in-out infinite; }
+@keyframes rh-turn { 0%, 15% { transform: rotate(0); } 55%, 100% { transform: rotate(-90deg); } }
+@media (orientation: portrait) { html[data-layout="phone"] .rotate-hint { display: grid; } }
+
+/* ---- the action menu that pops up on a PC / customer: small enough to leave the scene visible ---- */
+html[data-layout="phone"] .world-menu { width: min(236px, calc(100% - 12px)); padding: 5px 8px 7px; border-width: 2.5px; border-radius: 14px; }
+html[data-layout="phone"] .wm-head b { font-size: 13px; }
+html[data-layout="phone"] .wm-x { width: 24px; height: 24px; border-width: 2px; font-size: 11px; }
+html[data-layout="phone"] .wm-hint { margin-top: 1px; font-size: 10px; }
+html[data-layout="phone"] .wm-info { margin-top: 2px; font-size: 11px; }
+html[data-layout="phone"] .world-menu .patience { height: 6px; margin: 3px 0 1px; }
+html[data-layout="phone"] .wm-actions { gap: 4px; margin-top: 5px; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
+html[data-layout="phone"] .wm-actions.dur { grid-template-columns: repeat(3, 1fr); }
+html[data-layout="phone"] .wm-actions .btn { min-height: 36px; padding: 2px 6px; font-size: 13px; border-width: 2.5px; border-radius: 11px; box-shadow: 0 2px 0 var(--ink); }
+html[data-layout="phone"] .wm-actions .btn small { font-size: 9.5px; }
+html[data-layout="phone"] .world-menu { bottom: auto; } /* style.css pins it to the bottom on short screens — here it floats next to its target */
+
+/* when an alert is up, the queue gives up some height so the stack stays out of the counter area */
+html[data-layout="phone"] .dock-bl:has(.card.alerts:not(.calm)) .queue-list { max-height: 62px; }
+
+/* ---- full-screen dialogs (intro, pause, results, perks, settings): everything scaled for a 402 px tall screen ---- */
+html[data-layout="phone"] .modal-card { width: min(100%, 660px); }
+html[data-layout="phone"] .modal-eyebrow { padding: 1px 10px; font-size: 10px; }
+html[data-layout="phone"] .modal-card h1 { margin: 4px 0 2px; font-size: 26px; }
+html[data-layout="phone"] .modal-card h2 { margin: 7px 0 3px; font-size: 15px; }
+html[data-layout="phone"] .modal-card p { margin: 3px 0; font-size: 13px; line-height: 1.4; }
+html[data-layout="phone"] .modal-lead { font-size: 14px !important; }
+html[data-layout="phone"] .modal-hero { margin: 7px 0; padding: 7px 12px; border-width: 2.5px; border-radius: 14px; }
+html[data-layout="phone"] .badges { gap: 5px; margin: 6px 0; } html[data-layout="phone"] .badges span { padding: 1px 9px; font-size: 11px; border-width: 2px; }
+html[data-layout="phone"] .notice { margin: 5px 0; padding: 5px 10px; font-size: 12px; border-width: 2.5px; border-radius: 11px; }
+html[data-layout="phone"] .modal-actions { gap: 8px; margin-top: 8px; }
+html[data-layout="phone"] .btn.big { min-height: 40px; padding: 5px 16px; font-size: 15px; border-radius: 13px; }
+html[data-layout="phone"] .settlement { gap: 2px 10px; margin: 5px 0; padding: 5px 10px; font-size: 13px; border-width: 2.5px; border-radius: 12px; }
+html[data-layout="phone"] .stars { font-size: 28px; margin: 0; }
+html[data-layout="phone"] .store-grid { gap: 7px; margin: 6px 0; }
+html[data-layout="phone"] .perk { padding: 7px 9px; gap: 2px; border-width: 2.5px; border-radius: 13px; box-shadow: 0 3px 0 var(--ink); }
+html[data-layout="phone"] .perk .perk-icon { width: 34px; height: 34px; font-size: 20px; border-width: 2.5px; border-radius: 11px; }
+html[data-layout="phone"] .perk strong { font-size: 14px; } html[data-layout="phone"] .perk small { font-size: 11px; line-height: 1.25; }
+html[data-layout="phone"] .switch-row { padding: 5px 0; font-size: 14px; }
+html[data-layout="phone"] .seg .btn { min-height: 32px; font-size: 13px; padding: 2px 10px; }
+html[data-layout="phone"] .headline { padding: 4px 9px; margin: 4px 0; } html[data-layout="phone"] .headline .hl-ico { width: 28px; height: 28px; font-size: 16px; }
+html[data-layout="phone"] .headline b { font-size: 13px; } html[data-layout="phone"] .headline small { font-size: 11px; }
+html[data-layout="phone"] .intro-nav { margin-top: 8px; }
+html[data-layout="phone"] .modal-eyebrow { align-self: flex-start; }
+
+/* ---- smaller phones (iPhone SE / mini sideways) and Safari with its toolbar showing: trim the docks so they stay off the counter ---- */
+@media (max-width: 780px) {
+  html[data-layout="phone"] .dock-bl { width: 168px; } html[data-layout="phone"] .dock-br { width: 176px; }
+  html[data-layout="phone"] .dock .goal-foot .rest { display: none; }
+  html[data-layout="phone"] .dock .hud-pill.goal { width: 160px; }
+  html[data-layout="phone"] .dock .btn-icon { width: 32px; height: 32px; }
+  html[data-layout="phone"] .dock .queue-name { font-size: 11px; }
+}
+@media (max-height: 360px) {
+  html[data-layout="phone"] .dock .queue-list { max-height: 62px; }
+  html[data-layout="phone"] .dock .crisis-list { max-height: 34px; }
+  html[data-layout="phone"] .dock .card.vitals .card-title { display: none; }
+  html[data-layout="phone"] .dock .hud-pill.clock .pill-label { display: none; }
+}
+
+/* ==========================================================================
+   FLOAT — the same corner-dock layout on a PC (Tetapan → Susun atur → Terapung, or ?layout=float)
+   Shares everything above, but the docks are drawn 1.3× bigger, and the scene's own pieces keep their desktop size.
+   ========================================================================== */
+html[data-layout="float"] { --dk: 14px; --z: 1.3; }
+html[data-layout="float"] .hint { left: 50%; transform: translateX(-50%); bottom: 14px; max-width: calc(100% - 640px); }
+html[data-layout="float"] .crisis-overlay { top: 14px; }
+html[data-layout="float"] .zoom-ctl { top: 50%; bottom: auto; right: 14px; flex-direction: column; transform: translateY(-50%); }
+html[data-layout="float"] .zoom-ctl .zl { display: none; }
+html[data-layout="float"] .zoom-ctl .btn { min-width: 40px; min-height: 40px; }
+
+</style>
+<style>
+/* ==========================================================================
+   ABANG CC: 2007 — HOME (main menu page)
+   --------------------------------------------------------------------------
+   Shown by js/ui/home.js while the game phase is "menu" (<html data-screen="home">). The game's own chrome (top bar,
+   sidebar, labels, docks) is hidden and the live 3D café fills the right side of the screen; the menu is a floating
+   card on the left. Phone sizes are further down.
+   ========================================================================== */
+
+.home { position: fixed; inset: 0; z-index: 30; display: none; align-items: center; justify-content: flex-start; overflow: auto;
+  padding: max(18px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(clamp(24px, 6vw, 96px), env(safe-area-inset-left)); }
+html[data-screen="home"] .home:not([hidden]) { display: flex; }
+
+/* the game's own interface steps aside; the scene stays, shifted right of the menu */
+html[data-screen="home"] .topbar, html[data-screen="home"] .ticker, html[data-screen="home"] .sidebar, html[data-screen="home"] .vp-top,
+html[data-screen="home"] .hint, html[data-screen="home"] .zoom-ctl, html[data-screen="home"] .labels, html[data-screen="home"] .popups,
+html[data-screen="home"] .crisis-overlay, html[data-screen="home"] .world-menu, html[data-screen="home"] .dock, html[data-screen="home"] .vignette { display: none !important; }
+html[data-screen="home"] #app { display: block; padding: 0; }
+html[data-screen="home"] .stage { position: fixed; inset: 0; display: block; }
+html[data-screen="home"] .viewport { position: absolute; inset: 0; border: 0; border-radius: 0; box-shadow: none; }
+html[data-screen="home"] #game3D { left: 35%; width: 65%; cursor: default; }
+
+.home-panel { width: min(440px, 100%); display: flex; flex-direction: column; gap: 14px; animation: home-in .55s var(--ease-pop) both; }
+@keyframes home-in { from { opacity: 0; transform: translateX(-26px); } }
+
+.home-brand { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.home .ld-kicker { font-size: 12px; letter-spacing: .3em; color: var(--ink); text-shadow: none; opacity: .75; }
+.home .ld-title { font-size: clamp(42px, min(6.4vw, 11vh), 86px); transform-origin: left center; }
+.home .ld-year { margin-top: 2px; gap: 10px; }
+.home .ld-year b { font-size: clamp(16px, 2.2vw, 26px); border-width: 3px; box-shadow: 0 3px 0 var(--ink); }
+.home-chips span { display: inline-block; padding: 2px 11px; background: var(--yellow); border: 2.5px solid var(--ink); border-radius: 999px; box-shadow: 0 3px 0 var(--ink); font: 700 13px var(--font-display); color: var(--ink); }
+
+.home-card { display: grid; gap: 12px; padding: 14px; background: var(--paper); border: 4px solid var(--ink); border-radius: 28px; box-shadow: var(--shadow), 0 26px 50px rgba(5, 0, 40, .4); }
+.home-foot { margin: 0; font: 700 12px var(--font-body); color: var(--ink-2); text-shadow: 0 1px 0 rgba(255, 255, 255, .6); }
+
+/* tiles: the icon sits on top of its label */
+.tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-width: 0; padding: 10px 6px 9px; text-align: center;
+  background: var(--white); border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 4px 0 var(--ink); color: var(--ink);
+  font: 600 15px/1.1 var(--font-display); transition: transform .09s var(--ease-pop), box-shadow .09s, filter .15s;
+}
+.tile:hover { transform: translateY(-3px); box-shadow: 0 7px 0 var(--ink); filter: brightness(1.04); }
+.tile:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.tile b { font-weight: 600; white-space: nowrap; }
+.tile small { max-width: 100%; font: 700 11px/1.2 var(--font-body); color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile-ico { display: grid; place-content: center; }
+.tile-ico svg { display: block; filter: drop-shadow(0 2px 0 rgba(42, 33, 80, .22)); transition: transform .15s var(--ease-pop); }
+.tile:hover .tile-ico svg { transform: scale(1.1) rotate(-4deg); }
+.tile.sky { background: #d9f2ff; } .tile.violet { background: #e6dfff; } .tile.coral { background: #ffe2e2; }
+.tile-row { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: 10px; }
+
+.tile.hero { padding: 16px 10px 14px; gap: 5px; border-radius: 22px; background: linear-gradient(160deg, #54ecbd, var(--mint)); box-shadow: 0 6px 0 var(--ink); font-size: 27px; }
+.tile.hero:hover { box-shadow: 0 9px 0 var(--ink); } .tile.hero:active { box-shadow: 0 1px 0 var(--ink); }
+.tile.hero small { font-size: 13px; color: #0b5a43; }
+
+/* a window that is not a phone but is narrow: the menu centres over the whole scene */
+@media (max-width: 820px) {
+  .home { justify-content: center; }
+  html[data-screen="home"] #game3D { left: 0; width: 100%; }
+  html[data-screen="home"] .viewport::after { content: ''; position: absolute; inset: 0; background: rgba(30, 20, 86, .22); }
+  .home-brand { align-items: center; }
+}
+@media (max-height: 640px) and (min-width: 821px) {
+  .home-panel { gap: 8px; } .home-card { padding: 10px; gap: 9px; border-radius: 22px; }
+  .tile { padding: 7px 4px 6px; } .tile.hero { padding: 10px 8px 9px; }
+  .tile-ico svg { width: 34px; height: 34px; } .tile.hero .tile-ico svg { width: 46px; height: 46px; }
+  .home .ld-kicker { display: none; }
+}
+
+/* ---- phone, held sideways ---- */
+html[data-layout="phone"] .home { padding: var(--st) var(--sr) var(--sb) var(--sl); }
+html[data-layout="phone"] .home-panel { width: 340px; gap: 5px; }
+html[data-layout="phone"] .home .ld-kicker { display: none; }
+html[data-layout="phone"] .home .ld-title { font-size: 40px; }
+html[data-layout="phone"] .home .ld-year { margin-top: 0; } html[data-layout="phone"] .home .ld-year b { font-size: 13px; border-width: 2.5px; box-shadow: 0 2px 0 var(--ink); }
+html[data-layout="phone"] .home-chips span { padding: 0 9px; font-size: 11px; border-width: 2px; box-shadow: 0 2px 0 var(--ink); }
+html[data-layout="phone"] .home-card { gap: 7px; padding: 8px; border-width: 3px; border-radius: 20px; box-shadow: 0 4px 0 var(--ink), 0 14px 30px rgba(5, 0, 40, .35); }
+html[data-layout="phone"] .tile { gap: 1px; padding: 5px 3px 5px; border-width: 2.5px; border-radius: 13px; box-shadow: 0 3px 0 var(--ink); font-size: 11.5px; }
+html[data-layout="phone"] .tile small { font-size: 9.5px; }
+html[data-layout="phone"] .tile-ico svg { width: 30px; height: 30px; }
+html[data-layout="phone"] .tile.hero { padding: 7px 6px 7px; border-radius: 16px; box-shadow: 0 4px 0 var(--ink); font-size: 18px; }
+html[data-layout="phone"] .tile.hero .tile-ico svg { width: 40px; height: 40px; } html[data-layout="phone"] .tile.hero small { font-size: 11px; }
+html[data-layout="phone"] .tile-row { gap: 6px; }
+html[data-layout="phone"] .home-foot { font-size: 10px; }
+html[data-layout="phone"][data-screen="home"] #game3D { left: 40%; width: 60%; }
+
+/* ---- small icons inside ordinary buttons (pause menu, confirm dialogs) ---- */
+.btn .ico-svg { flex: none; margin: -3px 0; }
+
+/* ---- daily tip, credits link ---- */
+.home-tip { display: block; width: 100%; padding: 8px 12px; text-align: left; background: rgba(255, 248, 234, .9); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 3px 0 var(--ink);
+  font: 700 13px/1.35 var(--font-body); color: var(--ink-2); transition: background .15s, transform .09s var(--ease-pop); }
+.home-tip:hover { background: #fff3b3; transform: translateY(-2px); }
+.home-tip:active { transform: translateY(2px); }
+.link { padding: 0; background: none; border: 0; font: inherit; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; text-shadow: none; }
+.link:hover { color: var(--coral); }
+.modal-hero.credits p { display: flex; gap: 8px; align-items: baseline; }
+.cr-ico { flex: none; }
+html[data-layout="phone"] .home-tip { padding: 3px 9px; border-width: 2px; border-radius: 11px; box-shadow: 0 2px 0 var(--ink); font-size: 10.5px; line-height: 1.25; }
+@media (max-height: 640px) and (min-width: 821px) { .home-tip { padding: 5px 10px; font-size: 12px; } }
+
+</style>
 </head>
 <body>
 
@@ -1216,6 +1492,20 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   <footer class="ticker"><span class="ticker-tag">CC NEWS</span><span id="tickerText">Selamat datang ke pekan. Hari ni semua PC okay… rasanya.</span></footer>
 </div>
 
+<!-- Main menu page: shown before every session (js/ui/home.js fills the card; the live 3D café stays visible behind it) -->
+<section class="home" id="home" aria-label="Menu utama" hidden>
+  <div class="home-panel">
+    <div class="home-brand">
+      <span class="ld-kicker">MALAYSIA · KEDAI SIBER</span>
+      <div class="ld-title" aria-label="Abang CC 2007"><span class="ld-abang">ABANG</span><span class="ld-cc">CC</span></div>
+      <div class="ld-year" aria-hidden="true"><b>2007</b><span class="home-chips" id="homeChips"></span></div>
+    </div>
+    <nav class="home-card" id="homeCard" aria-label="Menu"></nav>
+    <button type="button" class="home-tip" id="homeTip" title="Tip seterusnya"></button>
+    <p class="home-foot">Alpha 0.12 · progress disimpan automatik dalam browser ini · <button type="button" class="link" data-modal="credits">Kredit</button></p>
+  </div>
+</section>
+<div class="rotate-hint" id="rotateHint" role="alert"><div><span class="rh-phone" aria-hidden="true">📱</span><b>Putar telefon ke landskap</b><small>Turn your phone sideways to play</small></div></div>
 <div id="modalRoot" class="modal-root"></div>
 <button type="button" id="perfHud" class="perf-hud" hidden title="Ketik untuk salin laporan prestasi"></button>
 
@@ -1316,6 +1606,120 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
       ready = true;
     },
   };
+})((window.ABCC = window.ABCC || {}));
+
+</script>
+<script>
+/* ---- js/ui/layout.js ---- */
+/* ==========================================================================
+   4b. LAYOUT — one game, three looks: "desktop" (classic), "float" and "phone"
+   --------------------------------------------------------------------------
+   "phone" and "float" share one idea: the 3D scene fills the whole screen and the panels sit in its four corners
+   (cash + clock top-left, target + buttons top-right, waiting queue bottom-left, shop status + tasks bottom-right).
+   "phone" is for touch phones held sideways; "float" is the same thing on a PC with bigger panels (Tetapan →
+   Susun atur → Terapung). "desktop" is the classic top bar + sidebar. Nothing else changes: same game, same save.
+   • Picked at start: a touch screen whose short side is ≤ 600 px → "phone" (always); otherwise the saved Susun atur
+     setting ("float" or the classic "desktop"). Force one with ?layout=phone|float|desktop (handy for testing on a PC).
+   • "phone" / "float" move the existing panel elements into four corner docks (same nodes, so every id and
+     listener keeps working); "desktop" puts them straight back where index.html has them.
+   • Held upright, a phone shows a "turn your phone" card and the shift is paused. Android Chrome is also
+     asked for fullscreen + landscape on the first tap (iPhone Safari cannot lock orientation, so it relies on the card).
+   ========================================================================== */
+(function (ns) {
+  'use strict';
+
+  const root = document.documentElement;
+  const $ = (id) => document.getElementById(id);
+  const DOCKS = {
+    tl: () => [$('worldPhase'), $('cashPill'), document.querySelector('.hud-pill.clock')],
+    tr: () => [$('worldCountdown'), $('goalPill'), document.querySelector('.top-actions')],
+    bl: () => [$('crisisPanel'), document.querySelector('.card.queue')],
+    br: () => [$('jobsPanel'), document.querySelector('.card.vitals')],
+  };
+  const homes = new Map(); // element → comment node left where it lived on the desktop layout
+
+  /** Is this a touch phone? (Touch screen, short side ≤ 600 px.) */
+  function isPhone() {
+    try {
+      return matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) <= 600;
+    } catch (e) {
+      return false;
+    }
+  }
+  /** The player's saved Susun atur choice ('classic' | 'float'). Read straight from the settings, as the UI isn't up yet. */
+  function savedPref() {
+    try {
+      return JSON.parse(localStorage.getItem('abangcc2007_settings') || '{}').layout === 'float' ? 'float' : 'classic';
+    } catch (e) {
+      return 'classic';
+    }
+  }
+  /** Which layout to use for a saved preference on this device. */
+  const resolve = (pref) => (isPhone() ? 'phone' : pref === 'float' ? 'float' : 'desktop');
+  function detect() {
+    const m = /[?&]layout=(phone|float|desktop)\b/.exec(location.search);
+    return m ? m[1] : resolve(savedPref());
+  }
+
+  function toDocks() {
+    const vp = $('viewport');
+    if (!vp || vp.querySelector('.dock')) return;
+    for (const [name, list] of Object.entries(DOCKS)) {
+      const dock = document.createElement('div');
+      dock.className = `dock dock-${name}`;
+      for (const el of list()) {
+        if (!el) continue;
+        const mark = document.createComment(el.id || el.className);
+        el.replaceWith(mark);
+        homes.set(el, mark);
+        dock.appendChild(el);
+      }
+      vp.appendChild(dock);
+    }
+  }
+
+  function toDesktop() {
+    for (const [el, mark] of homes) mark.replaceWith(el);
+    homes.clear();
+    document.querySelectorAll('.dock').forEach((d) => d.remove());
+  }
+
+  function apply(name) {
+    if (root.dataset.layout === name) return name;
+    root.dataset.layout = name;
+    if (name === 'desktop') toDesktop();
+    else toDocks();
+    return name;
+  }
+  /** Settings → Susun atur: 'classic' | 'float'. A phone always keeps its own layout. */
+  const set = (pref) => apply(resolve(pref));
+
+  const layout = apply(detect());
+  if (layout === 'phone') {
+    // Android Chrome: fullscreen + landscape lock, which needs a user gesture. Everything else just ignores this.
+    const lock = () => {
+      document.removeEventListener('pointerup', lock);
+      try {
+        const el = root;
+        const full = !document.fullscreenElement && el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : null;
+        Promise.resolve(full).then(() => screen.orientation?.lock?.('landscape')).catch(() => {});
+      } catch (e) {
+        /* not supported — the rotate card covers it */
+      }
+    };
+    document.addEventListener('pointerup', lock);
+
+    // Held upright: the card covers the screen, so also pause the shift until the phone is turned.
+    const upright = matchMedia('(orientation: portrait)');
+    const pauseIfUpright = () => {
+      const UI = ns.UI;
+      if (!upright.matches || !UI?.s || UI.s.phase !== 'active') return;
+      UI.togglePause();
+    };
+    upright.addEventListener?.('change', pauseIfUpright);
+  }
+
+  ns.Layout = { current: () => root.dataset.layout, apply, set, detect, isPhone };
 })((window.ABCC = window.ABCC || {}));
 
 </script>
@@ -1578,6 +1982,26 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
       quotes: ['a/s/l? haha.', 'Channel #kl-lepak tengah rancak!'] },
   ];
 
+  /* ---------- how a customer travels from the queue to their PC ----------
+     speed    world units / second (largest single-frame step must stay < 0.5 — browser test A7)
+     stride   walk-cycle radians per world unit: a lower value = longer, slower-looking steps
+     GAIT_ODDS  [walk, run, joy] weights per archetype; the pick is a hash of the customer id, so it is deterministic */
+  const GAITS = {
+    walk: { speed: 3.0, stride: 5.4 },
+    run: { speed: 5.0, stride: 3.9 },
+    joy: { speed: 4.4, stride: 2.9 }, // running and bounding with both arms up
+  };
+  const GAIT_ODDS = {
+    uncle: [0.85, 0.15, 0], fps: [0.3, 0.45, 0.25], hot: [0.3, 0.6, 0.1], student: [0.6, 0.25, 0.15], mmorpg: [0.4, 0.2, 0.4],
+    rm1: [0.1, 0.3, 0.6], arena: [0.25, 0.4, 0.35], lepak: [0.9, 0.1, 0], mirc: [0.65, 0.2, 0.15],
+  };
+  /** Which gait a customer uses on the way to the PC. Pure function of (id, type): no RNG is consumed. */
+  function gaitFor(id, typeId) {
+    const odds = GAIT_ODDS[typeId] || [0.5, 0.3, 0.2];
+    const r = Math.abs(Math.sin(id * 78.233 + 1.7) * 43758.5453) % 1;
+    return r < odds[0] ? 'walk' : r < odds[0] + odds[1] ? 'run' : 'joy';
+  }
+
   /* ---------- special events ----------
      Every event is a physical thing in the room: people at the door (kind 'npc'), the fuse box ('power'),
      a puddle ('floor') or a suspect by the snack machine ('machine'). The player selects it in the 3D scene
@@ -1625,7 +2049,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
     nomouse: { icon: '🖱️', title: 'Mouse hilang', hint: 'Tak boleh guna tanpa mouse.', time: 13 },
   };
 
-  Object.assign(ns, { CFG, RENTAL, DIRECTOR, ROOM, FAULTS, GAMES, PERKS, TYPES, EVENTS, ISSUES, SPECIALS, priceForMinutes, sessionSecondsFor, clamp, lerp, damp, byId, fmtMoney, clock, dayPart, shortestAngle });
+  Object.assign(ns, { CFG, RENTAL, DIRECTOR, ROOM, FAULTS, GAMES, PERKS, TYPES, GAITS, gaitFor, EVENTS, ISSUES, SPECIALS, priceForMinutes, sessionSecondsFor, clamp, lerp, damp, byId, fmtMoney, clock, dayPart, shortestAngle });
 })((window.ABCC = window.ABCC || {}));
 
 </script>
@@ -2012,7 +2436,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
       entity.y += (entity.vy / velMag) * travel;
     }
     entity.moveIntensity = Math.min(1, velMag / Math.max(0.01, speed));
-    entity.walkCycle = (entity.walkCycle || 0) + travel * 5.4;
+    entity.walkCycle = (entity.walkCycle || 0) + travel * (entity.stride || 5.4);
 
     if (velMag > 0.04) {
       const target = Math.atan2(entity.vx, entity.vy);
@@ -2405,6 +2829,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
     pc.sessionGame = c.game;
     pc.lingerTime = 0;
     c.status = 'walkToPc';
+    c.gait = ns.gaitFor(c.id, c.type);
     c.destination = ROOM.seatFor(pc);
     s.shiftStats.served++;
     s.pendingCustomerId = s.pendingCustomerId === c.id ? null : s.pendingCustomerId;
@@ -2466,7 +2891,10 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   function updatePeople(s, dt) {
     const drain = S.patienceDrain(s);
     for (const c of s.customers) {
-      S.updateMove(c, dt, c.status === 'event' ? 2.2 : CFG.CUSTOMER_SPEED);
+      // on the way to a PC each customer has their own gait (walk / run / run-with-joy); everyone else walks
+      const gait = c.status === 'walkToPc' ? ns.GAITS[c.gait] || ns.GAITS.walk : null;
+      c.stride = gait ? gait.stride : 0;
+      S.updateMove(c, dt, c.status === 'event' ? 2.2 : gait ? gait.speed * (CFG.CUSTOMER_SPEED / ns.GAITS.walk.speed) : CFG.CUSTOMER_SPEED);
       c.sitBlend = clamp((c.sitBlend || 0) + (c.status === 'playing' ? dt * 3.8 : -dt * 5.4), 0, 1);
 
       if (c.status === 'arriving' && !c.destination) c.status = 'waiting';
@@ -2930,6 +3358,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
       c.issue = null;
       if (stayers.includes(c.id)) {
         c.status = 'walkToPc';
+        c.gait = 'walk'; // back to the seat after a fight: no skipping
         c.destination = ROOM.seatFor(p);
       }
       p.issue = null;
@@ -5722,7 +6151,7 @@ window.ABCC.GfxEngine = (function () {
 
     // customers
     if (e.status === 'leaving') return { state: 'LEAVE', angry: (e.patience ?? 1) <= 0 };
-    if (moving) return { state: 'WALK' };
+    if (moving) return { state: 'WALK', gait: e.status === 'walkToPc' ? e.gait || 'walk' : 'walk' };
     if (act === 'argue') return { state: 'ANGRY' };
     if (sit > 0.05 && sit < 0.92 && e.status === 'playing') return { state: 'SIT' };
     if (sit >= 0.92 || (sit > 0.2 && e.status === 'playing')) {
@@ -5739,7 +6168,7 @@ window.ABCC.GfxEngine = (function () {
     return ctx.turning ? { state: 'TURN' } : { state: 'IDLE' };
   }
 
-  const base = { fwdL: 0, fwdR: 0, outL: 0.1, outR: 0.1, bendL: 0.18, bendR: 0.18, inL: 0, inR: 0, lean: 0, headYaw: 0, headNod: 0, mood: 'happy', hop: 0, legs: 'stand' };
+  const base = { fwdL: 0, fwdR: 0, outL: 0.1, outR: 0.1, bendL: 0.18, bendR: 0.18, inL: 0, inR: 0, lean: 0, headYaw: 0, headNod: 0, mood: 'happy', hop: 0, legs: 'stand', legAmp: 1, kneeAmp: 1, mouth: 0 };
 
   /**
    * Target pose for a state. Angles are radians (see drawPerson for how they map onto the rig).
@@ -5752,6 +6181,15 @@ window.ABCC.GfxEngine = (function () {
       case 'WALK': {
         const sw = Math.sin(c.phase) * 0.72 * c.mi;
         Object.assign(p, { fwdL: -sw, fwdR: sw, bendL: 0.18 + 0.4 * c.mi, bendR: 0.18 + 0.4 * c.mi, lean: 0.1 * c.mi, legs: 'walk', headNod: 0.05 });
+        if (st.gait === 'run') {
+          // sprint: long leg swing, high knees, elbows tucked and pumping, leaning into it
+          const pump = Math.sin(c.phase) * 1.0 * c.mi;
+          Object.assign(p, { fwdL: -pump, fwdR: pump, outL: 0.06, outR: 0.06, bendL: 1.45 * c.mi + 0.18, bendR: 1.45 * c.mi + 0.18, lean: 0.3 * c.mi, headNod: 0.08, hop: Math.abs(Math.sin(c.phase)) * 0.045 * c.mi, legAmp: 1.45, kneeAmp: 1.5, mood: 'focus' });
+        } else if (st.gait === 'joy') {
+          // running and bounding with both arms thrown up, mouth open, a little hop every stride
+          const b = Math.sin(c.phase);
+          Object.assign(p, { fwdL: 2.7 + b * 0.35 * c.mi, fwdR: 2.7 - b * 0.35 * c.mi, outL: 0.45 + Math.abs(Math.sin(c.phase / 2)) * 0.25, outR: 0.45 + Math.abs(Math.sin(c.phase / 2)) * 0.25, bendL: 0.25, bendR: 0.25, lean: -0.04, headNod: -0.06 + b * 0.05, hop: Math.abs(Math.sin(c.phase / 2)) * 0.3 * c.mi, legAmp: 1.1, kneeAmp: 1.9, mouth: 1, mood: 'cheer' });
+        }
         break;
       }
       case 'LEAVE': {
@@ -6446,7 +6884,7 @@ window.ABCC.GfxEngine = (function () {
 
     function poseOf(key) {
       let p = R.poses.get(key);
-      if (!p) R.poses.set(key, (p = { fwdL: 0, fwdR: 0, outL: 0.12, outR: 0.12, bendL: 0.18, bendR: 0.18, inL: 0, inR: 0, lean: 0, look: 0, nod: 0, brow: 0, smile: 0.6, open: 0, eye: 1, seen: 0, face: null, hop: 0, yaw: 0, state: 'IDLE' }));
+      if (!p) R.poses.set(key, (p = { fwdL: 0, fwdR: 0, outL: 0.12, outR: 0.12, bendL: 0.18, bendR: 0.18, inL: 0, inR: 0, lean: 0, look: 0, nod: 0, brow: 0, smile: 0.6, open: 0, eye: 1, seen: 0, face: null, hop: 0, yaw: 0, legAmp: 1, kneeAmp: 1, state: 'IDLE' }));
       return p;
     }
 
@@ -6725,7 +7163,9 @@ window.ABCC.GfxEngine = (function () {
       const rate = mode.state === 'REACT' || mode.state === 'ANGRY' ? 14 : 11;
       for (const key2 of ['fwdL', 'fwdR', 'outL', 'outR', 'bendL', 'bendR', 'inL', 'inR', 'lean']) P[key2] = damp(P[key2], tgt[key2], rate, dt);
       P.yaw = damp(P.yaw, tgt.headYaw, 9, dt);
-      P.hop = damp(P.hop, tgt.hop, 14, dt);
+      P.hop = damp(P.hop, tgt.hop, tgt.hop > 0.1 ? 30 : 14, dt); // joyful bounds need a snappy hop or they flatten out
+      P.legAmp = damp(P.legAmp, tgt.legAmp, 10, dt);
+      P.kneeAmp = damp(P.kneeAmp, tgt.kneeAmp, 10, dt);
 
       // head targets
       let lookYaw = 0;
@@ -6736,7 +7176,7 @@ window.ABCC.GfxEngine = (function () {
       const [browT, smileT, eyeT] = Anim.MOODS[tgt.mood] || Anim.MOODS.neutral;
       P.brow = damp(P.brow, browT, 9, dt);
       P.smile = damp(P.smile, smileT, 9, dt);
-      P.open = damp(P.open, tgt.mood === 'panic' ? 1 : 0, 10, dt);
+      P.open = damp(P.open, tgt.mood === 'panic' || tgt.mouth ? 1 : 0, 10, dt);
       P.eye = damp(P.eye, eyeT, 6, dt);
 
       // placement
@@ -6749,15 +7189,15 @@ window.ABCC.GfxEngine = (function () {
       eng.cast(true);
       st.push();
       st.translate(e.x, 0, e.y);
-      shadow(e.x, e.y, 0.5 * k, 0.4 * k, 0.36);
+      shadow(e.x, e.y, 0.5 * k * (1 - P.hop * 0.8), 0.4 * k * (1 - P.hop * 0.8), 0.36 * (1 - P.hop)); // the shadow shrinks while airborne
       st.rotateY(ang);
       st.scale(k);
 
       // legs
       for (const side of [-1, 1]) {
         const ph = phase + (side > 0 ? 0 : Math.PI);
-        let f = Math.sin(ph) * 0.7 * mi;
-        let knee = Math.max(0, -Math.sin(ph + 0.9)) * 0.9 * mi;
+        let f = Math.sin(ph) * 0.7 * mi * P.legAmp;
+        let knee = Math.max(0, -Math.sin(ph + 0.9)) * 0.9 * mi * P.kneeAmp;
         if (tgt.legs === 'turn') {
           const step = Math.sin(t * 11 + (side > 0 ? 0 : Math.PI));
           f = step * 0.32;
@@ -8194,6 +8634,7 @@ window.ABCC.GfxEngine = (function () {
         if (ev) { title = `${EVENTS[ev.type].emoji} ${EVENTS[ev.type].title}`; timerId = String(ev.id); timer = ev.time; hint = EVENTS[ev.type].say; }
       }
     }
+    if (ns.Layout?.current() === 'phone') opts = opts.map((o) => (o.sub ? { ...o, sub: o.sub.replace(/ · tekan [A-Z0-9]/, '') } : o)); // no keyboard on a phone
     const key = menuKey(sel);
     const show = (opts.length > 0 || (showEmpty && title && UI.menuTapped === key)) && UI.menuDismissed !== key;
     if (!show) {
@@ -8217,7 +8658,7 @@ window.ABCC.GfxEngine = (function () {
     const s = UI.s;
     if (!UI.settings.hints || s.phase !== 'active') return null;
     const waiting = State.inQueue(s).filter((c) => c.status === 'waiting');
-    if (s.pendingCustomerId) return s.pendingDuration ? ['3', 'Tap PC kosong yang berkelip hijau'] : ['2', 'Pilih tempoh sewaan (1 / 2 / 3)'];
+    if (s.pendingCustomerId) return s.pendingDuration ? ['3', 'Tap PC kosong yang berkelip hijau'] : ['2', ns.Layout?.current() === 'phone' ? 'Pilih tempoh sewaan' : 'Pilih tempoh sewaan (1 / 2 / 3)'];
     if ((s.worldEvents || []).length) return ['!', 'Ada kejadian — tap benda yang berdenyut dalam bilik'];
     if ((s.activeIssues || []).length) return ['!', 'Tap PC yang bertanda ❗ sebelum masa tamat!'];
     if (s.pcs.some((p) => p.status === 'fault')) return ['!', 'PC rosak! Tap PC → pilih cara baiki'];
@@ -8416,6 +8857,231 @@ window.ABCC.GfxEngine = (function () {
 
 </script>
 <script>
+/* ---- js/ui/icons.js ---- */
+/* ==========================================================================
+   4c. ICONS — the small cartoon icon set for the menu and buttons
+   --------------------------------------------------------------------------
+   Drawn as inline SVG so they look the same on every phone and PC (emoji and ▶ / ? glyphs do not: each system
+   draws them differently). Same look as the rest of the game: fat ink outline, flat bright fill.
+   UI.icon('play') → an <svg> string.   Names: play · resume · restart · guide · collection · settings · home
+   ========================================================================== */
+(function (ns) {
+  'use strict';
+
+  const UI = ns.UI;
+  const INK = '#2a2150';
+  const C = { yellow: '#ffcf3d', mint: '#2fd6a3', sky: '#4cc3ff', coral: '#ff5d73', violet: '#7b5cff', paper: '#fff8ea', white: '#ffffff' };
+
+  /** A fat outline pass (so overlapping shapes share one clean outline), then the colour pass on top. */
+  const icon = (outline, fills, extra = '') =>
+    `<g fill="${INK}" stroke="${INK}" stroke-width="7" stroke-linejoin="round" stroke-linecap="round">${outline}</g>${fills}${extra}`;
+
+  const teeth = (fill) => [0, 45, 90, 135].map((a) => `<rect x="21" y="4.5" width="6" height="39" rx="2.5" transform="rotate(${a} 24 24)"${fill ? ` fill="${fill}"` : ''}/>`).join('');
+
+  const SHAPES = {
+    // ▶
+    play: icon('<path d="M16 9 L39 24 L16 39 Z"/>', `<path d="M16 9 L39 24 L16 39 Z" fill="${C.yellow}"/>`, `<path d="M20 15 L30 22" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7"/>`),
+    // ▶▶ (pick up where you left off)
+    resume: icon('<path d="M6 12 L22 24 L6 36 Z"/><path d="M24 12 L42 24 L24 36 Z"/>', `<path d="M6 12 L22 24 L6 36 Z" fill="${C.yellow}"/><path d="M24 12 L42 24 L24 36 Z" fill="${C.yellow}"/>`),
+    // ↻
+    restart: icon('<path d="M37 24 A13 13 0 1 1 30 12.5" fill="none" stroke-width="9"/><path d="M38 17 L33 5.5 L25.5 18 Z"/>',
+      `<path d="M37 24 A13 13 0 1 1 30 12.5" fill="none" stroke="${C.coral}" stroke-width="4.5" stroke-linecap="round"/><path d="M38 17 L33 5.5 L25.5 18 Z" fill="${C.coral}"/>`),
+    // open book
+    guide: icon('<path d="M24 13 C19 9 11 9 5 12 L5 38 C11 35 19 35 24 39 Z"/><path d="M24 13 C29 9 37 9 43 12 L43 38 C37 35 29 35 24 39 Z"/>',
+      `<path d="M24 13 C19 9 11 9 5 12 L5 38 C11 35 19 35 24 39 Z" fill="${C.white}"/><path d="M24 13 C29 9 37 9 43 12 L43 38 C37 35 29 35 24 39 Z" fill="#d9f2ff"/>`,
+      `<path d="M10 19 C13 18 17 18 20 20 M10 26 C13 25 17 25 20 27 M28 20 C31 18 35 18 38 19 M28 27 C31 25 35 25 38 26" fill="none" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/><path d="M24 13 L24 39" stroke="${INK}" stroke-width="2.6"/>`),
+    // top hat
+    collection: icon('<rect x="5" y="33" width="38" height="8" rx="4"/><rect x="12" y="7" width="24" height="29" rx="5"/>',
+      `<rect x="5" y="33" width="38" height="8" rx="4" fill="${C.violet}"/><rect x="12" y="7" width="24" height="29" rx="5" fill="${C.violet}"/><rect x="12" y="26" width="24" height="7" fill="${C.coral}"/>`,
+      `<circle cx="24" cy="29.5" r="2.6" fill="${C.yellow}" stroke="${INK}" stroke-width="1.6"/><path d="M17 12 C17 16 17 20 17.5 23" stroke="#fff" stroke-width="2.6" stroke-linecap="round" fill="none" opacity=".55"/>`),
+    // gear
+    settings: icon(`<circle cx="24" cy="24" r="12"/>${teeth()}`, `<circle cx="24" cy="24" r="12" fill="${C.yellow}"/>${teeth(C.yellow)}`,
+      `<circle cx="24" cy="24" r="12" fill="${C.yellow}"/><circle cx="24" cy="24" r="5" fill="${C.paper}" stroke="${INK}" stroke-width="3"/>`),
+    // house (back to the main menu)
+    home: icon('<path d="M24 5 L43 22 L37 22 L37 41 L11 41 L11 22 L5 22 Z"/>', `<path d="M24 5 L43 22 L37 22 L37 41 L11 41 L11 22 L5 22 Z" fill="${C.yellow}"/><path d="M24 5 L43 22 L5 22 Z" fill="${C.coral}"/>`,
+      `<rect x="20" y="29" width="8" height="12" rx="2" fill="${C.sky}" stroke="${INK}" stroke-width="2.4"/>`),
+  };
+
+  /** UI.icon('guide', 44) → '<svg …>…</svg>'. The optional third argument swaps the icon's coral for another colour (for use on a coral button). */
+  UI.icon = (name, px = 44, tint) => `<svg class="ico-svg ico-${name}" viewBox="0 0 48 48" width="${px}" height="${px}" aria-hidden="true" focusable="false">${tint ? (SHAPES[name] || '').split(C.coral).join(tint) : SHAPES[name] || ''}</svg>`;
+})(window.ABCC);
+
+</script>
+<script>
+/* ---- js/ui/home.js ---- */
+/* ==========================================================================
+   4d. HOME — the main menu page (shown before every session, instead of the old pop-up)
+   --------------------------------------------------------------------------
+   Full-screen page: the live 3D café stays on screen behind a floating menu card. What the card offers depends on
+   whether there is a session to go back to:
+     no session   →  Mula Main · Cara Main · Koleksi · Tetapan
+     has session  →  Sambung Main · Main Semula · Cara Main · Koleksi · Tetapan
+   Buttons carry data-modal="…" so js/ui/modals.js (UI.handleModal) does the work, exactly as for the pop-ups.
+   ========================================================================== */
+(function (ns) {
+  'use strict';
+
+  const { fmtMoney } = ns;
+  const UI = ns.UI;
+  const { $, safe } = UI;
+
+  const home = $('home');
+  const card = $('homeCard');
+  const chips = $('homeChips');
+  const tip = $('homeTip');
+
+  /** Is there a run to go back to? (A fresh, untouched shop is not a session.) */
+  UI.hasSession = (s) => !!(s && (s.resumeTo || s.day > 1 || s.reports?.length || s.elapsed > 0));
+
+  const where = {
+    onboarding: 'Belum habis pengenalan',
+    prep: 'Sebelum buka kedai',
+    paused: 'Shift dijeda',
+    result: 'Laporan hari',
+    active: 'Shift dijeda',
+  };
+
+  /** One tip a day (it changes at midnight); tap the tip for the next one. Every line is true of the game as it is. */
+  const TIPS = [
+    'Pilih tempoh yang sama dengan permintaan pelanggan (★) untuk bayaran penuh. Salah pilih = bayaran dipotong.',
+    'Tap dua kali pada pelanggan untuk Auto-duduk: terus ke PC kosong yang paling dekat.',
+    'Restart PC masa ada pelanggan = refund 25% (sekali setiap kejadian).',
+    'Pelanggan yang menunggu terlalu lama akan balik dan reputasi turun. Layan yang bar kesabarannya hampir merah dulu.',
+    'PC suspicious? Tegur baik-baik dulu. Menuduh terus berisiko kalau dia sebenarnya tak bersalah.',
+    'Peak hour = lebih ramai dan PC cepat panas. Siapkan perk sebelum waktu itu tiba.',
+    'Perk CCTV memberi petunjuk tentang PC yang suspicious, tapi petunjuknya tak 100% tepat.',
+    'Hari 1 tiada kejadian rawak. Guna masa itu untuk belajar flow kedai.',
+    'Sewa & bil dibayar sebulan sekali, bukan setiap hari. Simpan cukup cash untuk hari itu.',
+    'Gagal capai target? Hari yang sama diulang dan progres hari-hari lepas kekal.',
+    'Papan kekunci: Space = pause, N = pelanggan seterusnya, 1 / 2 / 3 = tempoh, A = auto-duduk.',
+    'Topi Abang dibuka bila kau lepas hari-hari tertentu. Tengok di Koleksi.',
+  ];
+  let tipAt = Math.floor(Date.now() / 86400000) % TIPS.length;
+  const showTip = () => { tip.textContent = `💡 ${TIPS[tipAt % TIPS.length]}`; };
+  tip.addEventListener('click', () => {
+    tipAt = (tipAt + 1) % TIPS.length;
+    showTip();
+    UI.Sound.play('tap');
+  });
+
+  const tile = (cmd, ico, label, sub, css = '', size = 44) =>
+    `<button type="button" class="tile ${css}" data-modal="${cmd}"><span class="tile-ico">${UI.icon(ico, size)}</span><b>${label}</b>${sub ? `<small>${sub}</small>` : ''}</button>`;
+
+  UI.renderHome = function renderHome() {
+    const s = UI.s;
+    const session = UI.hasSession(s);
+    const meta = ns.Meta.get();
+    const hero = session
+      ? tile('continue', 'resume', 'Sambung Main', `Hari ${s.day} · ${fmtMoney(s.cash)}${where[s.resumeTo] ? ` · ${where[s.resumeTo]}` : ''}`, 'hero', 60)
+      : tile('newgame', 'play', 'Mula Main', `Hari 1 · modal ${fmtMoney(ns.CFG.START_CASH)} · 3 PC`, 'hero', 60);
+    const row = [
+      session ? tile('restart', 'restart', 'Main Semula', 'Dari Hari 1', 'coral') : '',
+      tile('help', 'guide', 'Cara Main', 'Panduan', 'sky'),
+      tile('collection', 'collection', 'Koleksi', `${ns.Meta.hats().filter((h) => h.unlocked).length}/${ns.Meta.hats().length} topi`, 'violet'),
+      tile('settings', 'settings', 'Tetapan', 'Bunyi · grafik', ''),
+    ].filter(Boolean);
+    card.innerHTML = `${hero}<div class="tile-row" style="--n:${row.length}">${row.join('')}</div>`;
+    showTip();
+    chips.innerHTML = meta.bestDay ? `<span>🏆 Hari terbaik ${safe(meta.bestDay)}</span>` : '';
+    document.documentElement.dataset.screen = 'home';
+    home.hidden = false;
+    card.querySelector('.tile')?.focus({ preventScroll: true });
+  };
+
+  UI.hideHome = function hideHome() {
+    document.documentElement.dataset.screen = 'game';
+    home.hidden = true;
+  };
+
+  // the page is one big hit area: nothing underneath (the 3D scene) reacts while it is up
+  home.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-modal]');
+    if (el) UI.handleModal(el);
+  });
+})(window.ABCC);
+
+</script>
+<script>
+/* ---- js/ui/homescene.js ---- */
+/* ==========================================================================
+   4e. HOME SCENE — the café comes alive behind the main menu
+   --------------------------------------------------------------------------
+   While the menu page is up, the 3D view shows a small throw-away demo shop instead of the player's real one:
+   customers walk in, queue, get seated, play (the monitors light up) and leave, Abang strolls over to set them up.
+   It runs the real game rules (so the animation is the real animation) but is never saved, has no money, trouble
+   or sound, and the player's actual session is left untouched. The demo mirrors the real shop's PC count and perks,
+   so the room looks like the player's own café.
+   ========================================================================== */
+(function (ns) {
+  'use strict';
+
+  const { State, S } = ns;
+  const UI = ns.UI;
+
+  let demo = null;
+  let key = '';
+  let spawnIn = 1;
+  let seatIn = 0.8;
+
+  function build(real) {
+    const d = State.create(20070815);
+    d.day = 4; // all the everyday customer types
+    d.pcs = real.pcs.map((p, i) => {
+      const pc = S.makePc(i);
+      pc.tier = p.tier || 1;
+      return pc;
+    });
+    d.perks = (real.perks || []).slice();
+    d.phase = 'prep';
+    State.startShift(d);
+    Object.assign(d, { customers: [], beatPlan: [], specialAt: [], worldEvents: [], activeIssues: [], officer: null }); // none of the tutorial's scripted crowds
+    return d;
+  }
+
+  /** Advance the demo shop by `dt` seconds and return it, ready to be drawn in place of `real`. */
+  UI.homeScene = {
+    step(real, dt) {
+      const k = `${real.pcs.length}|${(real.perks || []).join(',')}`;
+      if (!demo || k !== key) {
+        demo = build(real);
+        key = k;
+        spawnIn = 1;
+      }
+      dt = Math.min(dt, 0.07);
+      // no trouble, no inspections, a clock stuck at mid-afternoon
+      Object.assign(demo, { eventCooldown: 1e9, spawnCooldown: 1e9, inspectionScheduled: 1e9, elapsed: 20, activeIssues: [], worldEvents: [] });
+
+      spawnIn -= dt;
+      const queue = State.inQueue(demo);
+      if (spawnIn <= 0) {
+        if (queue.length < 2 && State.idlePCs(demo).length > queue.length) State.spawn(demo);
+        spawnIn = 2.5 + Math.random() * 3;
+      }
+      seatIn -= dt;
+      if (seatIn <= 0) {
+        seatIn = 0.7;
+        const next = queue.find((c) => c.status === 'waiting');
+        if (next) State.quickSeat(demo, next.id);
+      }
+
+      State.update(demo, dt);
+      for (const pc of demo.pcs) {
+        if (pc.fault || pc.issue) {
+          pc.fault = null;
+          pc.issue = null;
+          pc.status = pc.customerId ? 'busy' : 'free';
+        }
+      }
+      demo.customers = demo.customers.filter((c) => c.status !== 'event' && c.status !== 'officer'); // door crowds and officers are story beats, not scenery
+      demo.logs.length = 0;
+      State.drainFx(); // the demo is silent: its coins and doorbells are not for the player's ears
+      return demo;
+    },
+  };
+})(window.ABCC);
+
+</script>
+<script>
 /* ---- js/ui/modals.js ---- */
 /* ==========================================================================
    4f. MODALS — menu, intro cards, prep + perk draft, shift report, pause, help, settings
@@ -8445,24 +9111,31 @@ window.ABCC.GfxEngine = (function () {
   }
   const stat = (label, value, cls = '') => `<span class="${cls}">${label} ${value}</span>`;
 
-  function renderMenu() {
-    const s = UI.s;
-    const hasSave = !!State.getSaved() && !(s.phase === 'menu' && s.day === 1 && s.elapsed === 0 && s.reports.length === 0);
+  /** A yes / no question in the game's own style (replaces the browser's confirm() box). `yes` is the data-modal command. */
+  function renderConfirm({ eye, title, text, yes, yesLabel, icon = 'restart' }) {
+    overlay = 'confirm';
     showModal(`
-      <span class="modal-eyebrow">GAME NOSTALGIA MALAYSIA · 3D</span>
-      <h1>ABANG <em>CC</em>: 2007</h1>
-      <p class="modal-lead">"Abang aku balik kampung. Aku kena jaga cyber cafe dia hari demi hari… dan makin lama makin huru-hara."</p>
-      <div class="modal-hero">
-        <div class="badges"><span>🖥️ Mula 3 PC</span><span>👆 Tap &amp; urus</span><span>⚡ Shift 2 minit</span><span>🎴 Perk draft</span><span>🔥 Peak hour</span><span>👀 Pelanggan suspicious</span></div>
-        <p>Mula dengan 3 komputer CRT dan RM35. Setiap hari kau kena capai target jualan, pilih satu daripada dua perk, dan layan setiap pelanggan secara manual. Masalah diselesaikan terus dalam bilik 3D — tap PC, pelanggan atau benda yang berdenyut.</p>
-      </div>
+      <span class="modal-eyebrow">${eye}</span>
+      <h1>${title}</h1>
+      <p class="modal-lead">${text}</p>
       <div class="modal-actions">
-        ${hasSave ? '<button class="btn big mint" data-modal="continue">▶ Sambung main</button>' : ''}
-        <button class="btn big ${hasSave ? 'paper' : 'mint'}" data-modal="newgame">${hasSave ? '↻ Run baru' : '▶ Mula jaga kedai'}</button>
-        <button class="btn big sky" data-modal="help">? Cara main</button>
-        <button class="btn big paper" data-modal="collection">🎩 Koleksi</button>
-      </div>
-      <p class="small">Alpha 0.12 · progress disimpan automatik dalam browser ini</p>`);
+        <button class="btn big coral" data-modal="${yes}">${UI.icon(icon, 22, '#ffcf3d')} ${yesLabel}</button>
+        <button class="btn big paper" data-modal="back">Batal</button>
+      </div>`);
+    modalRoot.querySelector('[data-modal="back"]')?.focus({ preventScroll: true }); // the safe answer is the default one
+  }
+  const CONFIRMS = {
+    restart: () => ({ eye: 'MAIN SEMULA', title: 'Mula dari <em>Hari 1</em>?', text: `Progress sekarang (Hari ${UI.s.day}, ${fmtMoney(UI.s.cash)}) akan dipadam. Topi dalam Koleksi dan rekod hari terbaik <b>kekal</b>.`, yes: 'newgame', yesLabel: 'Ya, mula semula' }),
+    wipe: () => ({ eye: 'PADAM SAVE', title: 'Padam <em>semua</em> progress?', text: 'Semua progress akan dipadam dan kau mula dari awal. Topi dalam Koleksi kekal.', yes: 'confirmwipe', yesLabel: 'Ya, padam', icon: 'restart' }),
+  };
+
+  /** Bring a stored session back to where the player left it (the main menu always comes first). */
+  function resumeSession(s) {
+    const to = s.resumeTo || 'prep';
+    s.resumeTo = null;
+    s.phase = to === 'active' ? 'paused' : to; // never resume mid-action
+    if (s.phase === 'prep' && s.day >= 2 && !s.perkDraft?.length && !s.perkChoiceMade) State.draftPerks(s);
+    if (s.phase === 'prep' && s.day === 1) s.dayGoal = State.calcRevenueGoal(s, s.day);
   }
 
   function perkHTML() {
@@ -8497,7 +9170,7 @@ window.ABCC.GfxEngine = (function () {
       <div class="modal-actions">
         <button class="btn big mint" data-modal="start">▶ Buka kedai</button>
         ${canLoan ? `<button class="btn big paper" data-modal="loan">Pinjam ${fmtMoney(CFG.LOAN.amount)}</button>` : ''}
-        <button class="btn big sky" data-modal="help">? Cara main</button>
+        <button class="btn big sky" data-modal="help">${UI.icon('guide', 22)} Cara main</button>
       </div>`);
   }
 
@@ -8543,10 +9216,10 @@ window.ABCC.GfxEngine = (function () {
       <h1>Pause <em>☕</em></h1>
       <p class="modal-lead">Semua timer berhenti. Ambil nafas, susun strategi.</p>
       <div class="modal-actions">
-        <button class="btn big mint" data-modal="resume">▶ Sambung shift</button>
-        <button class="btn big sky" data-modal="help">? Cara main</button>
-        <button class="btn big paper" data-modal="settings">⚙ Tetapan</button>
-        <button class="btn big paper" data-modal="mainmenu">Menu utama</button>
+        <button class="btn big mint" data-modal="resume">${UI.icon('play', 22)} Sambung shift</button>
+        <button class="btn big sky" data-modal="help">${UI.icon('guide', 22)} Cara main</button>
+        <button class="btn big paper" data-modal="settings">${UI.icon('settings', 22)} Tetapan</button>
+        <button class="btn big paper" data-modal="mainmenu">${UI.icon('home', 22)} Menu utama</button>
       </div>
       <p class="small">Progress disimpan automatik.</p>`);
   }
@@ -8590,6 +9263,27 @@ window.ABCC.GfxEngine = (function () {
       <div class="modal-actions"><button class="btn big mint" data-modal="back">Faham, jom main!</button></div>`);
   }
 
+  /** Who made it and what it runs on. Edit this block to change the credits. */
+  const CREDITS = {
+    version: 'Alpha 0.12',
+    team: 'Tenang Squad',
+    lines: [
+      ['🎮', 'Game', 'Cyber café 2007 dalam 3D, untuk browser. Tanpa install.'],
+      ['🧊', 'Enjin', 'Grafik WebGL buatan sendiri (tiada library). Bunyi dan muzik dijana terus dalam browser.'],
+      ['🔤', 'Fon', 'Fredoka dan Nunito (Google Fonts, SIL Open Font License).'],
+      ['💾', 'Simpanan', 'Progress disimpan dalam browser ini sahaja. Padam di Tetapan.'],
+    ],
+  };
+  function renderCredits() {
+    overlay = 'credits';
+    showModal(`
+      <span class="modal-eyebrow">KREDIT</span>
+      <h1>ABANG <em>CC</em>: 2007</h1>
+      <p class="modal-lead">${safe(CREDITS.version)} · dibuat oleh <b>${safe(CREDITS.team)}</b></p>
+      <div class="modal-hero credits">${CREDITS.lines.map(([i, k, v]) => `<p><span class="cr-ico">${i}</span><b>${safe(k)}</b> ${safe(v)}</p>`).join('')}</div>
+      <div class="modal-actions"><button class="btn big mint" data-modal="back">Siap</button></div>`);
+  }
+
   /** Hats unlocked across runs (they stay when you start a new run). */
   function renderCollection() {
     overlay = 'collection';
@@ -8621,6 +9315,7 @@ window.ABCC.GfxEngine = (function () {
       <div class="switch-row"><span>🎵 Muzik</span>${seg('music', [[true, 'ON'], [false, 'OFF']], UI.settings.music !== false)}</div>
       <div class="switch-row"><span>🎨 Kualiti grafik</span>${seg('quality', [['high', 'Tinggi'], ['medium', 'Sederhana'], ['low', 'Rendah']], UI.settings.quality)}</div>
       <div class="switch-row"><span>🎚️ Kesukaran</span>${seg('preset', Object.entries(DIRECTOR.presets).map(([k, v]) => [k, v.label]), s.preset || 'biasa')}</div>
+      ${ns.Layout.isPhone() ? '' : `<div class="switch-row"><span>🧩 Susun atur</span>${seg('layout', [['classic', 'Klasik'], ['float', 'Terapung']], UI.settings.layout === 'float' ? 'float' : 'classic')}</div>`}
       <div class="switch-row"><span>💡 Tunjuk petunjuk</span>${seg('hints', [[true, 'ON'], [false, 'OFF']], UI.settings.hints)}</div>
       <div class="switch-row"><span>📈 Tunjuk FPS</span>${seg('showFps', [[true, 'ON'], [false, 'OFF']], !!UI.settings.showFps)}</div>
       <div class="switch-row"><span>🐢 Kurangkan animasi</span>${seg('reduceMotion', [[true, 'ON'], [false, 'OFF']], UI.settings.reduceMotion)}</div>
@@ -8637,8 +9332,12 @@ window.ABCC.GfxEngine = (function () {
     if (overlay && !force) return;
     if (!force && modalKey === s.phase) return;
     modalKey = s.phase;
+    if (s.phase === 'menu') {
+      hideModal(); // the main menu is a page (js/ui/home.js), not a pop-up
+      return UI.renderHome();
+    }
+    UI.hideHome();
     switch (s.phase) {
-      case 'menu': return renderMenu();
       case 'prep': return renderPrep();
       case 'result': return renderResult();
       case 'onboarding': return renderOnboarding();
@@ -8654,7 +9353,7 @@ window.ABCC.GfxEngine = (function () {
       State.save(UI.s);
     }
     overlay = kind;
-    kind === 'help' ? renderHelp() : kind === 'collection' ? renderCollection() : renderSettings();
+    kind === 'help' ? renderHelp() : kind === 'collection' ? renderCollection() : kind === 'credits' ? renderCredits() : renderSettings();
   };
 
   UI.resync = function resync() {
@@ -8683,8 +9382,8 @@ window.ABCC.GfxEngine = (function () {
     UI.Sound.play('click');
     let s = UI.s;
     switch (cmd) {
+      case 'restart': return renderConfirm(CONFIRMS.restart());
       case 'newgame':
-        if ((s.reports.length > 0 || s.elapsed > 10) && !confirm('Mula balik akan overwrite save lama. Confirm?')) return;
         State.resetSave();
         ns.Meta.recordRun();
         UI.s = s = State.create();
@@ -8693,8 +9392,8 @@ window.ABCC.GfxEngine = (function () {
         State.save(s);
         return UI.resync();
       case 'continue':
-        UI.s = State.getSaved() || s;
-        if (UI.s.phase === 'menu') UI.s.phase = 'prep';
+        resumeSession(s);
+        State.save(s);
         return UI.resync();
       case 'start':
         State.startShift(s);
@@ -8705,6 +9404,7 @@ window.ABCC.GfxEngine = (function () {
         State.save(s);
         return UI.resync();
       case 'mainmenu':
+        s.resumeTo = s.phase === 'menu' ? s.resumeTo : s.phase; // "Sambung Main" picks the shift up again from here
         s.phase = 'menu';
         State.save(s);
         return UI.resync();
@@ -8733,6 +9433,7 @@ window.ABCC.GfxEngine = (function () {
       case 'help': return UI.openOverlay('help');
       case 'settings': return UI.openOverlay('settings');
       case 'collection': return UI.openOverlay('collection');
+      case 'credits': return UI.openOverlay('credits');
       case 'hat':
         if (ns.Meta.equip(el.dataset.id)) {
           UI.gfx?.setHat(el.dataset.id);
@@ -8742,13 +9443,11 @@ window.ABCC.GfxEngine = (function () {
       case 'back':
         overlay = null;
         return UI.syncModal(true);
-      case 'wipe':
-        if (confirm('Padam semua progress dan mula dari awal?')) {
-          State.resetSave();
-          UI.s = State.create();
-          return UI.resync();
-        }
-        return;
+      case 'wipe': return renderConfirm(CONFIRMS.wipe());
+      case 'confirmwipe':
+        State.resetSave();
+        UI.s = State.create();
+        return UI.resync();
       case 'introskip':
         s.phase = 'prep';
         s.introStep = 4;
@@ -8791,6 +9490,7 @@ window.ABCC.GfxEngine = (function () {
         UI.saveSettings();
       }
       UI.applySettings();
+      if (key === 'layout') ns.Layout.set(val); // Klasik = top bar + sidebar, Terapung = panels floating in the corners of a full-screen scene
       UI.Sound.play('click');
       return renderSettings();
     }
@@ -9097,9 +9797,12 @@ window.ABCC.GfxEngine = (function () {
 
   UI.gfx?.setHat(ns.Meta.equipped());
 
+  // The game always opens on the main menu page. A stored session is kept under `resumeTo`: "Sambung Main" puts the player back there.
   UI.s = State.getSaved() || State.create();
-  if (UI.s.phase === 'prep' && UI.s.day >= 2 && !UI.s.perkDraft?.length && !UI.s.perkChoiceMade) State.draftPerks(UI.s);
-  if (UI.s.phase === 'prep' && UI.s.day === 1) UI.s.dayGoal = State.calcRevenueGoal(UI.s, UI.s.day);
+  if (UI.s.phase !== 'menu') {
+    UI.s.resumeTo = UI.s.phase;
+    UI.s.phase = 'menu';
+  }
 
   // browsers only allow audio after a tap/key: any of these unlocks it (iOS wants touchend)
   for (const type of ['pointerdown', 'keydown', 'touchend']) document.addEventListener(type, () => UI.Sound.unlock(), { passive: true });
@@ -9213,8 +9916,8 @@ window.ABCC.GfxEngine = (function () {
         UI.toast('🎯 Target hari ini dicapai! Teruskan untuk lebih banyak bintang.', 'good');
       }
     } else if (s.phase !== 'paused') UI.goalHit = false;
-    // music follows the shift: bright by day, moody at night, busier in peak hour; silent in menus and on pause
-    UI.Sound.music(s.phase === 'active' ? { night: ns.dayPart(CFG.DAY_START_MINUTES + s.elapsed * CFG.GAME_MINUTE_RATE).id === 'night', peak: !!s.peakActive } : null);
+    // music follows the shift: bright by day, moody at night, busier in peak hour; plays on the main menu page; silent in other dialogs and on pause
+    UI.Sound.music(s.phase === 'active' ? { night: ns.dayPart(CFG.DAY_START_MINUTES + s.elapsed * CFG.GAME_MINUTE_RATE).id === 'night', peak: !!s.peakActive } : s.phase === 'menu' ? { night: false, peak: false } : null); // the main menu has the daytime tune too
     const h = UI.hint();
     const bubble = $('hintBubble');
     bubble.hidden = !h;
@@ -9302,15 +10005,17 @@ window.ABCC.GfxEngine = (function () {
     const dt = last ? Math.min(0.07, rawMs / 1000) : 0;
     last = now;
     if (s.phase === 'active' && !UI.frozen) State.update(s, dt); // tests freeze time and step it by hand
+    const atHome = s.phase === 'menu';
+    const view = atHome && !UI.frozen ? UI.homeScene.step(s, dt) : s; // behind the main menu the café shows a live demo shop (js/ui/homescene.js)
     handleFx();
 
     if (UI.gfx) {
       const waiting = State.inQueue(s).some((c) => c.status === 'waiting');
-      const drawn = UI.gfx.render(s, now, {
+      const drawn = UI.gfx.render(view, now, {
         pendingReady: s.phase === 'active' && !!s.pendingCustomerId && !!s.pendingDuration,
         hintCustomers: UI.settings.hints && s.phase === 'active' && !s.pendingCustomerId && waiting,
       });
-      if (drawn) UI.updateLabels();
+      if (drawn && !atHome) UI.updateLabels(); // the labels belong to the real shop, and are hidden on the menu page anyway
     } else UI.updateFallbackBoard();
 
     if (s.phase === 'active') {

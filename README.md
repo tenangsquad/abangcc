@@ -17,7 +17,7 @@ Seat the customers · fix the crashing PCs · catch the cheaters · survive the 
 ## ▶️ Play in 10 seconds
 
 1. Open **`dist/ABANG_CC_2007_ALPHA_12.html`** in Chrome, Edge or Firefox. It's a single file, so just double-click it.
-2. Wait for the loading screen (about 2 seconds).
+2. Wait for the loading screen (about 3 seconds). You land on the **main menu**: press **Mula Main** (Play) for a new game. Once you have a game going, the menu also shows **Sambung Main** (Continue, picks up where you stopped) and **Main Semula** (Restart, asks first). **Cara Main** is the quick guide and **Koleksi** is your hats.
 3. Follow the **How to play** steps below. Day 1 is a gentle tutorial and has no random trouble.
 
 > 💡 Prefer a web server? Run `npx serve .` or `python -m http.server` in this folder and open `index.html`.
@@ -145,7 +145,7 @@ After each successful day you're offered **two random perks**. Each one helps, a
 
 ## 🎩 Keep your progress: the Koleksi
 
-Clear certain days and Abang unlocks new hats: 🎧 **Headphone Gamer** (clear day 3), 👒 **Topi Jerami** (day 6) and 👑 **Mahkota Raja CC** (day 10). Wear them from **🎩 Koleksi** on the main menu. They're only for looks, and they **stay unlocked even when you start a new run**. The best day you've reached is kept there too.
+Clear certain days and Abang unlocks new hats: 🎧 **Headphone Gamer** (clear day 3), 👒 **Topi Jerami** (day 6) and 👑 **Mahkota Raja CC** (day 10). Wear them from **Koleksi** on the main menu. They're only for looks, and they **stay unlocked even when you start a new run**. The best day you've reached is kept there too.
 
 ---
 
@@ -158,13 +158,19 @@ Clear certain days and Abang unlocks new hats: 🎧 **Headphone Gamer** (clear d
 | Next customer in the queue | `N` | Tap them in the queue |
 | Pick duration | `1` `2` `3` | Tap 30 / 60 / 90 |
 | Seat in one step | Double-click a customer, or `A` | Double-tap a customer |
-| Zoom | Mouse wheel or `+` `-` | Pinch or buttons |
+| Zoom | Mouse wheel or `+` `-` | Pinch |
 | Pan (when zoomed) | Drag | Drag |
 | Restart the selected PC | `R` | Use the PC's menu |
 
 The camera is fixed isometric and never rotates. Zooming is optional.
 
+**On a phone:** hold it **sideways**. The game switches to a phone layout by itself: the 3D shop fills the whole screen, with the cash and clock top-left, the daily target and buttons top-right, the waiting queue bottom-left and Abang's tasks and shop status bottom-right. Held upright you get a "Putar telefon" card and the shift pauses until you turn it. (Android Chrome also goes fullscreen and locks to landscape on your first tap; iPhone Safari can't lock the screen, so turn it by hand.) Same game and same save as on a PC, only the layout differs. To preview it on a PC, add `?layout=phone` to the address (`?layout=desktop` forces the PC layout).
+
 **Sound:** the ♫ button mutes everything. In Settings you can turn the **Muzik** (a small looping tune that gets slower and moodier at night and busier in peak hour) off separately. You hear a coin sound for every sale, a soft warning beep when a waiting customer is almost out of patience, and a fanfare when you reach the day's target.
+
+**Layout on a PC:** by default the game uses the classic layout (top bar and a sidebar). In Settings, **Susun atur → Terapung** makes the 3D shop fill the whole window with the panels floating in its four corners, which gives you a noticeably bigger café. The choice is remembered. (Phones always use the corner layout.)
+
+**Main menu extras:** the café on the menu page is alive (customers come and go behind it, it never touches your real shop), the menu plays the daytime tune once you have tapped anywhere, the box under the menu shows one tip a day (tap it for the next), and **Kredit** at the bottom lists the version, makers and fonts.
 
 **Difficulty:** open Settings (the ⚙ button) and pick **Santai** (easy), **Biasa** (normal) or **Mencabar** (hard).
 

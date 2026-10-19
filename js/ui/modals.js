@@ -26,24 +26,31 @@
   }
   const stat = (label, value, cls = '') => `<span class="${cls}">${label} ${value}</span>`;
 
-  function renderMenu() {
-    const s = UI.s;
-    const hasSave = !!State.getSaved() && !(s.phase === 'menu' && s.day === 1 && s.elapsed === 0 && s.reports.length === 0);
+  /** A yes / no question in the game's own style (replaces the browser's confirm() box). `yes` is the data-modal command. */
+  function renderConfirm({ eye, title, text, yes, yesLabel, icon = 'restart' }) {
+    overlay = 'confirm';
     showModal(`
-      <span class="modal-eyebrow">GAME NOSTALGIA MALAYSIA · 3D</span>
-      <h1>ABANG <em>CC</em>: 2007</h1>
-      <p class="modal-lead">"Abang aku balik kampung. Aku kena jaga cyber cafe dia hari demi hari… dan makin lama makin huru-hara."</p>
-      <div class="modal-hero">
-        <div class="badges"><span>🖥️ Mula 3 PC</span><span>👆 Tap &amp; urus</span><span>⚡ Shift 2 minit</span><span>🎴 Perk draft</span><span>🔥 Peak hour</span><span>👀 Pelanggan suspicious</span></div>
-        <p>Mula dengan 3 komputer CRT dan RM35. Setiap hari kau kena capai target jualan, pilih satu daripada dua perk, dan layan setiap pelanggan secara manual. Masalah diselesaikan terus dalam bilik 3D — tap PC, pelanggan atau benda yang berdenyut.</p>
-      </div>
+      <span class="modal-eyebrow">${eye}</span>
+      <h1>${title}</h1>
+      <p class="modal-lead">${text}</p>
       <div class="modal-actions">
-        ${hasSave ? '<button class="btn big mint" data-modal="continue">▶ Sambung main</button>' : ''}
-        <button class="btn big ${hasSave ? 'paper' : 'mint'}" data-modal="newgame">${hasSave ? '↻ Run baru' : '▶ Mula jaga kedai'}</button>
-        <button class="btn big sky" data-modal="help">? Cara main</button>
-        <button class="btn big paper" data-modal="collection">🎩 Koleksi</button>
-      </div>
-      <p class="small">Alpha 0.12 · progress disimpan automatik dalam browser ini</p>`);
+        <button class="btn big coral" data-modal="${yes}">${UI.icon(icon, 22, '#ffcf3d')} ${yesLabel}</button>
+        <button class="btn big paper" data-modal="back">Batal</button>
+      </div>`);
+    modalRoot.querySelector('[data-modal="back"]')?.focus({ preventScroll: true }); // the safe answer is the default one
+  }
+  const CONFIRMS = {
+    restart: () => ({ eye: 'MAIN SEMULA', title: 'Mula dari <em>Hari 1</em>?', text: `Progress sekarang (Hari ${UI.s.day}, ${fmtMoney(UI.s.cash)}) akan dipadam. Topi dalam Koleksi dan rekod hari terbaik <b>kekal</b>.`, yes: 'newgame', yesLabel: 'Ya, mula semula' }),
+    wipe: () => ({ eye: 'PADAM SAVE', title: 'Padam <em>semua</em> progress?', text: 'Semua progress akan dipadam dan kau mula dari awal. Topi dalam Koleksi kekal.', yes: 'confirmwipe', yesLabel: 'Ya, padam', icon: 'restart' }),
+  };
+
+  /** Bring a stored session back to where the player left it (the main menu always comes first). */
+  function resumeSession(s) {
+    const to = s.resumeTo || 'prep';
+    s.resumeTo = null;
+    s.phase = to === 'active' ? 'paused' : to; // never resume mid-action
+    if (s.phase === 'prep' && s.day >= 2 && !s.perkDraft?.length && !s.perkChoiceMade) State.draftPerks(s);
+    if (s.phase === 'prep' && s.day === 1) s.dayGoal = State.calcRevenueGoal(s, s.day);
   }
 
   function perkHTML() {
@@ -78,7 +85,7 @@
       <div class="modal-actions">
         <button class="btn big mint" data-modal="start">▶ Buka kedai</button>
         ${canLoan ? `<button class="btn big paper" data-modal="loan">Pinjam ${fmtMoney(CFG.LOAN.amount)}</button>` : ''}
-        <button class="btn big sky" data-modal="help">? Cara main</button>
+        <button class="btn big sky" data-modal="help">${UI.icon('guide', 22)} Cara main</button>
       </div>`);
   }
 
@@ -124,10 +131,10 @@
       <h1>Pause <em>☕</em></h1>
       <p class="modal-lead">Semua timer berhenti. Ambil nafas, susun strategi.</p>
       <div class="modal-actions">
-        <button class="btn big mint" data-modal="resume">▶ Sambung shift</button>
-        <button class="btn big sky" data-modal="help">? Cara main</button>
-        <button class="btn big paper" data-modal="settings">⚙ Tetapan</button>
-        <button class="btn big paper" data-modal="mainmenu">Menu utama</button>
+        <button class="btn big mint" data-modal="resume">${UI.icon('play', 22)} Sambung shift</button>
+        <button class="btn big sky" data-modal="help">${UI.icon('guide', 22)} Cara main</button>
+        <button class="btn big paper" data-modal="settings">${UI.icon('settings', 22)} Tetapan</button>
+        <button class="btn big paper" data-modal="mainmenu">${UI.icon('home', 22)} Menu utama</button>
       </div>
       <p class="small">Progress disimpan automatik.</p>`);
   }
@@ -171,6 +178,27 @@
       <div class="modal-actions"><button class="btn big mint" data-modal="back">Faham, jom main!</button></div>`);
   }
 
+  /** Who made it and what it runs on. Edit this block to change the credits. */
+  const CREDITS = {
+    version: 'Alpha 0.12',
+    team: 'Tenang Squad',
+    lines: [
+      ['🎮', 'Game', 'Cyber café 2007 dalam 3D, untuk browser. Tanpa install.'],
+      ['🧊', 'Enjin', 'Grafik WebGL buatan sendiri (tiada library). Bunyi dan muzik dijana terus dalam browser.'],
+      ['🔤', 'Fon', 'Fredoka dan Nunito (Google Fonts, SIL Open Font License).'],
+      ['💾', 'Simpanan', 'Progress disimpan dalam browser ini sahaja. Padam di Tetapan.'],
+    ],
+  };
+  function renderCredits() {
+    overlay = 'credits';
+    showModal(`
+      <span class="modal-eyebrow">KREDIT</span>
+      <h1>ABANG <em>CC</em>: 2007</h1>
+      <p class="modal-lead">${safe(CREDITS.version)} · dibuat oleh <b>${safe(CREDITS.team)}</b></p>
+      <div class="modal-hero credits">${CREDITS.lines.map(([i, k, v]) => `<p><span class="cr-ico">${i}</span><b>${safe(k)}</b> ${safe(v)}</p>`).join('')}</div>
+      <div class="modal-actions"><button class="btn big mint" data-modal="back">Siap</button></div>`);
+  }
+
   /** Hats unlocked across runs (they stay when you start a new run). */
   function renderCollection() {
     overlay = 'collection';
@@ -202,6 +230,7 @@
       <div class="switch-row"><span>🎵 Muzik</span>${seg('music', [[true, 'ON'], [false, 'OFF']], UI.settings.music !== false)}</div>
       <div class="switch-row"><span>🎨 Kualiti grafik</span>${seg('quality', [['high', 'Tinggi'], ['medium', 'Sederhana'], ['low', 'Rendah']], UI.settings.quality)}</div>
       <div class="switch-row"><span>🎚️ Kesukaran</span>${seg('preset', Object.entries(DIRECTOR.presets).map(([k, v]) => [k, v.label]), s.preset || 'biasa')}</div>
+      ${ns.Layout.isPhone() ? '' : `<div class="switch-row"><span>🧩 Susun atur</span>${seg('layout', [['classic', 'Klasik'], ['float', 'Terapung']], UI.settings.layout === 'float' ? 'float' : 'classic')}</div>`}
       <div class="switch-row"><span>💡 Tunjuk petunjuk</span>${seg('hints', [[true, 'ON'], [false, 'OFF']], UI.settings.hints)}</div>
       <div class="switch-row"><span>📈 Tunjuk FPS</span>${seg('showFps', [[true, 'ON'], [false, 'OFF']], !!UI.settings.showFps)}</div>
       <div class="switch-row"><span>🐢 Kurangkan animasi</span>${seg('reduceMotion', [[true, 'ON'], [false, 'OFF']], UI.settings.reduceMotion)}</div>
@@ -218,8 +247,12 @@
     if (overlay && !force) return;
     if (!force && modalKey === s.phase) return;
     modalKey = s.phase;
+    if (s.phase === 'menu') {
+      hideModal(); // the main menu is a page (js/ui/home.js), not a pop-up
+      return UI.renderHome();
+    }
+    UI.hideHome();
     switch (s.phase) {
-      case 'menu': return renderMenu();
       case 'prep': return renderPrep();
       case 'result': return renderResult();
       case 'onboarding': return renderOnboarding();
@@ -235,7 +268,7 @@
       State.save(UI.s);
     }
     overlay = kind;
-    kind === 'help' ? renderHelp() : kind === 'collection' ? renderCollection() : renderSettings();
+    kind === 'help' ? renderHelp() : kind === 'collection' ? renderCollection() : kind === 'credits' ? renderCredits() : renderSettings();
   };
 
   UI.resync = function resync() {
@@ -264,8 +297,8 @@
     UI.Sound.play('click');
     let s = UI.s;
     switch (cmd) {
+      case 'restart': return renderConfirm(CONFIRMS.restart());
       case 'newgame':
-        if ((s.reports.length > 0 || s.elapsed > 10) && !confirm('Mula balik akan overwrite save lama. Confirm?')) return;
         State.resetSave();
         ns.Meta.recordRun();
         UI.s = s = State.create();
@@ -274,8 +307,8 @@
         State.save(s);
         return UI.resync();
       case 'continue':
-        UI.s = State.getSaved() || s;
-        if (UI.s.phase === 'menu') UI.s.phase = 'prep';
+        resumeSession(s);
+        State.save(s);
         return UI.resync();
       case 'start':
         State.startShift(s);
@@ -286,6 +319,7 @@
         State.save(s);
         return UI.resync();
       case 'mainmenu':
+        s.resumeTo = s.phase === 'menu' ? s.resumeTo : s.phase; // "Sambung Main" picks the shift up again from here
         s.phase = 'menu';
         State.save(s);
         return UI.resync();
@@ -314,6 +348,7 @@
       case 'help': return UI.openOverlay('help');
       case 'settings': return UI.openOverlay('settings');
       case 'collection': return UI.openOverlay('collection');
+      case 'credits': return UI.openOverlay('credits');
       case 'hat':
         if (ns.Meta.equip(el.dataset.id)) {
           UI.gfx?.setHat(el.dataset.id);
@@ -323,13 +358,11 @@
       case 'back':
         overlay = null;
         return UI.syncModal(true);
-      case 'wipe':
-        if (confirm('Padam semua progress dan mula dari awal?')) {
-          State.resetSave();
-          UI.s = State.create();
-          return UI.resync();
-        }
-        return;
+      case 'wipe': return renderConfirm(CONFIRMS.wipe());
+      case 'confirmwipe':
+        State.resetSave();
+        UI.s = State.create();
+        return UI.resync();
       case 'introskip':
         s.phase = 'prep';
         s.introStep = 4;
@@ -372,6 +405,7 @@
         UI.saveSettings();
       }
       UI.applySettings();
+      if (key === 'layout') ns.Layout.set(val); // Klasik = top bar + sidebar, Terapung = panels floating in the corners of a full-screen scene
       UI.Sound.play('click');
       return renderSettings();
     }

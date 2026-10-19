@@ -21,9 +21,12 @@
 
   UI.gfx?.setHat(ns.Meta.equipped());
 
+  // The game always opens on the main menu page. A stored session is kept under `resumeTo`: "Sambung Main" puts the player back there.
   UI.s = State.getSaved() || State.create();
-  if (UI.s.phase === 'prep' && UI.s.day >= 2 && !UI.s.perkDraft?.length && !UI.s.perkChoiceMade) State.draftPerks(UI.s);
-  if (UI.s.phase === 'prep' && UI.s.day === 1) UI.s.dayGoal = State.calcRevenueGoal(UI.s, UI.s.day);
+  if (UI.s.phase !== 'menu') {
+    UI.s.resumeTo = UI.s.phase;
+    UI.s.phase = 'menu';
+  }
 
   // browsers only allow audio after a tap/key: any of these unlocks it (iOS wants touchend)
   for (const type of ['pointerdown', 'keydown', 'touchend']) document.addEventListener(type, () => UI.Sound.unlock(), { passive: true });
@@ -137,8 +140,8 @@
         UI.toast('🎯 Target hari ini dicapai! Teruskan untuk lebih banyak bintang.', 'good');
       }
     } else if (s.phase !== 'paused') UI.goalHit = false;
-    // music follows the shift: bright by day, moody at night, busier in peak hour; silent in menus and on pause
-    UI.Sound.music(s.phase === 'active' ? { night: ns.dayPart(CFG.DAY_START_MINUTES + s.elapsed * CFG.GAME_MINUTE_RATE).id === 'night', peak: !!s.peakActive } : null);
+    // music follows the shift: bright by day, moody at night, busier in peak hour; plays on the main menu page; silent in other dialogs and on pause
+    UI.Sound.music(s.phase === 'active' ? { night: ns.dayPart(CFG.DAY_START_MINUTES + s.elapsed * CFG.GAME_MINUTE_RATE).id === 'night', peak: !!s.peakActive } : s.phase === 'menu' ? { night: false, peak: false } : null); // the main menu has the daytime tune too
     const h = UI.hint();
     const bubble = $('hintBubble');
     bubble.hidden = !h;
@@ -226,15 +229,17 @@
     const dt = last ? Math.min(0.07, rawMs / 1000) : 0;
     last = now;
     if (s.phase === 'active' && !UI.frozen) State.update(s, dt); // tests freeze time and step it by hand
+    const atHome = s.phase === 'menu';
+    const view = atHome && !UI.frozen ? UI.homeScene.step(s, dt) : s; // behind the main menu the café shows a live demo shop (js/ui/homescene.js)
     handleFx();
 
     if (UI.gfx) {
       const waiting = State.inQueue(s).some((c) => c.status === 'waiting');
-      const drawn = UI.gfx.render(s, now, {
+      const drawn = UI.gfx.render(view, now, {
         pendingReady: s.phase === 'active' && !!s.pendingCustomerId && !!s.pendingDuration,
         hintCustomers: UI.settings.hints && s.phase === 'active' && !s.pendingCustomerId && waiting,
       });
-      if (drawn) UI.updateLabels();
+      if (drawn && !atHome) UI.updateLabels(); // the labels belong to the real shop, and are hidden on the menu page anyway
     } else UI.updateFallbackBoard();
 
     if (s.phase === 'active') {
