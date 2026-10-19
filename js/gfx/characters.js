@@ -112,9 +112,30 @@
         case 'cap':
           ball(0, 0.12, -0.06, 0.42, 0.3, 0.4, look.hair);
           if (kind === 'player') {
-            ball(0, 0.22, -0.03, 0.44, 0.26, 0.42, '#ffcf3d');
-            blk(0, 0.2, 0.36, 0.5, 0.06, 0.34, '#ffb300', 0.03);
-            ball(0, 0.3, 0.3, 0.1, 0.06, 0.03, '#ffffff', 0, 0.3, true);
+            const hat = R.abangHat || 'cap'; // cosmetic, unlocked across runs (see js/state/meta.js)
+            if (hat === 'phones') { // gamer headphones over the hair
+              ring(0, -0.02, -0.02, 0.47, 0.05, '#2a2150', 1, 0, Math.PI);
+              for (const side of [-1, 1]) {
+                ball(side * 0.45, -0.02, 0, 0.1, 0.17, 0.15, '#2a2150');
+                ball(side * 0.53, -0.02, 0, 0.03, 0.12, 0.11, '#4cc3ff', 0, 0.5, true);
+              }
+              ball(0, 0.36, 0.08, 0.1, 0.05, 0.1, '#ff5da2', 0, 0.2, true); // a hair tuft so the head isn't bare
+            } else if (hat === 'straw') { // wide-brim straw hat with a red band
+              cyl(0, 0.2, -0.02, 0.68, 0.05, '#e8c46a', 1, 1);
+              cyl(0, 0.24, -0.02, 0.36, 0.26, '#f2d27e', 0.9, 1);
+              cyl(0, 0.25, -0.02, 0.375, 0.07, '#d9304a', 0.97, 0);
+            } else if (hat === 'crown') { // gold crown with gems
+              cyl(0, 0.3, -0.03, 0.36, 0.17, '#ffd23f', 1.12, 1, 0.12);
+              for (let i = 0; i < 5; i++) {
+                const a = (i / 5) * TAU;
+                cyl(Math.sin(a) * 0.3, 0.46, Math.cos(a) * 0.3 - 0.03, 0.07, 0.2, '#ffd23f', 0.2, 1, 0.12);
+                ball(Math.sin(a) * 0.3, 0.68, Math.cos(a) * 0.3 - 0.03, 0.05, 0.05, 0.05, i % 2 ? '#ff5d73' : '#4cc3ff', 0, 0.6, true);
+              }
+            } else {
+              ball(0, 0.22, -0.03, 0.44, 0.26, 0.42, '#ffcf3d');
+              blk(0, 0.2, 0.36, 0.5, 0.06, 0.34, '#ffb300', 0.03);
+              ball(0, 0.3, 0.3, 0.1, 0.06, 0.03, '#ffffff', 0, 0.3, true);
+            }
           } else {
             ball(0, 0.22, -0.03, 0.44, 0.26, 0.42, '#4da3ff');
             blk(0, 0.2, -0.36, 0.5, 0.06, 0.34, '#2f7fe0', 0.03);

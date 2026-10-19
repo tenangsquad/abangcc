@@ -158,7 +158,7 @@ test('Phase 14: HUD content, sidebar order and no old Buku Log', async () => {
   assert.match(txt, /CC NEWS/);
   assert.doesNotMatch(txt, /Buku Log/i, 'the old log panel is gone');
   const order = await ev(`[...document.querySelectorAll('.sidebar .card-title > span:first-child')].map((e) => e.textContent.replace(/[^A-Za-z' ]/g, '').trim().toUpperCase())`);
-  assert.deepEqual(order.slice(0, 3), ['SITUASI PANAS', 'PELANGGAN MENUNGGU', 'STATUS KEDAI']);
+  assert.deepEqual(order.slice(0, 4), ['SITUASI PANAS', 'PELANGGAN MENUNGGU', 'ARAHAN ABANG', 'STATUS KEDAI']);
   assert.equal(await ev(`!!document.getElementById('selectionPanel') || !!document.getElementById('durationButtons')`), false, "the old Abang's Desk side panel is gone");
   for (const id of ['pauseBtn', 'soundBtn', 'settingsBtn', 'helpBtn', 'hudDay', 'hudTime', 'worldCountdown']) assert.ok(await ev(`!!document.getElementById('${id}')`), id);
   assert.match(await ev(`document.getElementById('hudDay').textContent`), /Hari 1/);
@@ -352,7 +352,8 @@ test('A17/7.7: a failed day shows why, and retrying restarts the SAME day with p
   const text = await ev(`document.querySelector('.modal-card').innerText`);
   assert.match(text, /Shift gagal/);
   assert.match(text, /Kekurangan/);
-  assert.match(text, /Kenapa gagal/);
+  assert.match(text, /Sebab utama/, 'the report opens with the main reason');
+  assert.match(text, /💡/, 'and a tip');
   await shot('06_failed_report');
   const retryBtn = await rect('[data-modal="retryday"]');
   assert.ok(retryBtn.b <= 768 && retryBtn.t >= 0, `the retry button is on screen at 1366×768 (bottom ${Math.round(retryBtn.b)})`);
@@ -534,6 +535,140 @@ test('Phase 6: camera zoom is optional, gentle and limited — and the camera ca
   await clickEl('[data-zoom="reset"]');
   assert.equal(await ev(`ABCC.debug.gfx().getZoom()`), 1);
   assert.equal(await ev(`Object.keys(ABCC.debug.gfx()).filter((k) => /rotat|orbit|yaw/i.test(k)).length`), 0, 'no rotation controls exist');
+});
+
+test('Auto-duduk: a double tap on a customer seats them for the ★ length on the nearest free PC; so does the ⚡ button and the A key', async () => {
+  await open();
+  await pageReady();
+  await ev(`ABCC.debug.ui().settings.hints = false; 1`);
+  // 1) double tap (two quick clicks on the same customer in the room)
+  const a = await ev(`T.wait('student', 90, 0)`);
+  await sleep(500);
+  const p = await ev(`ABCC.debug.pagePoint('customer', ${a})`);
+  await b.click(p.x, p.y);
+  await sleep(90);
+  await b.click(p.x, p.y);
+  await sleep(250);
+  assert.equal(await S(`State.byId(s.customers, ${a}).pcId`), 1, 'seated on PC 1 without choosing anything');
+  assert.equal(await S(`State.byId(s.customers, ${a}).duration`), 90, 'for the length they asked for');
+  assert.equal(await S('State.breakdown(s).rental'), 300);
+  // 2) the ⚡ button in the pop-up
+  const c = await ev(`T.wait('rm1', 30, 0)`);
+  await clickWorld('customer', c);
+  assert.equal(await ev(`!!document.querySelector('#worldMenu [data-act="autoseat"]')`), true, 'the menu offers Auto-duduk');
+  await clickEl('#worldMenu [data-act="autoseat"]');
+  assert.equal(await S(`State.byId(s.customers, ${c}).pcId`), 2);
+  // 3) the A key after selecting from the queue list
+  const d = await ev(`T.wait('uncle', 60, 0)`);
+  await sleep(300);
+  await clickEl(`.queue-item[data-customer="${d}"]`);
+  await b.eval(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' })); 1`);
+  await sleep(200);
+  assert.equal(await S(`State.byId(s.customers, ${d}).pcId`), 3);
+  // 4) nothing free: the button is disabled, nothing is charged
+  const e = await ev(`T.wait('fps', 60, 0)`);
+  const rental = await S('State.breakdown(s).rental');
+  await clickWorld('customer', e);
+  assert.equal(await ev(`document.querySelector('#worldMenu [data-act="autoseat"]').disabled`), true, 'the button is disabled when every PC is taken');
+  assert.equal(await S('State.breakdown(s).rental'), rental);
+  assert.deepEqual(b.consoleErrors, []);
+});
+
+test('Arahan Abang: lined-up jobs are listed in order, can be moved up or cancelled, and cost nothing when cancelled', async () => {
+  await open();
+  await pageReady(3, { cash: 50000 });
+  await ev(`(() => { const s = ABCC.debug.state(); for (const i of [0, 1, 2]) ABCC.State.breakPc(s, s.pcs[i], null, { kind: 'hardware' }); ABCC.debug.advance(0.3); return 1; })()`);
+  assert.match(await ev(`document.getElementById('jobList').innerText`), /Abang free/);
+  for (const id of [1, 2, 3]) {
+    await clickWorld('pc', id);
+    await clickEl('#worldMenu [data-act="repair"]');
+  }
+  await sleep(300);
+  const rows = await ev(`[...document.querySelectorAll('#jobList .job')].map((e) => e.querySelector('b').textContent)`);
+  assert.equal(rows.length, 3);
+  assert.match(rows[0], /Repair · PC 01/);
+  assert.equal(await ev(`document.getElementById('taskCount').textContent`), '3/3');
+  assert.equal(await ev(`document.getElementById('taskCount').classList.contains('full')`), true);
+  assert.equal(await ev(`document.querySelectorAll('#jobList [data-job-up]').length`), 2, 'the 2nd and 3rd waiting jobs can move up, the first has nowhere to go');
+  await clickEl('#jobList .job:nth-child(3) [data-job-up]');
+  const moved = await ev(`[...document.querySelectorAll('#jobList .job b')].map((e) => e.textContent.replace(/\\D+/g, ''))`);
+  assert.deepEqual(moved, ['01', '03', '02'], 'job 3 now comes before job 2');
+  const cash = await S('s.cash');
+  await clickEl('#jobList .job:nth-child(3) [data-job-cancel]');
+  assert.equal(await ev(`document.querySelectorAll('#jobList .job').length`), 2);
+  assert.equal(await S('s.cash'), cash, 'cancelling costs nothing');
+  await shot('18_jobs_panel');
+  assert.deepEqual(b.consoleErrors, []);
+});
+
+test('Shift report headline and Koleksi: the report names a tip; hats unlock, show in the Koleksi, can be worn and are remembered', async () => {
+  await open();
+  await pageReady(3);
+  await ev(`ABCC.Meta.reset(); ABCC.S.record(ABCC.debug.state(), 'rental', 99900, 'test'); ABCC.debug.advance(130); 1`);
+  await sleep(500);
+  const text = await ev(`document.querySelector('.modal-card').innerText`);
+  assert.match(text, /Target capai/);
+  assert.match(text, /Boleh lebih baik|Hari yang bersih/);
+  assert.match(text, /Topi baru dibuka[\s\S]*Headphone Gamer/, 'clearing day 3 unlocks the headphones and says so');
+  await shot('19_report_unlock');
+  await ev(`ABCC.debug.ui().openOverlay('collection'); 1`);
+  assert.match(await ev(`document.querySelector('.modal-card').innerText`), /Topi Abang/);
+  assert.equal(await ev(`document.querySelectorAll('.perk.hat').length`), 4);
+  assert.equal(await ev(`document.querySelectorAll('.perk.hat.locked').length`), 2, 'straw hat and crown are still locked');
+  await clickEl('[data-modal="hat"][data-id="phones"]');
+  assert.equal(await ev(`ABCC.Meta.equipped()`), 'phones');
+  await shot('20_collection');
+  await b.goto(INDEX);
+  await sleep(500);
+  assert.equal(await ev(`ABCC.Meta.equipped()`), 'phones', 'the chosen hat is remembered');
+});
+
+test('Music: it only plays during a shift, follows the Muzik setting and the ♫ button, and stops on pause', async () => {
+  await open();
+  await ev(`localStorage.setItem('abangcc2007_settings', JSON.stringify({ quality: 'high', qualityChosen: true, sound: true, music: true, noLoader: true })); 1`);
+  await b.goto(INDEX);
+  await sleep(500);
+  await pageReady();
+  await b.click(300, 300); // a real tap, so the browser lets audio start
+  await sleep(300);
+  await ev(`ABCC.debug.ui().refresh(true); 1`);
+  await sleep(500);
+  assert.equal(await ev(`ABCC.debug.ui().Sound.musicPlaying()`), true, 'music plays in an active shift');
+  await ev(`ABCC.debug.ui().settings.music = false; ABCC.debug.ui().refresh(true); 1`);
+  assert.equal(await ev(`ABCC.debug.ui().Sound.musicPlaying()`), false, 'Muzik OFF stops it');
+  await ev(`ABCC.debug.ui().settings.music = true; ABCC.debug.ui().refresh(true); 1`);
+  assert.equal(await ev(`ABCC.debug.ui().Sound.musicPlaying()`), true);
+  await ev(`document.getElementById('soundBtn').click(); ABCC.debug.ui().refresh(true); 1`);
+  assert.equal(await ev(`ABCC.debug.ui().Sound.musicPlaying()`), false, 'the ♫ button mutes music too');
+  await ev(`document.getElementById('soundBtn').click(); ABCC.debug.ui().refresh(true); 1`);
+  await ev(`ABCC.debug.ui().togglePause(); ABCC.debug.ui().refresh(true); 1`);
+  assert.equal(await ev(`ABCC.debug.ui().Sound.musicPlaying()`), false, 'silent while paused');
+  assert.deepEqual(b.consoleErrors, []);
+});
+
+test('Phone readiness: on an emulated phone with the CPU slowed 6×, the game keeps running without errors, and the FPS overlay and report work', async () => {
+  await open(390, 844, { mobile: true, dpr: 3 });
+  await b.send('Emulation.setCPUThrottlingRate', { rate: 6 });
+  try {
+    await b.goto(INDEX + '?fps');
+    await sleep(600);
+    await pageReady(4);
+    await ev(`(() => { const s = ABCC.debug.state(); s.spawnCooldown = 0.5; return 1; })()`);
+    await ev(`ABCC.debug.freeze(false); 1`);
+    const t0 = await S('s.elapsed');
+    await sleep(5000);
+    const t1 = await S('s.elapsed');
+    assert.ok(t1 - t0 > 0.5, `the simulation kept advancing under load, just slower (${(t1 - t0).toFixed(1)} s of game time in 5 s)`);
+    assert.equal(await ev(`document.getElementById('perfHud').hidden`), false, '?fps shows the overlay');
+    assert.match(await ev(`document.getElementById('perfHud').textContent`), /^FPS \d+ · terburuk \d+ ms/);
+    const report = await ev(`ABCC.debug.ui().perfReport()`);
+    assert.match(report, /Purata FPS: [\d.]+ dalam \d+ s/);
+    assert.match(report, /GPU: /);
+    assert.deepEqual(b.consoleErrors, []);
+    await shot('21_throttled_phone');
+  } finally {
+    await b.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+  }
 });
 
 test('Phase 16: mute toggle works; sounds are generated (no audio files requested)', async () => {

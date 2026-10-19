@@ -911,3 +911,121 @@ test('Customers: the pop-up needs no side panel — State.durationOptions gives 
   assert.deepEqual([...opts.map((o) => o.minutes)], [30, 60, 90]);
   assert.deepEqual([...opts.filter((o) => o.wanted).map((o) => o.minutes)], [90]);
 });
+
+/* ------------------------------------------------ the "suggestions" round: auto-seat, jobs, tips, hats */
+test('Auto-duduk: one step books the ★ length on the nearest free PC and pays exactly like the manual correct pick', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  const c = addWaiting(ns, s, 'student', 90);
+  const r = State.quickSeat(s, c.id);
+  assert.ok(r.ok, r.msg);
+  const pc = State.byId ? State.byId(s.pcs, c.pcId) : s.pcs.find((p) => p.id === c.pcId);
+  assert.equal(pc.id, 1, 'PC 1 is the nearest free PC to the queue head');
+  assert.equal(c.duration, 90);
+  assert.equal(State.breakdown(s).rental, 300, 'the full RM3.00 for 90 minutes, no wrong-duration cut');
+  assert.equal(s.shiftStats.wrongDuration, 0);
+  for (let i = 0; i < 400 && c.status !== 'playing'; i++) State.update(s, 0.05);
+  assert.equal(c.status, 'playing');
+  // with PC 1 busy the next customer goes elsewhere; with none free it says so and charges nothing
+  const d = addWaiting(ns, s, 'rm1', 30);
+  assert.ok(State.quickSeat(s, d.id).ok);
+  assert.notEqual(d.pcId, c.pcId);
+  const e = addWaiting(ns, s, 'uncle', 60);
+  State.quickSeat(s, e.id);
+  const f = addWaiting(ns, s, 'uncle', 60);
+  const before = State.breakdown(s).rental;
+  const none = State.quickSeat(s, f.id);
+  assert.equal(none.ok, false);
+  assert.equal(State.breakdown(s).rental, before);
+});
+
+test("Abang's jobs: they can be listed, reordered and cancelled — and nothing is charged for a cancelled job", () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns, { cash: 100000 });
+  for (const id of [1, 2, 3]) State.breakPc(s, s.pcs[id - 1], null, { kind: 'hardware' });
+  assert.ok(State.perform(s, 'repair', 1).ok);
+  assert.ok(State.perform(s, 'repair', 2).ok);
+  assert.ok(State.perform(s, 'repair', 3).ok);
+  State.updatePlayer(s, 0.05); // the first job becomes Abang's active one
+  let list = State.taskList(s);
+  assert.deepEqual(plain(list.map((t) => t.entityId)), [1, 2, 3]);
+  assert.equal(State.perform(s, 'repair', 3).ok, false, 'a fourth job is refused (max 3)');
+  // move the last one up, then cancel the one Abang is only walking to
+  assert.ok(State.moveTaskUp(s, list[2].id).ok);
+  assert.deepEqual(plain(State.taskList(s).map((t) => t.entityId)), [1, 3, 2]);
+  assert.equal(State.moveTaskUp(s, State.taskList(s)[1].id).ok, false, 'the next job cannot jump the one in progress');
+  const cash = s.cash;
+  assert.ok(State.cancelTask(s, list[0].id).ok, 'a job Abang is still walking to can be dropped');
+  assert.ok(State.cancelTask(s, State.taskList(s)[0].id).ok);
+  assert.equal(s.cash, cash, 'no money is spent on a cancelled repair');
+  assert.equal(State.taskList(s).length, 1);
+});
+
+test('A customer who is nearly out of patience triggers exactly one warning event', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  const c = addWaiting(ns, s, 'hot', 60);
+  State.drainFx?.();
+  let warned = 0;
+  for (let i = 0; i < 1500 && c.status === 'waiting'; i++) {
+    State.update(s, 0.05);
+    warned += State.drainFx().filter((f) => f.type === 'patienceLow' && f.customerId === c.id).length;
+  }
+  assert.equal(warned, 1, 'one beep, not a stream of them');
+  assert.ok(s.shiftStats.queueWalkouts >= 1, 'and they did walk out in the end');
+});
+
+test('Shift report: every report has a headline with a fix; a bad day names its biggest leak', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  for (let i = 0; i < 3; i++) addWaiting(ns, s, 'hot', 60); // never served → they walk out
+  run(ns, s, ns.CFG.SHIFT + 5);
+  const r = s.lastReport;
+  assert.equal(r.goalMet, false);
+  assert.ok(r.headline && r.headline.text && r.headline.tip, 'headline + tip');
+  assert.equal(r.headline.kind, 'fail');
+  assert.match(r.headline.text, /beratur|Tiada pelanggan dilayan/);
+  // a clean winning day still gets a line
+  const { ns: ns2 } = fresh();
+  const w = calmShift(ns2);
+  w.cash += 0;
+  ns2.S.record(w, 'rental', 99900, 'test');
+  run(ns2, w, ns2.CFG.SHIFT + 5);
+  assert.equal(w.lastReport.goalMet, true);
+  assert.ok(w.lastReport.headline.tip);
+});
+
+test('Koleksi: hats unlock by clearing days, only unlocked hats can be worn, and everything survives a new run', () => {
+  const { ns, storage } = loadGame();
+  const M = ns.Meta;
+  assert.equal(M.equipped(), 'cap');
+  assert.deepEqual(plain(M.hats().filter((h) => h.unlocked).map((h) => h.id)), ['cap']);
+  assert.equal(M.equip('crown'), false, 'a locked hat cannot be worn');
+  assert.deepEqual(plain(M.recordDay(1, 2).map((h) => h.id)), []);
+  assert.deepEqual(plain(M.recordDay(3, 2).map((h) => h.id)), ['phones'], 'clearing day 3 unlocks the headphones');
+  assert.deepEqual(plain(M.recordDay(3, 3).map((h) => h.id)), [], 'clearing it again unlocks nothing twice');
+  assert.equal(M.equip('phones'), true);
+  assert.deepEqual(plain(M.recordDay(10, 3).map((h) => h.id)).sort(), ['crown', 'straw'], 'a jump to day 10 unlocks everything on the way');
+  M.recordRun();
+  assert.equal(JSON.parse(storage.getItem('abangcc2007_meta')).hat, 'phones', 'stored on its own, apart from the run save');
+  // a brand-new run (State.create / resetSave) does not touch it
+  ns.State.resetSave();
+  ns.State.create();
+  assert.equal(M.get().bestDay, 10);
+  assert.equal(M.get().runs, 1);
+  // a fresh page (fresh module, same storage) reads it back
+  const { ns: again } = loadGame({ storage });
+  assert.equal(again.Meta.equipped(), 'phones');
+  assert.equal(again.Meta.get().bestDay, 10);
+});
+
+test('Clearing a day through the real shift flow records progress and reports newly unlocked hats', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns, { day: 3 });
+  s.cash = 5000;
+  ns.S.record(s, 'rental', 99900, 'test'); // plenty of sales
+  run(ns, s, ns.CFG.SHIFT + 5);
+  assert.equal(s.lastReport.goalMet, true);
+  assert.deepEqual(plain(s.lastReport.unlocked), ['phones']);
+  assert.equal(ns.Meta.get().bestDay, 3);
+});

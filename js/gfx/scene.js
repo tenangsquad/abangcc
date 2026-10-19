@@ -538,6 +538,14 @@
       stats: () => R.stats,
       light: () => R.light,
       setHover: (h) => { R.hover = h; },
+      setHat: (id) => { R.abangHat = id || 'cap'; },
+      /** Which GPU / driver the browser reports (when it allows it). Used by the phone performance report. */
+      gpuInfo: () => {
+        try {
+          const gl = eng.gl, ext = gl.getExtension('WEBGL_debug_renderer_info');
+          return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+        } catch { return 'unknown'; }
+      },
       setFocus: (x, z, zoom = 3) => { R.focus = x == null ? null : { x, z, zoom }; },
       setQuality: (q) => { R.quality = QUALITY[q] ? q : 'high'; eng.setShadows(QUALITY[R.quality].shadows); },
       setDebugTime: (minutes) => { R.debugMinutes = minutes; },

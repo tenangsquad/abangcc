@@ -120,11 +120,38 @@
     return `<div class="patience ${pct < 30 ? 'low' : pct < 60 ? 'mid' : ''}" data-patience="${c.id}" aria-label="Kesabaran ${Math.round(pct)}%"><i style="width:${pct}%"></i></div>`;
   };
 
-  /** "n/3" next to the shop status: how many jobs Abang has lined up. */
-  UI.renderTaskCount = function renderTaskCount() {
-    const pending = State.pendingCount(UI.s);
-    $('taskCount').hidden = !pending;
-    setText($('taskCount'), `🧑‍🔧 ${pending}/${CFG.MAX_COMMANDS}`);
+  /* ------------------------------------------------------------ Arahan Abang */
+  const TASK_NAME = { restart: '↻ Restart', repair: '🔧 Repair', cool: '❄️ Sejukkan', reset: '📡 Reset sambungan', soft: '🗣️ Tegur baik-baik', harsh: '📢 Tuduh & halau', warn: '🔊 Tegur', calm: '🕊️ Leraikan', eject: '👋 Halau', close: '✖️ Tutup laman', search: '🔍 Geledah', replace: '🛒 Mouse baru' };
+  function taskText(s, t) {
+    if (t.entityKind === 'event') {
+      const ev = State.eventById(s, t.entityId);
+      if (!ev) return { text: 'Kejadian dah tamat', target: null };
+      const ch = EVENTS[ev.type].choices.find((c) => c.id === t.opts?.choice);
+      return { text: `${EVENTS[ev.type].emoji} ${ch ? ch.label.replace(/^\S+\s/, '') : EVENTS[ev.type].title}`, sub: EVENTS[ev.type].title, target: { kind: 'event', id: ev.id } };
+    }
+    return { text: `${TASK_NAME[t.kind] || t.kind} · PC ${pad2(t.entityId)}`, target: { kind: 'pc', id: t.entityId } };
+  }
+  let jobKey = '';
+  /** The list of jobs Abang has lined up (max 3): what he is on, what is waiting, with reorder / cancel. */
+  UI.renderJobs = function renderJobs() {
+    const s = UI.s;
+    const tasks = State.taskList(s);
+    const key = tasks.map((t, i) => `${t.id}:${i}:${t === s.activeTask ? (t.remaining === null ? 'w' : 'k') : 'q'}`).join('|');
+    $('jobsPanel').classList.toggle('idle', !tasks.length);
+    setText($('taskCount'), `${tasks.length}/${CFG.MAX_COMMANDS}`);
+    $('taskCount').classList.toggle('full', tasks.length >= CFG.MAX_COMMANDS);
+    if (key === jobKey) return;
+    jobKey = key;
+    $('jobList').innerHTML = tasks.length
+      ? tasks.map((t, i) => {
+          const info = taskText(s, t);
+          const active = t === s.activeTask;
+          const state = active ? (t.remaining === null ? '🚶 menuju…' : '🔧 sedang buat') : i === 1 && s.activeTask ? '⏳ seterusnya' : `⏳ #${i + 1}`;
+          const canUp = !active && s.commands.indexOf(t) > 0;
+          const canCancel = !(active && t.remaining !== null);
+          return `<li class="job ${active ? 'active' : ''}" ${info.target ? `data-kind="${info.target.kind}" data-id="${info.target.id}"` : ''}><span class="job-n">${i + 1}</span><span class="job-main"><b>${safe(info.text)}</b><small>${state}</small></span>${canUp ? `<button type="button" class="job-btn" data-job-up="${t.id}" title="Dahulukan" aria-label="Dahulukan arahan ${i + 1}">↑</button>` : ''}${canCancel ? `<button type="button" class="job-btn" data-job-cancel="${t.id}" title="Batalkan" aria-label="Batalkan arahan ${i + 1}">✕</button>` : ''}</li>`;
+        }).join('')
+      : '<li class="job-empty">Abang free. Tap PC atau kejadian untuk bagi arahan.</li>';
   };
 
   /** Live numbers in the pop-up menu (countdowns, patience bar) without rebuilding its buttons. */
@@ -173,6 +200,7 @@
         hint = `“Bang, ${c.requestedMinutes} minit!” · ★ = permintaan pelanggan`;
         info = patienceBar(c);
         opts = State.durationOptions(s, c.id).map((d) => ({ act: 'duration', choice: d.minutes, label: `${d.minutes} MIN${d.wanted ? ' ★' : ''}`, sub: `${fmtMoney(d.price)} · tekan ${d.minutes / 30}`, css: `${d.chosen ? 'mint' : 'paper'} ${d.wanted ? 'wanted' : ''}` }));
+        opts.push({ act: 'autoseat', label: '⚡ Auto-duduk', sub: `★ ${c.requestedMinutes} min + PC terdekat · tekan A · atau tap dua kali`, css: 'sky', disabled: !State.idlePCs(s).length || s.powerOutage > 0 });
       }
     } else if (s.phase === 'active' && (sel?.kind === 'pc' || sel?.kind === 'event')) {
       opts = State.options(s, sel);

@@ -11,7 +11,7 @@
 
   const modalRoot = $('modalRoot');
   let modalKey = '';
-  let overlay = null; // 'help' | 'settings' | null
+  let overlay = null; // 'help' | 'settings' | 'collection' | null
   UI.getOverlay = () => overlay;
   UI.setOverlay = (v) => { overlay = v; };
 
@@ -41,6 +41,7 @@
         ${hasSave ? '<button class="btn big mint" data-modal="continue">▶ Sambung main</button>' : ''}
         <button class="btn big ${hasSave ? 'paper' : 'mint'}" data-modal="newgame">${hasSave ? '↻ Run baru' : '▶ Mula jaga kedai'}</button>
         <button class="btn big sky" data-modal="help">? Cara main</button>
+        <button class="btn big paper" data-modal="collection">🎩 Koleksi</button>
       </div>
       <p class="small">Alpha 0.12 · progress disimpan automatik dalam browser ini</p>`);
   }
@@ -86,13 +87,18 @@
     const r = s.lastReport;
     if (!r) return;
     const stars = [1, 2, 3].map((n) => `<span class="${n <= r.stars ? 'on' : ''}">⭐</span>`).join('');
-    const why = !r.goalMet && r.reasons?.length ? `<div class="notice why"><b>Kenapa gagal?</b><ul>${r.reasons.map((x) => `<li>${safe(x.icon)} ${safe(x.text)}</li>`).join('')}</ul></div>` : '';
+    const hl = r.headline ? `<div class="headline ${r.headline.kind}"><span class="hl-ico" aria-hidden="true">${safe(r.headline.icon)}</span><div><b>${r.goalMet ? 'Boleh lebih baik' : 'Sebab utama'}: ${safe(r.headline.text)}</b><small>💡 ${safe(r.headline.tip)}</small></div></div>` : '';
+    const more = !r.goalMet && r.reasons?.length > 1 ? `<div class="notice why"><b>Juga menyumbang:</b><ul>${r.reasons.slice(1).map((x) => `<li>${safe(x.icon)} ${safe(x.text)}</li>`).join('')}</ul></div>` : '';
+    const why = hl || (!r.goalMet && r.reasons?.length ? `<div class="notice why"><b>Kenapa gagal?</b><ul>${r.reasons.map((x) => `<li>${safe(x.icon)} ${safe(x.text)}</li>`).join('')}</ul></div>` : '') ;
+    const unlocked = (r.unlocked || []).map((id) => ns.Meta.HATS.find((h) => h.id === id)).filter(Boolean);
+    const unlockNote = unlocked.length ? `<div class="notice unlock">🔓 <b>Topi baru dibuka:</b> ${unlocked.map((h) => `${safe(h.emoji)} ${safe(h.name)}`).join(', ')}. Pakai di <b>🎩 Koleksi</b> (menu utama).</div>` : '';
+    const whyAll = unlockNote + why + (hl ? more : '');
     showModal(`
       <span class="modal-eyebrow">LAPORAN HARI ${s.day}</span>
       <h1>${r.goalMet ? 'Target capai' : 'Shift gagal'} <em>${r.goalMet ? '🎉' : '😵'}</em></h1>
       <div class="stars" aria-label="${r.stars} bintang">${stars}</div>
       <p class="modal-lead">${r.goalMet ? 'Bagus! Kedai hari ini lepas target. Esok mungkin lebih huru-hara.' : `Jualan bersih ${fmtMoney(r.income)} — kurang <b>${fmtMoney(r.shortfall)}</b> daripada target. Hari ini diulang dari awal; progres hari-hari lepas kekal.`}</p>
-      ${why}
+      ${whyAll}
       <div class="settlement">
         <span>Target jualan</span><span>${fmtMoney(r.goal)}</span>
         <span>🎮 Jualan sewa</span><span class="good">+ ${fmtMoney(r.rental)}</span>
@@ -156,12 +162,33 @@
       <h1>Jaga CC. <em>Jangan panik!</em></h1>
       <div class="modal-hero">
         <p>👤 <b>Tap pelanggan</b> yang beratur → menu <b>30 / 60 / 90 minit</b> muncul di sebelahnya (<kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>) → tap PC yang berkelip hijau. Pilih sama seperti permintaan pelanggan (★) untuk bayaran penuh; salah pilih = bayaran dipotong.</p>
+        <p>⚡ <b>Auto-duduk</b>: tap dua kali pada pelanggan (atau butang ⚡ pada menu, atau <kbd>A</kbd>) untuk terus beri mereka tempoh ★ di PC kosong yang paling dekat. <b>Arahan Abang</b> (panel kanan) menunjukkan kerja yang beratur: ↑ untuk dahulukan, ✕ untuk batalkan.</p>
         <p>🔧 <b>PC bermasalah</b> (hang, beku, panas, BSOD, internet putus, rosak)? Tap PC → pilih cara baiki pada menu di sebelah PC. Restart masa ada pelanggan = refund 25% (sekali setiap kejadian).</p>
         <p>❓ <b>PC suspicious</b>: tap PC → <b>Tegur baik-baik</b> (selamat) atau <b>Tuduh &amp; halau</b> (berani). Dia mungkin tak bersalah — salah tuduh kos reputasi, professionalism dan refund.</p>
         <p>🎲 <b>Kejadian khas</b> (rombongan, ponteng, blackout, air tumpah, snack hilang…) muncul sebagai orang/benda dalam bilik. Tap yang berdenyut, atau kad di <b>Situasi Panas</b> (TENGOK), lalu pilih pada menu di atas benda itu.</p>
         <p>🖱️ Zoom kamera: roda tetikus / cubit / butang Zoom. ⌨️ <kbd>Space</kbd> pause · <kbd>N</kbd> pelanggan seterusnya · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> tempoh · <kbd>R</kbd> restart PC yang dipilih.</p>
       </div>
       <div class="modal-actions"><button class="btn big mint" data-modal="back">Faham, jom main!</button></div>`);
+  }
+
+  /** Hats unlocked across runs (they stay when you start a new run). */
+  function renderCollection() {
+    overlay = 'collection';
+    const Meta = ns.Meta;
+    const m = Meta.get();
+    const cards = Meta.hats().map((h) => {
+      const worn = m.hat === h.id;
+      const label = worn ? '✓ Dipakai' : h.unlocked ? 'Pakai' : `🔒 Lepas Hari ${h.day}`;
+      return `<div class="perk hat ${h.unlocked ? '' : 'locked'}"><div class="perk-icon">${safe(h.emoji)}</div><strong>${safe(h.name)}</strong><small>${h.unlocked ? (h.day ? safe(h.desc) : 'Topi biasa Abang.') : safe(h.desc)}</small>
+        <button type="button" class="btn ${worn ? 'mint' : ''}" data-modal="hat" data-id="${h.id}" ${h.unlocked && !worn ? '' : 'disabled'}>${label}</button></div>`;
+    }).join('');
+    showModal(`
+      <span class="modal-eyebrow">KOLEKSI</span>
+      <h1>Topi <em>Abang</em></h1>
+      <p class="modal-lead">Lepaskan hari-hari tertentu untuk buka topi baru. Ia kekal walaupun kau mula run baru, dan hanya hiasan.</p>
+      <div class="badges stats">${stat('🏆 Hari terbaik', m.bestDay || '–')}${stat('✅ Hari dilepasi', m.daysCleared)}${stat('🔁 Run', m.runs)}${stat('⭐ Bintang terbaik', m.bestStars || '–')}</div>
+      <div class="store-grid">${cards}</div>
+      <div class="modal-actions"><button class="btn big mint" data-modal="back">Siap</button></div>`);
   }
 
   function renderSettings() {
@@ -172,9 +199,11 @@
       <span class="modal-eyebrow">TETAPAN</span>
       <h1>Ubah <em>suai</em></h1>
       <div class="switch-row"><span>🔊 Bunyi</span>${seg('sound', [[true, 'ON'], [false, 'OFF']], UI.settings.sound)}</div>
+      <div class="switch-row"><span>🎵 Muzik</span>${seg('music', [[true, 'ON'], [false, 'OFF']], UI.settings.music !== false)}</div>
       <div class="switch-row"><span>🎨 Kualiti grafik</span>${seg('quality', [['high', 'Tinggi'], ['medium', 'Sederhana'], ['low', 'Rendah']], UI.settings.quality)}</div>
       <div class="switch-row"><span>🎚️ Kesukaran</span>${seg('preset', Object.entries(DIRECTOR.presets).map(([k, v]) => [k, v.label]), s.preset || 'biasa')}</div>
       <div class="switch-row"><span>💡 Tunjuk petunjuk</span>${seg('hints', [[true, 'ON'], [false, 'OFF']], UI.settings.hints)}</div>
+      <div class="switch-row"><span>📈 Tunjuk FPS</span>${seg('showFps', [[true, 'ON'], [false, 'OFF']], !!UI.settings.showFps)}</div>
       <div class="switch-row"><span>🐢 Kurangkan animasi</span>${seg('reduceMotion', [[true, 'ON'], [false, 'OFF']], UI.settings.reduceMotion)}</div>
       <p class="small">Kualiti Rendah mematikan outline &amp; bayang matahari dan menurunkan resolusi — sesuai untuk telefon lama. Kesukaran berkuat kuasa untuk hari seterusnya.</p>
       <div class="modal-actions">
@@ -206,7 +235,7 @@
       State.save(UI.s);
     }
     overlay = kind;
-    kind === 'help' ? renderHelp() : renderSettings();
+    kind === 'help' ? renderHelp() : kind === 'collection' ? renderCollection() : renderSettings();
   };
 
   UI.resync = function resync() {
@@ -238,6 +267,7 @@
       case 'newgame':
         if ((s.reports.length > 0 || s.elapsed > 10) && !confirm('Mula balik akan overwrite save lama. Confirm?')) return;
         State.resetSave();
+        ns.Meta.recordRun();
         UI.s = s = State.create();
         s.phase = 'onboarding';
         s.introStep = 0;
@@ -283,6 +313,13 @@
         return;
       case 'help': return UI.openOverlay('help');
       case 'settings': return UI.openOverlay('settings');
+      case 'collection': return UI.openOverlay('collection');
+      case 'hat':
+        if (ns.Meta.equip(el.dataset.id)) {
+          UI.gfx?.setHat(el.dataset.id);
+          UI.toast('Topi dipakai!', 'good');
+        }
+        return renderCollection();
       case 'back':
         overlay = null;
         return UI.syncModal(true);

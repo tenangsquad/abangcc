@@ -470,6 +470,20 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .crisis:disabled { opacity: 1; cursor: default; }
 .crisis.event { background: #fff7d6; } .crisis.suspicious { background: #fff0c9; } .crisis.loudvideo { background: #ffe9e4; } .crisis.fight { background: #ffdfe4; } .crisis.nomouse { background: #eaf1ff; }
 
+/* Arahan Abang (the jobs he has lined up) */
+.job-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.job { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 5px; background: var(--white); border: 2.5px solid var(--ink); border-radius: 14px; box-shadow: 0 2px 0 var(--ink); }
+.job.active { background: #fff3b3; }
+.job-n { flex: none; width: 24px; height: 24px; display: grid; place-content: center; font: 700 13px var(--font-display); background: var(--yellow); border: 2px solid var(--ink); border-radius: 50%; }
+.job-main { flex: 1; min-width: 0; display: grid; }
+.job-main b { font: 700 13.5px/1.2 var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.job-main small { font: 700 11px/1.2 var(--font-body); color: var(--ink-3); }
+.job-btn { flex: none; width: 28px; height: 28px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--paper-2); font: 700 13px var(--font-display); line-height: 1; padding: 0; }
+.job-btn:hover { background: var(--sky); } .job-btn[data-job-cancel]:hover { background: var(--coral); color: var(--white); }
+.job-empty { padding: 2px 2px 0; font: 700 12.5px/1.3 var(--font-body); color: var(--ink-3); }
+.count.full { background: var(--coral); color: var(--white); }
+@media (pointer: coarse) { .job-btn { width: 36px; height: 36px; } }
+
 /* PC info inside the pop-up menu */
 .btn.wanted { outline: 3px solid var(--yellow); outline-offset: 1px; }
 .combo { font: 700 13px var(--font-display); color: var(--ink-2); letter-spacing: 0; text-transform: none; }
@@ -477,6 +491,13 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 /* perk cards */
 .perk small.up { color: #1a6a4a; } .perk small.down { color: #a1243b; } .perk small.upkeep { color: var(--ink-3); font-weight: 800; }
 .perk .own { font-style: normal; font-size: 12px; padding: 0 6px; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 999px; vertical-align: middle; }
+.headline { display: flex; align-items: center; gap: 12px; margin: 10px 0; padding: 10px 14px; background: #fff0d6; border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 3px 0 var(--ink); }
+.headline.win { background: #e1f7ec; }
+.headline .hl-ico { flex: none; width: 42px; height: 42px; display: grid; place-content: center; font-size: 24px; background: var(--white); border: 2.5px solid var(--ink); border-radius: 14px; }
+.headline b { display: block; font: 700 16px/1.25 var(--font-display); color: var(--ink); }
+.headline small { display: block; margin-top: 2px; font: 700 13px/1.35 var(--font-body); color: var(--ink-2); }
+.notice.unlock { background: #e1f7ec; }
+.perk.hat.locked { opacity: .7; } .perk.hat.locked .perk-icon { filter: grayscale(1); }
 .notice.why ul { margin: 6px 0 0; padding-left: 20px; } .notice.why li { margin: 3px 0; font-weight: 700; }
 
 /* no-WebGL fallback board */
@@ -492,7 +513,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   .sidebar .card { flex: 0 0 auto; min-height: 0; }
   .card.alerts { flex: 0 3 auto; display: flex; flex-direction: column; min-height: 58px; }
   .card.queue { flex: 1 1 130px; display: flex; flex-direction: column; min-height: 112px; }
-  .card.vitals { flex: 0 0 auto; }
+  .card.vitals, .card.jobs { flex: 0 0 auto; }
   .crisis-list { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; padding: 0 3px 4px 1px; scrollbar-width: thin; }
   .queue-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 3px 4px 1px; scrollbar-width: thin; }
   .meter-row { grid-template-columns: 1fr 1fr; gap: 6px 14px; }
@@ -556,6 +577,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   .badges { margin: 8px 0; gap: 6px; } .badges span { font-size: 13px; padding: 2px 10px; }
   .notice { padding: 7px 12px; font-size: 14px; margin: 6px 0; }
   .notice.why ul { margin-top: 3px; } .notice.why li { margin: 1px 0; }
+  .headline { padding: 6px 10px; margin: 6px 0; gap: 10px; } .headline .hl-ico { width: 34px; height: 34px; font-size: 20px; } .headline b { font-size: 14.5px; } .headline small { font-size: 12px; }
   .perk { padding: 10px; gap: 4px; } .perk .perk-icon { width: 44px; height: 44px; font-size: 26px; } .perk small { font-size: 13px; line-height: 1.3; }
   .modal-card h2 { margin: 8px 0 4px; font-size: 18px; }
 }
@@ -567,7 +589,8 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 @media (max-width: 860px) {
   .stage { grid-template-rows: minmax(230px, 52%) minmax(0, 1fr); }
   /* the queue sits right under the scene; a real alert jumps ahead of it */
-  .card.queue { order: 1; } .card.alerts { order: 2; } .card.vitals { order: 3; }
+  .card.queue { order: 1; } .card.jobs { order: 2; } .card.alerts { order: 3; } .card.vitals { order: 4; }
+  .card.jobs.idle { display: none; }
   .card.alerts.urgent { order: 0; }
   .card.alerts.calm .crisis-list { display: none; }
   .card.alerts.calm .card-title { margin-bottom: 0; }
@@ -586,6 +609,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 
 /* phones held sideways: scene left, slim dock right — must come after the generic phone rules */
 @media (max-height: 520px) and (orientation: landscape) {
+  .card.jobs.idle { display: none; }
   .stage { grid-template-columns: minmax(0, 1fr) 270px; grid-template-rows: minmax(0, 1fr); }
   .sidebar { padding-bottom: 4px; }
   .card.alerts.calm { display: none; }
@@ -617,6 +641,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .wm-actions.dur { grid-template-columns: repeat(3, 1fr); }
 .wm-actions.dur .btn { justify-content: center; text-align: center; padding: 4px 4px; }
 .wm-actions.dur .btn.stack { align-items: center; }
+.wm-actions.dur .btn[data-act="autoseat"] { grid-column: 1 / -1; }
 .wm-actions .btn { min-height: 40px; padding: 4px 10px; font-size: 14px; justify-content: flex-start; text-align: left; box-shadow: 0 3px 0 var(--ink); }
 .wm-actions .btn.stack { align-items: flex-start; }
 .wm-actions .btn small { white-space: normal; line-height: 1.15; }
@@ -699,6 +724,11 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   .ld-row { margin-bottom: 4px; font-size: 13px; }
   .ld-bar { height: 14px; }
 }
+
+/* ---------- FPS overlay (Settings → Tunjuk FPS, or add ?fps to the address). Tap it to copy a performance report. ---------- */
+.perf-hud { position: fixed; left: 6px; bottom: 6px; z-index: 90; max-width: calc(100vw - 12px); padding: 3px 8px; font: 600 11px/1.35 ui-monospace, Consolas, monospace; text-align: left; color: #8cffc1; background: rgba(20, 10, 60, .85); border: 1.5px solid rgba(140, 255, 193, .5); border-radius: 8px; }
+.perf-hud[hidden] { display: none; }
+.perf-hud.slow { color: #ffd23f; } .perf-hud.bad { color: #ff8a8a; }
 
 </style>
 </head>
@@ -1157,17 +1187,22 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 
     <aside class="sidebar">
       <section class="card alerts calm" id="crisisPanel">
-        <h2 class="card-title"><span>1. 🚨 Situasi panas</span><span class="count" id="crisisCount">0</span></h2>
+        <h2 class="card-title"><span>🚨 Situasi panas</span><span class="count" id="crisisCount">0</span></h2>
         <div class="crisis-list" id="crisisList"><p class="calm-note">Aman buat masa ini…</p></div>
       </section>
 
       <section class="card queue">
-        <h2 class="card-title"><span>2. 🧾 Pelanggan menunggu</span><span class="count" id="queueCount">0</span></h2>
+        <h2 class="card-title"><span>🧾 Pelanggan menunggu</span><span class="count" id="queueCount">0</span></h2>
         <div class="queue-list" id="queueList"><p class="empty">Belum ada pelanggan.</p></div>
       </section>
 
+      <section class="card jobs idle" id="jobsPanel">
+        <h2 class="card-title"><span>🧑‍🔧 Arahan Abang</span><span class="count" id="taskCount" title="Arahan yang Abang sedang buat (maks. 3)">0/3</span></h2>
+        <ol class="job-list" id="jobList"><li class="job-empty">Abang free. Tap PC atau kejadian untuk bagi arahan.</li></ol>
+      </section>
+
       <section class="card vitals">
-        <h2 class="card-title"><span>3. 📊 Status kedai</span><span class="count" id="taskCount" title="Arahan yang Abang sedang buat" hidden>0</span><span class="combo" id="comboText" title="Combo tindakan pantas">⚡ x0</span></h2>
+        <h2 class="card-title"><span>📊 Status kedai</span><span class="combo" id="comboText" title="Combo tindakan pantas">⚡ x0</span></h2>
         <div class="meter-row">
           <div class="meter" title="Reputasi: pelanggan datang lebih ramai bila tinggi."><div class="meter-head"><span>⭐ Reputasi</span><b id="hudRepValue">55</b></div><div class="meter-track"><i id="hudRepBar"></i></div></div>
           <div class="meter" title="Professionalism: kedai yang diurus profesional lebih tenang dan lebih dipercayai pegawai."><div class="meter-head"><span>🤝 Profesional</span><b id="hudProValue">75</b></div><div class="meter-track"><i id="hudProBar"></i></div></div>
@@ -1182,6 +1217,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 </div>
 
 <div id="modalRoot" class="modal-root"></div>
+<button type="button" id="perfHud" class="perf-hud" hidden title="Ketik untuk salin laporan prestasi"></button>
 
 <!-- scripts: classic (non-module) so the game also opens straight from file:// — order matters -->
 <script>
@@ -2297,6 +2333,26 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
     return S.ok(exact ? 'Sewaan berjaya!' : 'Salah masa — pelanggan dapat potongan harga.');
   }
 
+  /**
+   * One-step seating ("auto-duduk"): book the length the customer asked for (★) and give them the free PC that is
+   * nearest to them. Same rules as doing it by hand, so it can never pay more or less than the correct manual pick.
+   */
+  function quickSeat(s, customerId) {
+    if (s.phase !== 'active') return S.fail('Buka shift dulu.');
+    const c = byId(s.customers, customerId);
+    if (!c || !QUEUE_STATES.includes(c.status)) return S.fail('Pelanggan dah tak menunggu.');
+    if (s.powerOutage > 0) return S.fail('Elektrik tengah padam!');
+    const free = idlePCs(s);
+    if (!free.length) return S.fail('Tiada PC kosong sekarang.');
+    const dist = (p) => Math.hypot(ROOM.seatFor(p).x - c.x, ROOM.seatFor(p).y - c.y);
+    const pc = free.reduce((best, p) => (dist(p) < dist(best) - 1e-6 ? p : best), free[0]);
+    const r = chooseRental(s, c.id, c.requestedMinutes);
+    if (!r.ok) return r;
+    const done = assignToPC(s, pc.id);
+    if (!done.ok) return done;
+    return S.ok(`⚡ ${c.name}: ${c.requestedMinutes} min di PC ${pc.id}.`);
+  }
+
   function bumpWrong(s, c, minutes, info) {
     S.bump(s, 'rep', RENTAL.wrongRep);
     s.shiftStats.complaints++;
@@ -2441,10 +2497,15 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
         // Stand in line facing the counter (a slight turn so the face stays readable from the camera).
         if (!c.destination) c.facing = (c.facing ?? 0) + ns.shortestAngle(c.facing ?? 0, -1.2) * (1 - Math.exp(-6 * dt));
         c.patience -= dt * drain;
+        if (c.patience > 0 && !c.lowWarned && c.patience / Math.max(1, c.patienceMax) < 0.25) {
+          c.lowWarned = true; // one warning beep per customer
+          S.emit('patienceLow', { customerId: c.id });
+        }
         if (c.patience <= 0) {
           releaseCustomer(s, c, `${c.name} bosan tunggu dan balik.`);
           S.bump(s, 'rep', -2);
           s.shiftStats.walkouts++;
+          s.shiftStats.queueWalkouts++;
           s.shiftStats.walkoutLost += S.priceFor(c.requestedMinutes, { tier: 1 }, c.game);
           S.emit('walkout', { customerId: c.id });
         }
@@ -2459,7 +2520,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   }
 
   Object.assign(S, { inQueue, idlePCs, queueCap, patiencePct, makeCustomer, compactQueue, joinQueue, releaseCustomer, refreshActs });
-  Object.assign(State, { spawn, chooseRental, assignToPC, assignCustomer, inQueue, idlePCs, patiencePct, releaseCustomer, updatePeople, queueCap: S.queueCap });
+  Object.assign(State, { spawn, chooseRental, assignToPC, quickSeat, assignCustomer, inQueue, idlePCs, patiencePct, releaseCustomer, updatePeople, queueCap: S.queueCap });
 })(window.ABCC);
 
 </script>
@@ -3893,9 +3954,39 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   function perform(s, act, id, choice) {
     if (s.phase !== 'active') return S.fail('Buka shift dulu.');
     if (act === 'duration') return State.chooseRental(s, id, Number(choice));
+    if (act === 'autoseat') return State.quickSeat(s, id);
     if (act === 'event') return beginEventAction(s, id, choice);
     if (act === 'extend' || act === 'sendoff') return State.lingerChoice(s, id, act);
     return beginAction(s, act, id);
+  }
+
+  /** Abang's lined-up jobs in the order he will do them (the one he is on first). */
+  function taskList(s) {
+    return [s.activeTask, ...s.commands].filter(Boolean);
+  }
+
+  /** Drop a job. A queued one just disappears; the one Abang is walking to is abandoned; one he is already working on can't be. Nothing is charged until a job finishes. */
+  function cancelTask(s, taskId) {
+    if (s.activeTask?.id === taskId) {
+      if (s.activeTask.remaining !== null) return S.fail('Abang tengah buat kerja tu.');
+      s.activeTask = null;
+      s.player.destination = null;
+      s.player._routeGoal = null;
+      return S.ok('Arahan dibatalkan.');
+    }
+    const i = s.commands.findIndex((t) => t.id === taskId);
+    if (i < 0) return S.fail('Arahan tu dah selesai.');
+    s.commands.splice(i, 1);
+    return S.ok('Arahan dibatalkan.');
+  }
+
+  /** Move a waiting job one place earlier (it cannot jump ahead of the job Abang is already on). */
+  function moveTaskUp(s, taskId) {
+    const i = s.commands.findIndex((t) => t.id === taskId);
+    if (i < 0) return S.fail('Arahan tu dah mula atau selesai.');
+    if (i === 0) return S.fail('Itu sudah arahan seterusnya.');
+    [s.commands[i - 1], s.commands[i]] = [s.commands[i], s.commands[i - 1]];
+    return S.ok('Arahan didahulukan.');
   }
 
   /** Apply the effect of a finished task. */
@@ -3980,7 +4071,90 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
     }
   }
 
-  Object.assign(State, { options, durationOptions, select, beginAction, beginEventAction, perform, finishAction, updatePlayer, pendingCount: pendingTasks, PC_TASKS, TASK_WORK });
+  Object.assign(State, { options, durationOptions, select, taskList, cancelTask, moveTaskUp, beginAction, beginEventAction, perform, finishAction, updatePlayer, pendingCount: pendingTasks, PC_TASKS, TASK_WORK });
+})(window.ABCC);
+
+</script>
+<script>
+/* ---- js/state/meta.js ---- */
+/* ==========================================================================
+   2k. META — progress that outlives a single run (the "Koleksi")
+   --------------------------------------------------------------------------
+   A run can be restarted at any time, but some things are kept for good: how far you ever got and the
+   cosmetic hats for Abang that clearing certain days unlocks. Stored under its own key, apart from the run save,
+   so "Run baru" never wipes it. Hats are cosmetic only — they change nothing about the game.
+   ========================================================================== */
+(function (ns) {
+  'use strict';
+
+  const KEY = 'abangcc2007_meta';
+
+  /** `day` = clear this day (in any run) to unlock it. */
+  const HATS = [
+    { id: 'cap', name: 'Topi Kuning', emoji: '🧢', day: 0, desc: 'Topi biasa Abang.' },
+    { id: 'phones', name: 'Headphone Gamer', emoji: '🎧', day: 3, desc: 'Lepas Hari 3.' },
+    { id: 'straw', name: 'Topi Jerami', emoji: '👒', day: 6, desc: 'Lepas Hari 6.' },
+    { id: 'crown', name: 'Mahkota Raja CC', emoji: '👑', day: 10, desc: 'Lepas Hari 10.' },
+  ];
+
+  const blank = () => ({ bestDay: 0, runs: 0, daysCleared: 0, bestStars: 0, hat: 'cap' });
+  let data = null;
+
+  function load() {
+    if (data) return data;
+    data = blank();
+    try {
+      Object.assign(data, JSON.parse(localStorage.getItem(KEY) || '{}'));
+    } catch {
+      /* storage blocked or corrupt: start fresh */
+    }
+    if (!HATS.some((h) => h.id === data.hat)) data.hat = 'cap';
+    return data;
+  }
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(data));
+    } catch {
+      /* storage blocked: the progress lasts until the page closes */
+    }
+  }
+
+  const unlockedIds = (d) => HATS.filter((h) => d.bestDay >= h.day).map((h) => h.id);
+
+  const Meta = {
+    HATS,
+    get: () => ({ ...load() }),
+    hats: () => HATS.map((h) => ({ ...h, unlocked: load().bestDay >= h.day })),
+    equipped: () => load().hat,
+    /** A shift was cleared. Returns the hats this just unlocked (usually none). */
+    recordDay(day, stars) {
+      const d = load();
+      const before = unlockedIds(d);
+      d.daysCleared++;
+      d.bestDay = Math.max(d.bestDay, day);
+      d.bestStars = Math.max(d.bestStars, stars || 0);
+      save();
+      return HATS.filter((h) => d.bestDay >= h.day && !before.includes(h.id));
+    },
+    recordRun() {
+      load().runs++;
+      save();
+    },
+    equip(id) {
+      const d = load();
+      if (!unlockedIds(d).includes(id)) return false;
+      d.hat = id;
+      save();
+      return true;
+    },
+    /** Tests only: forget everything. */
+    reset() {
+      data = blank();
+      save();
+    },
+  };
+
+  ns.Meta = Meta;
 })(window.ABCC);
 
 </script>
@@ -3996,7 +4170,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   const S = ns.S;
   const State = (ns.State = ns.State || {});
 
-  const newStats = () => ({ served: 0, complaints: 0, repairs: 0, incidents: 0, inspections: 0, walkouts: 0, walkoutLost: 0, wrongDuration: 0, wrongLost: 0, falseAccusations: 0, pcDownSec: 0, idleWhileWaiting: 0, blackoutSec: 0 });
+  const newStats = () => ({ served: 0, complaints: 0, repairs: 0, incidents: 0, inspections: 0, walkouts: 0, queueWalkouts: 0, walkoutLost: 0, wrongDuration: 0, wrongLost: 0, falseAccusations: 0, pcDownSec: 0, idleWhileWaiting: 0, blackoutSec: 0 });
 
   function create(seed) {
     return {
@@ -4152,21 +4326,38 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
     return true;
   }
 
-  /** The "why did we miss it" lines on a failed shift report, biggest loss first. */
-  function explainShortfall(s, b) {
+  /** Everything that cost the shop money, biggest first, each with a one-line fix. Feeds the report's headline and its "why" list. */
+  function leakLines(s, b) {
     const st = s.shiftStats;
     const lines = [];
-    const refundByKind = {};
-    for (const e of s.shiftLedger) if (e.cat === 'refund') refundByKind[e.kind] = (refundByKind[e.kind] || 0) - e.amount;
-    if (-b.refunds > 0) lines.push({ cost: -b.refunds, icon: '↩️', text: `Refund RM${(-b.refunds / 100).toFixed(2)} (restart, salah tuduh, PC rosak) mengurangkan jualan.` });
-    if (st.walkouts > 0) lines.push({ cost: st.walkoutLost || st.walkouts * 150, icon: '🚶', text: `${st.walkouts} pelanggan balik sebelum sempat main — kira-kira ${fmtMoney(st.walkoutLost || st.walkouts * 150)} jualan hilang.` });
-    if (st.wrongDuration > 0) lines.push({ cost: st.wrongLost, icon: '⏱️', text: `${st.wrongDuration} kali tempoh sewaan salah — ${fmtMoney(st.wrongLost)} hilang.` });
-    if (st.falseAccusations > 0) lines.push({ cost: 300 * st.falseAccusations, icon: '😬', text: `${st.falseAccusations} salah tuduh — pelanggan keluar dan reputasi jatuh.` });
-    if (st.pcDownSec > 20) lines.push({ cost: st.pcDownSec * 8, icon: '🔧', text: `PC rosak/diselenggara sejumlah ${Math.round(st.pcDownSec)} saat-PC — kapasiti terbuang.` });
-    if (st.idleWhileWaiting > 12) lines.push({ cost: st.idleWhileWaiting * 10, icon: '🖥️', text: `PC kosong ${Math.round(st.idleWhileWaiting)} saat-PC ketika pelanggan menunggu. Assign lebih cepat!` });
-    if (st.blackoutSec > 3) lines.push({ cost: st.blackoutSec * 20, icon: '⚡', text: `Blackout ${Math.round(st.blackoutSec)} saat menghentikan semua sewaan.` });
-    if (st.served === 0) lines.push({ cost: 9999, icon: '🧾', text: 'Tiada pelanggan dilayan langsung.' });
-    return lines.sort((a, b2) => b2.cost - a.cost).slice(0, 3).map(({ icon, text }) => ({ icon, text }));
+    const refunded = -b.refunds;
+    const queueWalk = st.queueWalkouts || 0;
+    const faultWalk = Math.max(0, (st.walkouts || 0) - queueWalk);
+    const walkCost = (n) => (st.walkouts ? (st.walkoutLost || st.walkouts * 150) * (n / st.walkouts) : 0);
+    if (refunded > 0) lines.push({ cost: refunded, icon: '↩️', text: `Refund RM${(refunded / 100).toFixed(2)} (restart, salah tuduh, PC rosak) mengurangkan jualan.`, head: `Refund ${fmtMoney(refunded)} makan jualan`, tip: 'Kalau PC panas atau internet putus, guna Sejukkan / Reset (percuma, tiada refund).' });
+    if (queueWalk > 0) lines.push({ cost: walkCost(queueWalk) || queueWalk * 150, icon: '🚶', text: `${queueWalk} pelanggan balik sebelum sempat main — kira-kira ${fmtMoney(walkCost(queueWalk) || queueWalk * 150)} jualan hilang.`, head: `${queueWalk} pelanggan balik marah sebab beratur terlalu lama`, tip: 'Layan yang bar kesabarannya paling merah dulu. Tap dua kali pelanggan = auto-duduk, lebih pantas.' });
+    if (faultWalk > 0) lines.push({ cost: walkCost(faultWalk) || faultWalk * 150, icon: '🖥️', text: `${faultWalk} pelanggan balik sebab PC mereka rosak.`, head: `${faultWalk} pelanggan balik sebab PC rosak`, tip: 'Baiki PC yang ada pelanggan dahulu. Rak Spare Parts mempercepatkan repair.' });
+    if (st.wrongDuration > 0) lines.push({ cost: st.wrongLost, icon: '⏱️', text: `${st.wrongDuration} kali tempoh sewaan salah — ${fmtMoney(st.wrongLost)} hilang.`, head: `${st.wrongDuration} kali tempoh sewaan salah (−${fmtMoney(st.wrongLost)})`, tip: 'Pilih tempoh bertanda ★, atau guna auto-duduk yang sentiasa pilih ★.' });
+    if (st.falseAccusations > 0) lines.push({ cost: 300 * st.falseAccusations, icon: '😬', text: `${st.falseAccusations} salah tuduh — pelanggan keluar dan reputasi jatuh.`, head: `${st.falseAccusations} pelanggan dituduh salah`, tip: 'Bila tak pasti, pilih Tegur baik-baik. CCTV memberi petunjuk (tak 100% tepat).' });
+    if (st.pcDownSec > 20) lines.push({ cost: st.pcDownSec * 8, icon: '🔧', text: `PC rosak/diselenggara sejumlah ${Math.round(st.pcDownSec)} saat-PC — kapasiti terbuang.`, head: `PC tak dapat digunakan ${Math.round(st.pcDownSec)} saat-PC`, tip: 'Baiki PC rosak cepat. Repair makan masa, jadi beri arahan awal.' });
+    if (st.idleWhileWaiting > 12) lines.push({ cost: st.idleWhileWaiting * 10, icon: '🖥️', text: `PC kosong ${Math.round(st.idleWhileWaiting)} saat-PC ketika pelanggan menunggu. Assign lebih cepat!`, head: `PC kosong ${Math.round(st.idleWhileWaiting)} saat-PC ketika orang menunggu`, tip: 'Assign terus. Tap dua kali pelanggan untuk auto-duduk.' });
+    if (st.blackoutSec > 3) lines.push({ cost: st.blackoutSec * 20, icon: '⚡', text: `Blackout ${Math.round(st.blackoutSec)} saat menghentikan semua sewaan.`, head: `Blackout ${Math.round(st.blackoutSec)} saat`, tip: 'Terus ke kotak fius bila lampu padam. RM8 itu murah berbanding jualan yang hilang.' });
+    if (st.served === 0) lines.push({ cost: 9999, icon: '🧾', text: 'Tiada pelanggan dilayan langsung.', head: 'Tiada pelanggan dilayan', tip: 'Tap pelanggan di queue, pilih minit, kemudian tap PC kosong.' });
+    return lines.sort((a, b2) => b2.cost - a.cost);
+  }
+
+  /** The "why did we miss it" lines on a failed shift report, biggest loss first. */
+  function explainShortfall(s, b) {
+    return leakLines(s, b).slice(0, 3).map(({ icon, text }) => ({ icon, text }));
+  }
+
+  /** One line for the top of every shift report: the main thing that went wrong (or, on a good day, what still leaked) and how to fix it. */
+  function shiftHeadline(s, b, goalMet) {
+    const top = leakLines(s, b)[0];
+    if (top) return { kind: goalMet ? 'win' : 'fail', icon: top.icon, text: top.head, tip: top.tip };
+    return goalMet
+      ? { kind: 'win', icon: '🌟', text: 'Hari yang bersih — tiada kebocoran besar.', tip: 'Beli perk baru untuk sasaran yang makin tinggi.' }
+      : { kind: 'fail', icon: '📉', text: 'Kedai kurang ramai hari ini.', tip: 'Tiada kesilapan besar. Poster Promosi atau lebih banyak PC menarik dan melayan lebih ramai pelanggan.' };
   }
 
   function endShift(s) {
@@ -4229,6 +4420,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
       net: income - paid.bills - expense,
       shortfall: Math.max(0, goal - income),
       reasons: goalMet ? [] : explainShortfall(s, b),
+      headline: shiftHeadline(s, b, goalMet),
       endingCash: s.cash,
       combo: s.bestCombo,
       heroSaved: s.heroSaved,
@@ -4244,6 +4436,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
       // 1–3 stars: 1 = goal missed, 2 = goal met, 3 = goal beaten by 40% with a healthy reputation.
       stars: !goalMet ? 1 : income >= goal * 1.4 && s.rep >= 55 ? 3 : 2,
     };
+    report.unlocked = goalMet && ns.Meta ? ns.Meta.recordDay(s.day, report.stars).map((h) => h.id) : []; // cosmetic hats kept across runs
     s.lastReport = report;
     s.reports.push(report);
     s.dayFailed = !goalMet;
@@ -4465,7 +4658,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
     s.worldEvents = s.worldEvents || [];
     s.activeIssues = s.activeIssues || [];
     s.once = s.once || {};
-    s.shiftStats = Object.assign({ served: 0, complaints: 0, repairs: 0, incidents: 0, inspections: 0, walkouts: 0, walkoutLost: 0, wrongDuration: 0, wrongLost: 0, falseAccusations: 0, pcDownSec: 0, idleWhileWaiting: 0, blackoutSec: 0 }, s.shiftStats);
+    s.shiftStats = Object.assign({ served: 0, complaints: 0, repairs: 0, incidents: 0, inspections: 0, walkouts: 0, queueWalkouts: 0, walkoutLost: 0, wrongDuration: 0, wrongLost: 0, falseAccusations: 0, pcDownSec: 0, idleWhileWaiting: 0, blackoutSec: 0 }, s.shiftStats);
     if (s.phase === 'active') s.phase = 'paused';
     return s;
   }
@@ -6340,9 +6533,30 @@ window.ABCC.GfxEngine = (function () {
         case 'cap':
           ball(0, 0.12, -0.06, 0.42, 0.3, 0.4, look.hair);
           if (kind === 'player') {
-            ball(0, 0.22, -0.03, 0.44, 0.26, 0.42, '#ffcf3d');
-            blk(0, 0.2, 0.36, 0.5, 0.06, 0.34, '#ffb300', 0.03);
-            ball(0, 0.3, 0.3, 0.1, 0.06, 0.03, '#ffffff', 0, 0.3, true);
+            const hat = R.abangHat || 'cap'; // cosmetic, unlocked across runs (see js/state/meta.js)
+            if (hat === 'phones') { // gamer headphones over the hair
+              ring(0, -0.02, -0.02, 0.47, 0.05, '#2a2150', 1, 0, Math.PI);
+              for (const side of [-1, 1]) {
+                ball(side * 0.45, -0.02, 0, 0.1, 0.17, 0.15, '#2a2150');
+                ball(side * 0.53, -0.02, 0, 0.03, 0.12, 0.11, '#4cc3ff', 0, 0.5, true);
+              }
+              ball(0, 0.36, 0.08, 0.1, 0.05, 0.1, '#ff5da2', 0, 0.2, true); // a hair tuft so the head isn't bare
+            } else if (hat === 'straw') { // wide-brim straw hat with a red band
+              cyl(0, 0.2, -0.02, 0.68, 0.05, '#e8c46a', 1, 1);
+              cyl(0, 0.24, -0.02, 0.36, 0.26, '#f2d27e', 0.9, 1);
+              cyl(0, 0.25, -0.02, 0.375, 0.07, '#d9304a', 0.97, 0);
+            } else if (hat === 'crown') { // gold crown with gems
+              cyl(0, 0.3, -0.03, 0.36, 0.17, '#ffd23f', 1.12, 1, 0.12);
+              for (let i = 0; i < 5; i++) {
+                const a = (i / 5) * TAU;
+                cyl(Math.sin(a) * 0.3, 0.46, Math.cos(a) * 0.3 - 0.03, 0.07, 0.2, '#ffd23f', 0.2, 1, 0.12);
+                ball(Math.sin(a) * 0.3, 0.68, Math.cos(a) * 0.3 - 0.03, 0.05, 0.05, 0.05, i % 2 ? '#ff5d73' : '#4cc3ff', 0, 0.6, true);
+              }
+            } else {
+              ball(0, 0.22, -0.03, 0.44, 0.26, 0.42, '#ffcf3d');
+              blk(0, 0.2, 0.36, 0.5, 0.06, 0.34, '#ffb300', 0.03);
+              ball(0, 0.3, 0.3, 0.1, 0.06, 0.03, '#ffffff', 0, 0.3, true);
+            }
           } else {
             ball(0, 0.22, -0.03, 0.44, 0.26, 0.42, '#4da3ff');
             blk(0, 0.2, -0.36, 0.5, 0.06, 0.34, '#2f7fe0', 0.03);
@@ -7281,6 +7495,14 @@ window.ABCC.GfxEngine = (function () {
       stats: () => R.stats,
       light: () => R.light,
       setHover: (h) => { R.hover = h; },
+      setHat: (id) => { R.abangHat = id || 'cap'; },
+      /** Which GPU / driver the browser reports (when it allows it). Used by the phone performance report. */
+      gpuInfo: () => {
+        try {
+          const gl = eng.gl, ext = gl.getExtension('WEBGL_debug_renderer_info');
+          return ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+        } catch { return 'unknown'; }
+      },
       setFocus: (x, z, zoom = 3) => { R.focus = x == null ? null : { x, z, zoom }; },
       setQuality: (q) => { R.quality = QUALITY[q] ? q : 'high'; eng.setShadows(QUALITY[R.quality].shadows); },
       setDebugTime: (minutes) => { R.debugMinutes = minutes; },
@@ -7349,7 +7571,7 @@ window.ABCC.GfxEngine = (function () {
   }
 
   /* ---------- settings (kept separate from the game save) ---------- */
-  UI.settings = { sound: true, quality: defaultQuality(), reduceMotion: false, hints: true, qualityChosen: false };
+  UI.settings = { sound: true, music: true, quality: defaultQuality(), reduceMotion: false, hints: true, qualityChosen: false };
   try {
     Object.assign(UI.settings, JSON.parse(localStorage.getItem(CFG.SETTINGS) || '{}'));
   } catch {
@@ -7498,14 +7720,119 @@ window.ABCC.GfxEngine = (function () {
     perk: () => [523, 784, 988, 1319].forEach((f, i) => tone(f, 0.12, 'triangle', 0.045, i * 0.07)), // perk purchase
     win: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, 'triangle', 0.055, i * 0.11)), // successful shift
     lose: () => [392, 349, 294].forEach((f, i) => tone(f, 0.24, 'sawtooth', 0.035, i * 0.16)),
+    warn: () => { tone(760, 0.09, 'triangle', 0.045); tone(540, 0.16, 'triangle', 0.045, 0.1); }, // a customer is about to lose patience
+    goal: () => { [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.16, 'square', 0.028, i * 0.08)); [523, 659, 784].forEach((f) => tone(f, 0.5, 'triangle', 0.04, 0.34)); }, // today's target reached
   };
+
+  /* ------------------------------------------------------------------ music
+     A tiny generative chiptune loop: bass, a plucked arpeggio, an occasional melody note and soft hi-hats over a
+     four-chord progression. It is bright by day (C major), slower and moodier at night (A minor) and a bit faster
+     and busier during peak hour. Quiet on purpose; it has its own switch in Settings, and the ♫ button mutes everything. */
+  const MOODS = {
+    day: { bpm: 108, base: 60, prog: [[0, 'M'], [-3, 'm'], [-7, 'M'], [-5, 'M']], scale: [0, 2, 4, 7, 9] },
+    night: { bpm: 90, base: 57, prog: [[0, 'm'], [-4, 'M'], [-9, 'M'], [-2, 'M']], scale: [0, 3, 5, 7, 10] },
+  };
+  const midi = (n) => 440 * Math.pow(2, (n - 69) / 12);
+  const rnd = (n) => Math.abs(Math.sin(n * 91.345 + 7.1) * 43758.5453) % 1; // deterministic: the loop always sounds the same
+  const mu = { timer: 0, next: 0, step: 0, mood: 'day', peak: false, gain: null, on: false, userGesture: false };
+
+  function musicStep(step, t) {
+    const m = MOODS[mu.mood];
+    const bar = Math.floor(step / 8) % 4, pos = step % 8;
+    const [r, q] = m.prog[bar];
+    const root = m.base + r;
+    const c = ensure();
+    const note = (n, dur, type, vol, when = t) => {
+      const osc = c.createOscillator(), g = c.createGain();
+      osc.type = type;
+      osc.frequency.value = midi(n);
+      g.gain.setValueAtTime(0.0001, when);
+      g.gain.exponentialRampToValueAtTime(vol, when + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+      osc.connect(g).connect(mu.gain);
+      osc.start(when);
+      osc.stop(when + dur + 0.03);
+    };
+    if (pos === 0 || pos === 4) note(root - 12, 0.34, 'triangle', 0.075); // bass
+    const tones = [0, q === 'M' ? 4 : 3, 7, 12];
+    const idx = [0, 2, 1, 3, 0, 2, 3, 1][pos];
+    if (rnd(step) > (mu.peak ? 0.12 : 0.34)) note(root + tones[idx] + 12, 0.16, 'square', 0.022); // arpeggio
+    if ((pos === 0 || pos === 4) && rnd(step + 100) > 0.4) note(m.base + 12 + m.scale[Math.floor(rnd(step + 7) * 5)], 0.4, 'sine', 0.04); // melody
+    if (pos % 2 === 1 || (mu.peak && pos % 2 === 0)) { // hi-hat
+      const len = Math.floor(c.sampleRate * 0.025), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      const src = c.createBufferSource(), hp = c.createBiquadFilter(), g = c.createGain();
+      src.buffer = buf; hp.type = 'highpass'; hp.frequency.value = 6000; g.gain.value = 0.018;
+      src.connect(hp).connect(g).connect(mu.gain);
+      src.start(t);
+    }
+  }
+
+  function musicTick() {
+    const c = ctx;
+    if (!c || !mu.on) return;
+    const m = MOODS[mu.mood];
+    const stepDur = 60 / (m.bpm + (mu.peak ? 16 : 0)) / 2;
+    if (mu.next < c.currentTime) mu.next = c.currentTime + 0.05;
+    while (mu.next < c.currentTime + 0.4) {
+      musicStep(mu.step, mu.next);
+      mu.next += stepDur;
+      mu.step++;
+    }
+  }
+
+  function musicStart() {
+    const c = ensure();
+    if (!c || mu.on) return;
+    if (!mu.gain) {
+      mu.gain = c.createGain();
+      mu.gain.connect(master);
+    }
+    mu.gain.gain.cancelScheduledValues(c.currentTime);
+    mu.gain.gain.setValueAtTime(mu.gain.gain.value, c.currentTime);
+    mu.gain.gain.linearRampToValueAtTime(0.7, c.currentTime + 1.2);
+    mu.on = true;
+    mu.next = c.currentTime + 0.1;
+    mu.timer = setInterval(musicTick, 100);
+  }
+
+  function musicStop() {
+    if (!mu.on) return;
+    mu.on = false;
+    clearInterval(mu.timer);
+    if (ctx && mu.gain) {
+      mu.gain.gain.cancelScheduledValues(ctx.currentTime);
+      mu.gain.gain.setValueAtTime(mu.gain.gain.value, ctx.currentTime);
+      mu.gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.35);
+    }
+  }
 
   let typingClock = 0;
   UI.Sound = {
     play(name) {
       if (UI.settings.sound && effects[name]) effects[name]();
     },
-    unlock: ensure,
+    unlock() {
+      mu.userGesture = true;
+      return ensure();
+    },
+    /**
+     * Called a few times a second with what the game is doing: { night, peak } while a shift is running,
+     * anything falsy otherwise (menus, pause, reports). Starts and stops the music loop; needs a prior tap
+     * (browsers refuse audio before that) and respects the Sound and Music settings.
+     */
+    music(state) {
+      const want = !!state && UI.settings.sound && UI.settings.music !== false && mu.userGesture;
+      if (!want) return musicStop();
+      const mood = state.night ? 'night' : 'day';
+      if (mood !== mu.mood) {
+        mu.mood = mood;
+        mu.step = Math.ceil(mu.step / 32) * 32; // change key on a phrase boundary
+      }
+      mu.peak = !!state.peak;
+      musicStart();
+    },
+    musicPlaying: () => mu.on,
     /** Called every frame: a soft, throttled keyboard patter while customers are playing. */
     ambient(dt, playingCount) {
       if (!UI.settings.sound || playingCount <= 0) return;
@@ -7758,11 +8085,38 @@ window.ABCC.GfxEngine = (function () {
     return `<div class="patience ${pct < 30 ? 'low' : pct < 60 ? 'mid' : ''}" data-patience="${c.id}" aria-label="Kesabaran ${Math.round(pct)}%"><i style="width:${pct}%"></i></div>`;
   };
 
-  /** "n/3" next to the shop status: how many jobs Abang has lined up. */
-  UI.renderTaskCount = function renderTaskCount() {
-    const pending = State.pendingCount(UI.s);
-    $('taskCount').hidden = !pending;
-    setText($('taskCount'), `🧑‍🔧 ${pending}/${CFG.MAX_COMMANDS}`);
+  /* ------------------------------------------------------------ Arahan Abang */
+  const TASK_NAME = { restart: '↻ Restart', repair: '🔧 Repair', cool: '❄️ Sejukkan', reset: '📡 Reset sambungan', soft: '🗣️ Tegur baik-baik', harsh: '📢 Tuduh & halau', warn: '🔊 Tegur', calm: '🕊️ Leraikan', eject: '👋 Halau', close: '✖️ Tutup laman', search: '🔍 Geledah', replace: '🛒 Mouse baru' };
+  function taskText(s, t) {
+    if (t.entityKind === 'event') {
+      const ev = State.eventById(s, t.entityId);
+      if (!ev) return { text: 'Kejadian dah tamat', target: null };
+      const ch = EVENTS[ev.type].choices.find((c) => c.id === t.opts?.choice);
+      return { text: `${EVENTS[ev.type].emoji} ${ch ? ch.label.replace(/^\S+\s/, '') : EVENTS[ev.type].title}`, sub: EVENTS[ev.type].title, target: { kind: 'event', id: ev.id } };
+    }
+    return { text: `${TASK_NAME[t.kind] || t.kind} · PC ${pad2(t.entityId)}`, target: { kind: 'pc', id: t.entityId } };
+  }
+  let jobKey = '';
+  /** The list of jobs Abang has lined up (max 3): what he is on, what is waiting, with reorder / cancel. */
+  UI.renderJobs = function renderJobs() {
+    const s = UI.s;
+    const tasks = State.taskList(s);
+    const key = tasks.map((t, i) => `${t.id}:${i}:${t === s.activeTask ? (t.remaining === null ? 'w' : 'k') : 'q'}`).join('|');
+    $('jobsPanel').classList.toggle('idle', !tasks.length);
+    setText($('taskCount'), `${tasks.length}/${CFG.MAX_COMMANDS}`);
+    $('taskCount').classList.toggle('full', tasks.length >= CFG.MAX_COMMANDS);
+    if (key === jobKey) return;
+    jobKey = key;
+    $('jobList').innerHTML = tasks.length
+      ? tasks.map((t, i) => {
+          const info = taskText(s, t);
+          const active = t === s.activeTask;
+          const state = active ? (t.remaining === null ? '🚶 menuju…' : '🔧 sedang buat') : i === 1 && s.activeTask ? '⏳ seterusnya' : `⏳ #${i + 1}`;
+          const canUp = !active && s.commands.indexOf(t) > 0;
+          const canCancel = !(active && t.remaining !== null);
+          return `<li class="job ${active ? 'active' : ''}" ${info.target ? `data-kind="${info.target.kind}" data-id="${info.target.id}"` : ''}><span class="job-n">${i + 1}</span><span class="job-main"><b>${safe(info.text)}</b><small>${state}</small></span>${canUp ? `<button type="button" class="job-btn" data-job-up="${t.id}" title="Dahulukan" aria-label="Dahulukan arahan ${i + 1}">↑</button>` : ''}${canCancel ? `<button type="button" class="job-btn" data-job-cancel="${t.id}" title="Batalkan" aria-label="Batalkan arahan ${i + 1}">✕</button>` : ''}</li>`;
+        }).join('')
+      : '<li class="job-empty">Abang free. Tap PC atau kejadian untuk bagi arahan.</li>';
   };
 
   /** Live numbers in the pop-up menu (countdowns, patience bar) without rebuilding its buttons. */
@@ -7811,6 +8165,7 @@ window.ABCC.GfxEngine = (function () {
         hint = `“Bang, ${c.requestedMinutes} minit!” · ★ = permintaan pelanggan`;
         info = patienceBar(c);
         opts = State.durationOptions(s, c.id).map((d) => ({ act: 'duration', choice: d.minutes, label: `${d.minutes} MIN${d.wanted ? ' ★' : ''}`, sub: `${fmtMoney(d.price)} · tekan ${d.minutes / 30}`, css: `${d.chosen ? 'mint' : 'paper'} ${d.wanted ? 'wanted' : ''}` }));
+        opts.push({ act: 'autoseat', label: '⚡ Auto-duduk', sub: `★ ${c.requestedMinutes} min + PC terdekat · tekan A · atau tap dua kali`, css: 'sky', disabled: !State.idlePCs(s).length || s.powerOutage > 0 });
       }
     } else if (s.phase === 'active' && (sel?.kind === 'pc' || sel?.kind === 'event')) {
       opts = State.options(s, sel);
@@ -8075,7 +8430,7 @@ window.ABCC.GfxEngine = (function () {
 
   const modalRoot = $('modalRoot');
   let modalKey = '';
-  let overlay = null; // 'help' | 'settings' | null
+  let overlay = null; // 'help' | 'settings' | 'collection' | null
   UI.getOverlay = () => overlay;
   UI.setOverlay = (v) => { overlay = v; };
 
@@ -8105,6 +8460,7 @@ window.ABCC.GfxEngine = (function () {
         ${hasSave ? '<button class="btn big mint" data-modal="continue">▶ Sambung main</button>' : ''}
         <button class="btn big ${hasSave ? 'paper' : 'mint'}" data-modal="newgame">${hasSave ? '↻ Run baru' : '▶ Mula jaga kedai'}</button>
         <button class="btn big sky" data-modal="help">? Cara main</button>
+        <button class="btn big paper" data-modal="collection">🎩 Koleksi</button>
       </div>
       <p class="small">Alpha 0.12 · progress disimpan automatik dalam browser ini</p>`);
   }
@@ -8150,13 +8506,18 @@ window.ABCC.GfxEngine = (function () {
     const r = s.lastReport;
     if (!r) return;
     const stars = [1, 2, 3].map((n) => `<span class="${n <= r.stars ? 'on' : ''}">⭐</span>`).join('');
-    const why = !r.goalMet && r.reasons?.length ? `<div class="notice why"><b>Kenapa gagal?</b><ul>${r.reasons.map((x) => `<li>${safe(x.icon)} ${safe(x.text)}</li>`).join('')}</ul></div>` : '';
+    const hl = r.headline ? `<div class="headline ${r.headline.kind}"><span class="hl-ico" aria-hidden="true">${safe(r.headline.icon)}</span><div><b>${r.goalMet ? 'Boleh lebih baik' : 'Sebab utama'}: ${safe(r.headline.text)}</b><small>💡 ${safe(r.headline.tip)}</small></div></div>` : '';
+    const more = !r.goalMet && r.reasons?.length > 1 ? `<div class="notice why"><b>Juga menyumbang:</b><ul>${r.reasons.slice(1).map((x) => `<li>${safe(x.icon)} ${safe(x.text)}</li>`).join('')}</ul></div>` : '';
+    const why = hl || (!r.goalMet && r.reasons?.length ? `<div class="notice why"><b>Kenapa gagal?</b><ul>${r.reasons.map((x) => `<li>${safe(x.icon)} ${safe(x.text)}</li>`).join('')}</ul></div>` : '') ;
+    const unlocked = (r.unlocked || []).map((id) => ns.Meta.HATS.find((h) => h.id === id)).filter(Boolean);
+    const unlockNote = unlocked.length ? `<div class="notice unlock">🔓 <b>Topi baru dibuka:</b> ${unlocked.map((h) => `${safe(h.emoji)} ${safe(h.name)}`).join(', ')}. Pakai di <b>🎩 Koleksi</b> (menu utama).</div>` : '';
+    const whyAll = unlockNote + why + (hl ? more : '');
     showModal(`
       <span class="modal-eyebrow">LAPORAN HARI ${s.day}</span>
       <h1>${r.goalMet ? 'Target capai' : 'Shift gagal'} <em>${r.goalMet ? '🎉' : '😵'}</em></h1>
       <div class="stars" aria-label="${r.stars} bintang">${stars}</div>
       <p class="modal-lead">${r.goalMet ? 'Bagus! Kedai hari ini lepas target. Esok mungkin lebih huru-hara.' : `Jualan bersih ${fmtMoney(r.income)} — kurang <b>${fmtMoney(r.shortfall)}</b> daripada target. Hari ini diulang dari awal; progres hari-hari lepas kekal.`}</p>
-      ${why}
+      ${whyAll}
       <div class="settlement">
         <span>Target jualan</span><span>${fmtMoney(r.goal)}</span>
         <span>🎮 Jualan sewa</span><span class="good">+ ${fmtMoney(r.rental)}</span>
@@ -8220,12 +8581,33 @@ window.ABCC.GfxEngine = (function () {
       <h1>Jaga CC. <em>Jangan panik!</em></h1>
       <div class="modal-hero">
         <p>👤 <b>Tap pelanggan</b> yang beratur → menu <b>30 / 60 / 90 minit</b> muncul di sebelahnya (<kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>) → tap PC yang berkelip hijau. Pilih sama seperti permintaan pelanggan (★) untuk bayaran penuh; salah pilih = bayaran dipotong.</p>
+        <p>⚡ <b>Auto-duduk</b>: tap dua kali pada pelanggan (atau butang ⚡ pada menu, atau <kbd>A</kbd>) untuk terus beri mereka tempoh ★ di PC kosong yang paling dekat. <b>Arahan Abang</b> (panel kanan) menunjukkan kerja yang beratur: ↑ untuk dahulukan, ✕ untuk batalkan.</p>
         <p>🔧 <b>PC bermasalah</b> (hang, beku, panas, BSOD, internet putus, rosak)? Tap PC → pilih cara baiki pada menu di sebelah PC. Restart masa ada pelanggan = refund 25% (sekali setiap kejadian).</p>
         <p>❓ <b>PC suspicious</b>: tap PC → <b>Tegur baik-baik</b> (selamat) atau <b>Tuduh &amp; halau</b> (berani). Dia mungkin tak bersalah — salah tuduh kos reputasi, professionalism dan refund.</p>
         <p>🎲 <b>Kejadian khas</b> (rombongan, ponteng, blackout, air tumpah, snack hilang…) muncul sebagai orang/benda dalam bilik. Tap yang berdenyut, atau kad di <b>Situasi Panas</b> (TENGOK), lalu pilih pada menu di atas benda itu.</p>
         <p>🖱️ Zoom kamera: roda tetikus / cubit / butang Zoom. ⌨️ <kbd>Space</kbd> pause · <kbd>N</kbd> pelanggan seterusnya · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> tempoh · <kbd>R</kbd> restart PC yang dipilih.</p>
       </div>
       <div class="modal-actions"><button class="btn big mint" data-modal="back">Faham, jom main!</button></div>`);
+  }
+
+  /** Hats unlocked across runs (they stay when you start a new run). */
+  function renderCollection() {
+    overlay = 'collection';
+    const Meta = ns.Meta;
+    const m = Meta.get();
+    const cards = Meta.hats().map((h) => {
+      const worn = m.hat === h.id;
+      const label = worn ? '✓ Dipakai' : h.unlocked ? 'Pakai' : `🔒 Lepas Hari ${h.day}`;
+      return `<div class="perk hat ${h.unlocked ? '' : 'locked'}"><div class="perk-icon">${safe(h.emoji)}</div><strong>${safe(h.name)}</strong><small>${h.unlocked ? (h.day ? safe(h.desc) : 'Topi biasa Abang.') : safe(h.desc)}</small>
+        <button type="button" class="btn ${worn ? 'mint' : ''}" data-modal="hat" data-id="${h.id}" ${h.unlocked && !worn ? '' : 'disabled'}>${label}</button></div>`;
+    }).join('');
+    showModal(`
+      <span class="modal-eyebrow">KOLEKSI</span>
+      <h1>Topi <em>Abang</em></h1>
+      <p class="modal-lead">Lepaskan hari-hari tertentu untuk buka topi baru. Ia kekal walaupun kau mula run baru, dan hanya hiasan.</p>
+      <div class="badges stats">${stat('🏆 Hari terbaik', m.bestDay || '–')}${stat('✅ Hari dilepasi', m.daysCleared)}${stat('🔁 Run', m.runs)}${stat('⭐ Bintang terbaik', m.bestStars || '–')}</div>
+      <div class="store-grid">${cards}</div>
+      <div class="modal-actions"><button class="btn big mint" data-modal="back">Siap</button></div>`);
   }
 
   function renderSettings() {
@@ -8236,9 +8618,11 @@ window.ABCC.GfxEngine = (function () {
       <span class="modal-eyebrow">TETAPAN</span>
       <h1>Ubah <em>suai</em></h1>
       <div class="switch-row"><span>🔊 Bunyi</span>${seg('sound', [[true, 'ON'], [false, 'OFF']], UI.settings.sound)}</div>
+      <div class="switch-row"><span>🎵 Muzik</span>${seg('music', [[true, 'ON'], [false, 'OFF']], UI.settings.music !== false)}</div>
       <div class="switch-row"><span>🎨 Kualiti grafik</span>${seg('quality', [['high', 'Tinggi'], ['medium', 'Sederhana'], ['low', 'Rendah']], UI.settings.quality)}</div>
       <div class="switch-row"><span>🎚️ Kesukaran</span>${seg('preset', Object.entries(DIRECTOR.presets).map(([k, v]) => [k, v.label]), s.preset || 'biasa')}</div>
       <div class="switch-row"><span>💡 Tunjuk petunjuk</span>${seg('hints', [[true, 'ON'], [false, 'OFF']], UI.settings.hints)}</div>
+      <div class="switch-row"><span>📈 Tunjuk FPS</span>${seg('showFps', [[true, 'ON'], [false, 'OFF']], !!UI.settings.showFps)}</div>
       <div class="switch-row"><span>🐢 Kurangkan animasi</span>${seg('reduceMotion', [[true, 'ON'], [false, 'OFF']], UI.settings.reduceMotion)}</div>
       <p class="small">Kualiti Rendah mematikan outline &amp; bayang matahari dan menurunkan resolusi — sesuai untuk telefon lama. Kesukaran berkuat kuasa untuk hari seterusnya.</p>
       <div class="modal-actions">
@@ -8270,7 +8654,7 @@ window.ABCC.GfxEngine = (function () {
       State.save(UI.s);
     }
     overlay = kind;
-    kind === 'help' ? renderHelp() : renderSettings();
+    kind === 'help' ? renderHelp() : kind === 'collection' ? renderCollection() : renderSettings();
   };
 
   UI.resync = function resync() {
@@ -8302,6 +8686,7 @@ window.ABCC.GfxEngine = (function () {
       case 'newgame':
         if ((s.reports.length > 0 || s.elapsed > 10) && !confirm('Mula balik akan overwrite save lama. Confirm?')) return;
         State.resetSave();
+        ns.Meta.recordRun();
         UI.s = s = State.create();
         s.phase = 'onboarding';
         s.introStep = 0;
@@ -8347,6 +8732,13 @@ window.ABCC.GfxEngine = (function () {
         return;
       case 'help': return UI.openOverlay('help');
       case 'settings': return UI.openOverlay('settings');
+      case 'collection': return UI.openOverlay('collection');
+      case 'hat':
+        if (ns.Meta.equip(el.dataset.id)) {
+          UI.gfx?.setHat(el.dataset.id);
+          UI.toast('Topi dipakai!', 'good');
+        }
+        return renderCollection();
       case 'back':
         overlay = null;
         return UI.syncModal(true);
@@ -8455,6 +8847,31 @@ window.ABCC.GfxEngine = (function () {
     UI.refresh(true);
   };
 
+  /** "Auto-duduk": seat the customer for the ★ length on the nearest free PC, in one go. */
+  UI.quickSeat = function quickSeat(customerId) {
+    const s = UI.s;
+    if (s.phase !== 'active') return;
+    const r = State.quickSeat(s, customerId);
+    UI.toast(r.msg, r.ok ? 'good' : 'bad');
+    UI.Sound.play(r.ok ? 'tap' : 'bad');
+    if (r.ok) UI.menuDismissed = s.selected ? `${s.selected.kind}:${s.selected.id}` : null;
+    State.save(s);
+    UI.refresh(true);
+  };
+
+  /** A tap on a customer (in the room or in the queue list). A second tap on the same one within 0.4 s auto-seats them. */
+  let lastCustomerTap = { id: null, t: 0 };
+  UI.tapCustomer = function tapCustomer(id) {
+    const now = performance.now();
+    if (lastCustomerTap.id === id && now - lastCustomerTap.t < 400) {
+      lastCustomerTap = { id: null, t: 0 };
+      UI.quickSeat(id);
+      return;
+    }
+    lastCustomerTap = { id, t: now };
+    UI.select({ kind: 'customer', id });
+  };
+
   UI.chooseDuration = function chooseDuration(minutes) {
     const s = UI.s;
     if (!s.pendingCustomerId || s.phase !== 'active') return;
@@ -8543,7 +8960,8 @@ window.ABCC.GfxEngine = (function () {
     if (!rec || cancelled || rec.moved || !UI.gfx) return;
     if (UI.s.phase !== 'active') return;
     const hit = UI.gfx.pick(UI.s, rec.x, rec.y, { touch: rec.type !== 'mouse' });
-    if (hit) UI.select(hit);
+    if (hit?.kind === 'customer') UI.tapCustomer(hit.id);
+    else if (hit) UI.select(hit);
   };
   canvas.addEventListener('pointerup', (e) => endPointer(e, false));
   canvas.addEventListener('pointercancel', (e) => endPointer(e, true));
@@ -8578,7 +8996,7 @@ window.ABCC.GfxEngine = (function () {
   });
   $('queueList').addEventListener('click', (e) => {
     const el = e.target.closest('[data-customer]');
-    if (el) UI.select({ kind: 'customer', id: Number(el.dataset.customer) });
+    if (el) UI.tapCustomer(Number(el.dataset.customer));
   });
   $('crisisList').addEventListener('click', (e) => {
     const card = e.target.closest('[data-kind]');
@@ -8589,6 +9007,21 @@ window.ABCC.GfxEngine = (function () {
     UI.gfx?.setHover(card ? { kind: card.dataset.kind, id: Number(card.dataset.id) } : null);
   });
   $('crisisList').addEventListener('pointerleave', () => UI.gfx?.setHover(null));
+  $('jobList').addEventListener('click', (e) => {
+    const s = UI.s;
+    const up = e.target.closest('[data-job-up]'), del = e.target.closest('[data-job-cancel]');
+    if (!up && !del) return;
+    const r = up ? State.moveTaskUp(s, Number(up.dataset.jobUp)) : State.cancelTask(s, Number(del.dataset.jobCancel));
+    UI.toast(r.msg, r.ok ? 'good' : 'bad');
+    UI.Sound.play(r.ok ? 'click' : 'bad');
+    State.save(s);
+    UI.refresh(true);
+  });
+  $('jobList').addEventListener('pointerover', (e) => {
+    const row = e.target.closest('[data-kind]');
+    UI.gfx?.setHover(row ? { kind: row.dataset.kind, id: Number(row.dataset.id) } : null);
+  });
+  $('jobList').addEventListener('pointerleave', () => UI.gfx?.setHover(null));
   $('fallbackBoard').addEventListener('click', (e) => {
     const card = e.target.closest('[data-kind]');
     if (card) UI.select({ kind: card.dataset.kind, id: Number(card.dataset.id) });
@@ -8628,6 +9061,7 @@ window.ABCC.GfxEngine = (function () {
     } else if (active && !e.repeat) {
       if (['1', '2', '3'].includes(e.key)) UI.chooseDuration(Number(e.key) * 30);
       else if (e.key === 'n' || e.key === 'N') nextCustomer();
+      else if ((e.key === 'a' || e.key === 'A') && s.pendingCustomerId) UI.quickSeat(s.pendingCustomerId);
       else if (e.key === 'r' || e.key === 'R') {
         const opt = State.options(s, s.selected).find((o) => o.act === 'restart');
         if (opt && s.selected?.kind === 'pc') UI.performFromEl({ dataset: { act: 'restart', id: String(s.selected.id) }, disabled: opt.disabled });
@@ -8661,12 +9095,18 @@ window.ABCC.GfxEngine = (function () {
     $('noWebgl').hidden = false;
   });
 
+  UI.gfx?.setHat(ns.Meta.equipped());
+
   UI.s = State.getSaved() || State.create();
   if (UI.s.phase === 'prep' && UI.s.day >= 2 && !UI.s.perkDraft?.length && !UI.s.perkChoiceMade) State.draftPerks(UI.s);
   if (UI.s.phase === 'prep' && UI.s.day === 1) UI.s.dayGoal = State.calcRevenueGoal(UI.s, UI.s.day);
 
+  // browsers only allow audio after a tap/key: any of these unlocks it (iOS wants touchend)
+  for (const type of ['pointerdown', 'keydown', 'touchend']) document.addEventListener(type, () => UI.Sound.unlock(), { passive: true });
+
   /* ---------- simulation events → popups, particles and sounds ---------- */
   let lastBell = 0;
+  let lastWarn = 0;
   function handleFx() {
     const s = UI.s;
     const gfx = UI.gfx;
@@ -8736,6 +9176,12 @@ window.ABCC.GfxEngine = (function () {
         case 'walkout':
           UI.Sound.play('bad');
           break;
+        case 'patienceLow':
+          if (performance.now() - lastWarn > 1500) {
+            lastWarn = performance.now();
+            UI.Sound.play('warn');
+          }
+          break;
         case 'perk':
           UI.Sound.play('perk');
           break;
@@ -8753,11 +9199,22 @@ window.ABCC.GfxEngine = (function () {
   /* ---------- panels + HUD refresh (cheap: ~4×/s and after every action) ---------- */
   UI.refresh = function refresh(force = false) {
     UI.renderWorldMenu(force);
-    UI.renderTaskCount();
+    UI.renderJobs();
     UI.renderQueue();
     UI.renderCrises();
     UI.tickDesk();
     UI.refreshHud();
+    const s = UI.s;
+    // today's target reached: one fanfare per shift
+    if (s.phase === 'active') {
+      if (!UI.goalHit && State.shiftTakings(s) >= State.calcRevenueGoal(s, s.day)) {
+        UI.goalHit = true;
+        UI.Sound.play('goal');
+        UI.toast('🎯 Target hari ini dicapai! Teruskan untuk lebih banyak bintang.', 'good');
+      }
+    } else if (s.phase !== 'paused') UI.goalHit = false;
+    // music follows the shift: bright by day, moody at night, busier in peak hour; silent in menus and on pause
+    UI.Sound.music(s.phase === 'active' ? { night: ns.dayPart(CFG.DAY_START_MINUTES + s.elapsed * CFG.GAME_MINUTE_RATE).id === 'night', peak: !!s.peakActive } : null);
     const h = UI.hint();
     const bubble = $('hintBubble');
     bubble.hidden = !h;
@@ -8795,9 +9252,53 @@ window.ABCC.GfxEngine = (function () {
     }
   }
 
+  /* ---------- performance overlay + report (for testing on real phones) ---------- */
+  const perfEl = $('perfHud');
+  const perf = { frames: 0, ms: 0, slow: 0, worst: 0, winFrames: 0, winMs: 0, winWorst: 0, fps: 0, shown: 0, sample: 0, started: 0 };
+  const showPerf = () => /[?&]fps\b/.test(location.search) || !!UI.settings.showFps;
+  function perfReport() {
+    const g = UI.gfx?.stats?.() || {};
+    const avg = perf.ms ? (perf.frames / perf.ms) * 1000 : 0;
+    return [
+      'ABANG CC 2007 — laporan prestasi',
+      `Peranti: ${navigator.userAgent}`,
+      `Skrin: ${innerWidth}x${innerHeight} @${devicePixelRatio}x · ${screen.width}x${screen.height}`,
+      `GPU: ${UI.gfx?.gpuInfo?.() || 'tiada WebGL'}`,
+      `Kualiti: ${UI.settings.quality}${UI.settings.qualityChosen ? ' (dipilih)' : ' (auto)'}`,
+      `Purata FPS: ${avg.toFixed(1)} dalam ${(perf.ms / 1000).toFixed(0)} s (${perf.frames} frame)`,
+      `Frame lambat (>33 ms): ${perf.slow} (${perf.frames ? ((perf.slow / perf.frames) * 100).toFixed(1) : 0}%) · terburuk ${perf.worst.toFixed(0)} ms`,
+      `Bina scene (JS): ${(g.buildMs || 0).toFixed(1)} ms · instance: ${g.instances || '?'} · draw call: ${g.draws ?? g.drawCalls ?? '?'}`,
+    ].join('\n');
+  }
+  UI.perfReport = perfReport;
+  perfEl.addEventListener('click', () => {
+    const text = perfReport();
+    if (navigator.clipboard && location.protocol !== 'file:') navigator.clipboard.writeText(text).then(() => UI.toast('Laporan prestasi disalin!', 'good')).catch(() => UI.toast(text));
+    else UI.toast('Salin dari konsol: ABCC.UI.perfReport()');
+    console.log(text);
+  });
+  function perfFrame(now, rawMs) {
+    if (!showPerf()) { if (!perfEl.hidden) perfEl.hidden = true; return; }
+    if (rawMs > 0 && rawMs < 1000) { // ignore the first frame and tab-switch gaps
+      perf.frames++; perf.ms += rawMs; perf.winFrames++; perf.winMs += rawMs;
+      perf.winWorst = Math.max(perf.winWorst, rawMs); perf.worst = Math.max(perf.worst, rawMs);
+      if (rawMs > 33.4) perf.slow++;
+    }
+    if (now - perf.shown > 500) {
+      perf.shown = now;
+      perf.fps = perf.winMs ? (perf.winFrames / perf.winMs) * 1000 : 0;
+      const g = UI.gfx?.stats?.() || {};
+      perfEl.hidden = false;
+      perfEl.className = `perf-hud ${perf.fps < 25 ? 'bad' : perf.fps < 50 ? 'slow' : ''}`;
+      perfEl.textContent = `FPS ${perf.fps.toFixed(0)} · terburuk ${perf.winWorst.toFixed(0)} ms · bina ${(g.buildMs || 0).toFixed(1)} ms · ${UI.settings.quality} · ${innerWidth}×${innerHeight}@${devicePixelRatio}`;
+      perf.winFrames = 0; perf.winMs = 0; perf.winWorst = 0;
+    }
+  }
+
   function frame(now) {
     const s = UI.s;
     const rawMs = last ? now - last : 16;
+    perfFrame(now, last ? rawMs : 0);
     const dt = last ? Math.min(0.07, rawMs / 1000) : 0;
     last = now;
     if (s.phase === 'active' && !UI.frozen) State.update(s, dt); // tests freeze time and step it by hand

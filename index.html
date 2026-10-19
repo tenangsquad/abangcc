@@ -470,17 +470,22 @@
 
     <aside class="sidebar">
       <section class="card alerts calm" id="crisisPanel">
-        <h2 class="card-title"><span>1. 🚨 Situasi panas</span><span class="count" id="crisisCount">0</span></h2>
+        <h2 class="card-title"><span>🚨 Situasi panas</span><span class="count" id="crisisCount">0</span></h2>
         <div class="crisis-list" id="crisisList"><p class="calm-note">Aman buat masa ini…</p></div>
       </section>
 
       <section class="card queue">
-        <h2 class="card-title"><span>2. 🧾 Pelanggan menunggu</span><span class="count" id="queueCount">0</span></h2>
+        <h2 class="card-title"><span>🧾 Pelanggan menunggu</span><span class="count" id="queueCount">0</span></h2>
         <div class="queue-list" id="queueList"><p class="empty">Belum ada pelanggan.</p></div>
       </section>
 
+      <section class="card jobs idle" id="jobsPanel">
+        <h2 class="card-title"><span>🧑‍🔧 Arahan Abang</span><span class="count" id="taskCount" title="Arahan yang Abang sedang buat (maks. 3)">0/3</span></h2>
+        <ol class="job-list" id="jobList"><li class="job-empty">Abang free. Tap PC atau kejadian untuk bagi arahan.</li></ol>
+      </section>
+
       <section class="card vitals">
-        <h2 class="card-title"><span>3. 📊 Status kedai</span><span class="count" id="taskCount" title="Arahan yang Abang sedang buat" hidden>0</span><span class="combo" id="comboText" title="Combo tindakan pantas">⚡ x0</span></h2>
+        <h2 class="card-title"><span>📊 Status kedai</span><span class="combo" id="comboText" title="Combo tindakan pantas">⚡ x0</span></h2>
         <div class="meter-row">
           <div class="meter" title="Reputasi: pelanggan datang lebih ramai bila tinggi."><div class="meter-head"><span>⭐ Reputasi</span><b id="hudRepValue">55</b></div><div class="meter-track"><i id="hudRepBar"></i></div></div>
           <div class="meter" title="Professionalism: kedai yang diurus profesional lebih tenang dan lebih dipercayai pegawai."><div class="meter-head"><span>🤝 Profesional</span><b id="hudProValue">75</b></div><div class="meter-track"><i id="hudProBar"></i></div></div>
@@ -495,6 +500,7 @@
 </div>
 
 <div id="modalRoot" class="modal-root"></div>
+<button type="button" id="perfHud" class="perf-hud" hidden title="Ketik untuk salin laporan prestasi"></button>
 
 <!-- scripts: classic (non-module) so the game also opens straight from file:// — order matters -->
 <script src="js/ui/loader.js"></script>
@@ -509,6 +515,7 @@
 <script src="js/state/events.js"></script>
 <script src="js/state/officer.js"></script>
 <script src="js/state/actions.js"></script>
+<script src="js/state/meta.js"></script>
 <script src="js/state/shift.js"></script>
 <script src="js/state/save.js"></script>
 <script src="js/state/index.js"></script>

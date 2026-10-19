@@ -17,6 +17,7 @@ export const STATE_FILES = [
   'js/state/events.js',
   'js/state/officer.js',
   'js/state/actions.js',
+  'js/state/meta.js',
   'js/state/shift.js',
   'js/state/save.js',
   'js/state/index.js',

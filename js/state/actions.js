@@ -140,9 +140,39 @@
   function perform(s, act, id, choice) {
     if (s.phase !== 'active') return S.fail('Buka shift dulu.');
     if (act === 'duration') return State.chooseRental(s, id, Number(choice));
+    if (act === 'autoseat') return State.quickSeat(s, id);
     if (act === 'event') return beginEventAction(s, id, choice);
     if (act === 'extend' || act === 'sendoff') return State.lingerChoice(s, id, act);
     return beginAction(s, act, id);
+  }
+
+  /** Abang's lined-up jobs in the order he will do them (the one he is on first). */
+  function taskList(s) {
+    return [s.activeTask, ...s.commands].filter(Boolean);
+  }
+
+  /** Drop a job. A queued one just disappears; the one Abang is walking to is abandoned; one he is already working on can't be. Nothing is charged until a job finishes. */
+  function cancelTask(s, taskId) {
+    if (s.activeTask?.id === taskId) {
+      if (s.activeTask.remaining !== null) return S.fail('Abang tengah buat kerja tu.');
+      s.activeTask = null;
+      s.player.destination = null;
+      s.player._routeGoal = null;
+      return S.ok('Arahan dibatalkan.');
+    }
+    const i = s.commands.findIndex((t) => t.id === taskId);
+    if (i < 0) return S.fail('Arahan tu dah selesai.');
+    s.commands.splice(i, 1);
+    return S.ok('Arahan dibatalkan.');
+  }
+
+  /** Move a waiting job one place earlier (it cannot jump ahead of the job Abang is already on). */
+  function moveTaskUp(s, taskId) {
+    const i = s.commands.findIndex((t) => t.id === taskId);
+    if (i < 0) return S.fail('Arahan tu dah mula atau selesai.');
+    if (i === 0) return S.fail('Itu sudah arahan seterusnya.');
+    [s.commands[i - 1], s.commands[i]] = [s.commands[i], s.commands[i - 1]];
+    return S.ok('Arahan didahulukan.');
   }
 
   /** Apply the effect of a finished task. */
@@ -227,5 +257,5 @@
     }
   }
 
-  Object.assign(State, { options, durationOptions, select, beginAction, beginEventAction, perform, finishAction, updatePlayer, pendingCount: pendingTasks, PC_TASKS, TASK_WORK });
+  Object.assign(State, { options, durationOptions, select, taskList, cancelTask, moveTaskUp, beginAction, beginEventAction, perform, finishAction, updatePlayer, pendingCount: pendingTasks, PC_TASKS, TASK_WORK });
 })(window.ABCC);

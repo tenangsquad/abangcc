@@ -56,6 +56,8 @@ You are **Abang**, the owner of a tiny *kedai siber*. Each day (a "shift") you m
 </tr>
 </table>
 
+> ⚡ **Shortcut:** **double-tap a customer** (or press the **⚡ Auto-duduk** button in their menu, or `A`) to seat them in one step. They get the length they asked for (★) on the nearest free PC. It's exactly as good as picking the right length yourself.
+
 > ⏱️ Sessions are short: 30 min = 10 seconds, 60 min = 16 seconds, 90 min = 22 seconds. **Customers lose patience while they wait**, so keep the queue moving.
 
 ### 2. Fix broken PCs
@@ -74,6 +76,8 @@ Tap a PC showing a problem. A small menu pops up right beside it. Pick an action
 💸 Restarting a PC while someone is using it refunds them **25%**, once per incident.
 
 <img src="tests/screenshots/14_pc_menu.png" alt="The action menu next to a PC" width="640">
+
+**Abang's job list.** Everything you tap for Abang to do lines up in the **Arahan Abang** panel on the right (up to 3 jobs). Use **↑** to send a job earlier or **✕** to cancel it, which is free, since nothing is charged until a job is done. You can't cancel the job he's already working on.
 
 ### 3. Handle trouble
 
@@ -139,6 +143,12 @@ After each successful day you're offered **two random perks**. Each one helps, a
 
 ---
 
+## 🎩 Keep your progress: the Koleksi
+
+Clear certain days and Abang unlocks new hats: 🎧 **Headphone Gamer** (clear day 3), 👒 **Topi Jerami** (day 6) and 👑 **Mahkota Raja CC** (day 10). Wear them from **🎩 Koleksi** on the main menu. They're only for looks, and they **stay unlocked even when you start a new run**. The best day you've reached is kept there too.
+
+---
+
 ## ⌨️ Controls
 
 | Action | Desktop | Phone / tablet |
@@ -147,11 +157,14 @@ After each successful day you're offered **two random perks**. Each one helps, a
 | Pause | `Space` or `Esc` | Pause button (Ⅱ) at the top |
 | Next customer in the queue | `N` | Tap them in the queue |
 | Pick duration | `1` `2` `3` | Tap 30 / 60 / 90 |
+| Seat in one step | Double-click a customer, or `A` | Double-tap a customer |
 | Zoom | Mouse wheel or `+` `-` | Pinch or buttons |
 | Pan (when zoomed) | Drag | Drag |
 | Restart the selected PC | `R` | Use the PC's menu |
 
 The camera is fixed isometric and never rotates. Zooming is optional.
+
+**Sound:** the ♫ button mutes everything. In Settings you can turn the **Muzik** (a small looping tune that gets slower and moodier at night and busier in peak hour) off separately. You hear a coin sound for every sale, a soft warning beep when a waiting customer is almost out of patience, and a fanfare when you reach the day's target.
 
 **Difficulty:** open Settings (the ⚙ button) and pick **Santai** (easy), **Biasa** (normal) or **Mencabar** (hard).
 
@@ -159,11 +172,12 @@ The camera is fixed isometric and never rotates. Zooming is optional.
 
 ## 💡 Tips for beginners
 
-- 🎯 **Match the ★ duration.** A wrong length is billed at a 38% discount, so it never beats the right one.
+- 🎯 **Match the ★ duration.** A wrong length is billed at half price, so it never beats the right one. Auto-duduk always picks ★.
 - 🚦 **Keep the queue short.** An angry customer is a lost customer.
 - 🔥 **Fix overheating first.** It's the only fault that can destroy the PC.
 - 🤝 **When in doubt, use "Tegur baik-baik".** Accusing an innocent customer hurts your reputation.
 - 🛒 **Take cheap perks early.** A second PC pays for itself fast, but watch the extra bills.
+- 📋 **Read the end-of-day report.** The first line says the biggest thing that cost you money (for example "3 customers left angry in the queue") and how to fix it.
 - ⏸️ **Pause (`Space`) when it gets hectic.** The game also pauses by itself when you switch tabs.
 
 ---
@@ -177,9 +191,10 @@ The camera is fixed isometric and never rotates. Zooming is optional.
 |---|---|
 | Play (no tools) | Double-click `index.html` or `dist/ABANG_CC_2007_ALPHA_12.html` |
 | Build the single-file bundle | `node tools/build.mjs` (no dependencies, Node 22+) |
-| Logic tests (53) | `node --test tests/state.test.mjs` |
-| Browser tests (24) | `node --test tests/browser.test.mjs` (needs Chrome or Edge; set `CHROME_PATH` if installed somewhere unusual). Screenshots go to `tests/screenshots/`. |
+| Logic tests (59) | `node --test tests/state.test.mjs` |
+| Browser tests (29) | `node --test tests/browser.test.mjs` (needs Chrome or Edge; set `CHROME_PATH` if installed somewhere unusual). Screenshots go to `tests/screenshots/`. |
 | Balance simulation | `node tests/sim.mjs 10 10` (three simulated skill levels play the whole campaign) |
+| Check speed on a phone | Add `?fps` to the address (or Settings → Tunjuk FPS) and read [docs/PHONE_TESTING.md](docs/PHONE_TESTING.md). It has not been measured on a real phone yet. |
 
 There are **no npm packages** anywhere. The browser tests drive Chrome through its DevTools protocol using Node's built-in `WebSocket`.
 

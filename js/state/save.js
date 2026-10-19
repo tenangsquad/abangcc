@@ -74,7 +74,7 @@
     s.worldEvents = s.worldEvents || [];
     s.activeIssues = s.activeIssues || [];
     s.once = s.once || {};
-    s.shiftStats = Object.assign({ served: 0, complaints: 0, repairs: 0, incidents: 0, inspections: 0, walkouts: 0, walkoutLost: 0, wrongDuration: 0, wrongLost: 0, falseAccusations: 0, pcDownSec: 0, idleWhileWaiting: 0, blackoutSec: 0 }, s.shiftStats);
+    s.shiftStats = Object.assign({ served: 0, complaints: 0, repairs: 0, incidents: 0, inspections: 0, walkouts: 0, queueWalkouts: 0, walkoutLost: 0, wrongDuration: 0, wrongLost: 0, falseAccusations: 0, pcDownSec: 0, idleWhileWaiting: 0, blackoutSec: 0 }, s.shiftStats);
     if (s.phase === 'active') s.phase = 'paused';
     return s;
   }
