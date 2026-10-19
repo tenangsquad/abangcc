@@ -4,8 +4,8 @@ Run on 2026-10-18 on Windows 11, Node 25.6, Chrome (headless, software WebGL via
 
 | Suite | Command | Result |
 |---|---|---|
-| Game logic | `node --test tests/state.test.mjs` | **51 / 51 pass** |
-| In the browser | `node --test tests/browser.test.mjs` | **23 / 23 pass** (real mouse + touch events, real WebGL) — includes the PC action menu |
+| Game logic | `node --test tests/state.test.mjs` | **59 / 59 pass** |
+| In the browser | `node --test tests/browser.test.mjs` | **29 / 29 pass** (real mouse + touch events, real WebGL) — includes the PC action menu, the customer pop-up, auto-seat, Abang's job list, the Koleksi, music and a CPU-throttled phone run |
 | Sound effects | one-off script (not committed) | 19 effects + the typing ambience play with no errors; no console errors during 6 s of live play with a blackout and a spill |
 | Balance | `node tests/sim.mjs 10 10` | see below |
 
@@ -47,6 +47,20 @@ Run on 2026-10-18 on Windows 11, Node 25.6, Chrome (headless, software WebGL via
 * At 1366×768 the failed-day report pushed "Cuba hari ini lagi" off screen. Fixed (sticky buttons, compact report).
 * On a phone the duration buttons were below the fold after selecting a customer. Fixed (Desk first in the phone dock).
 * In landscape on a phone the stage used only 52% of the height. Fixed, with a regression assertion.
+* After the layout update (bigger café, counter moved to the front-left corner, desks along the back wall) the first balance run showed day 2 failing far more often: customers had a much longer walk from the queue to a desk at their old walking speed (2.0). Fixed by raising the customer walking speed to 3.0 (`CFG.CUSTOMER_SPEED`); the simulation is back in line.
+
+## Suggestions round (auto-seat, job list, sound, report tips, Koleksi, phone readiness)
+
+Added: auto-seat (double-tap / ⚡ button / `A`), the *Arahan Abang* job list with reorder and cancel, a goal fanfare + low-patience beep + generative music (own Muzik setting), a headline with a fix at the top of every shift report, cosmetic hats unlocked across runs (*Koleksi*), and an FPS overlay (`?fps`) with a copyable performance report plus `docs/PHONE_TESTING.md`.
+New tests: logic — auto-seat, job cancel/reorder (nothing charged), one warning per customer, report headline, hat unlocks and persistence, hat unlock through a real shift (6 tests); browser — double-tap/button/key auto-seat, the jobs panel, the report headline + Koleksi, music on/off/pause, and a 6×-CPU-throttled phone run (5 tests).
+Not covered: a real phone. The throttled run proves the game keeps working under load on an emulated phone screen, **not** how a phone GPU performs. Simulation is unchanged (the scripted players don't use the new shortcuts), so it says nothing about how much easier auto-seat makes the game for a human.
+Found while testing: a typo (`s` used before it was defined) in the refresh loop broke boot — caught immediately by the page-load check.
+
+## Layout update (to-do list round)
+
+Changed: net-sales label colour, faster Abang (`ABANG_SPEED` 3.5→4.8, errands 3.1→4.2, work time ×0.85), counter moved to the front-left corner with the water dispenser and magazine rack on its old spot, desks fill the back-wall row first, bigger café (depth 10→12) with smaller desks/people (0.85→0.78), 30/60/90 pop-up on the customer (the Abang's Desk side panel is removed), loading screen 3 s.
+Tests changed: the sidebar-order check (3 panels now), the duration clicks (now on the pop-up menu), the net-sales colour check, the loader time (≥ 2.9 s). New: a customer pop-up test in the browser, a floor-plan/pathing test and a duration-options test in the logic suite.
+Simulation after the change (10 seeds, 10 days, first-try pass): Excellent 10/10 on every day but day 4 (9/10); Good 10/10, 10/10, 9, 9, 8, 9, 8, 8, 9, 8; Sloppy 4/10 on day 1 and 1/7 on day 2. The table below is from the earlier build and is kept for reference only.
 
 ## Balance simulation (`node tests/sim.mjs 10 10`)
 

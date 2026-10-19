@@ -19,14 +19,16 @@
     const s = UI.s;
     if (!ent || s.phase !== 'active') return;
     UI.menuDismissed = null; // tapping something always (re)opens its menu
+    const seating = !!(s.pendingCustomerId && s.pendingDuration && ent.kind === 'pc'); // this tap seats a customer, it is not a request for info
     const r = State.select(s, ent);
-    if (r && !r.ok && r.msg) UI.toast(r.msg, 'bad'); // successes are shown by the desk itself
+    if (r && !r.ok && r.msg) UI.toast(r.msg, 'bad'); // successes are shown by the pop-up menu itself
     UI.Sound.play(r?.ok === false ? 'bad' : 'tap');
+    UI.menuTapped = seating || window.matchMedia('(max-width: 860px)').matches ? null : `${ent.kind}:${ent.id}`; // a plain info card for a PC with nothing to fix: desktop only, never after seating
     State.save(s);
     UI.refresh(true);
   };
 
-  /** A button in Abang's Desk: duration, fix, confrontation option or event choice. */
+  /** A button in the pop-up menu: duration, fix, confrontation option or event choice. */
   UI.performFromEl = function performFromEl(el) {
     const s = UI.s;
     if (s.phase !== 'active' || el.disabled) return;
@@ -35,16 +37,42 @@
     if (r.msg && (!r.ok || act !== 'duration')) UI.toast(r.msg, r.ok ? 'good' : 'bad');
     if (r.ok) {
       UI.Sound.play(act === 'duration' ? 'tap' : 'click');
-      if (act !== 'duration' && s.selected) UI.menuDismissed = `${s.selected.kind}:${s.selected.id}`; // the choice is made: close the menu
+      if (s.selected) UI.menuDismissed = `${s.selected.kind}:${s.selected.id}`; // the choice is made: close the menu (the PC to tap next stays clear)
       State.save(s);
     } else UI.Sound.play('bad');
     UI.refresh(true);
+  };
+
+  /** "Auto-duduk": seat the customer for the ★ length on the nearest free PC, in one go. */
+  UI.quickSeat = function quickSeat(customerId) {
+    const s = UI.s;
+    if (s.phase !== 'active') return;
+    const r = State.quickSeat(s, customerId);
+    UI.toast(r.msg, r.ok ? 'good' : 'bad');
+    UI.Sound.play(r.ok ? 'tap' : 'bad');
+    if (r.ok) UI.menuDismissed = s.selected ? `${s.selected.kind}:${s.selected.id}` : null;
+    State.save(s);
+    UI.refresh(true);
+  };
+
+  /** A tap on a customer (in the room or in the queue list). A second tap on the same one within 0.4 s auto-seats them. */
+  let lastCustomerTap = { id: null, t: 0 };
+  UI.tapCustomer = function tapCustomer(id) {
+    const now = performance.now();
+    if (lastCustomerTap.id === id && now - lastCustomerTap.t < 400) {
+      lastCustomerTap = { id: null, t: 0 };
+      UI.quickSeat(id);
+      return;
+    }
+    lastCustomerTap = { id, t: now };
+    UI.select({ kind: 'customer', id });
   };
 
   UI.chooseDuration = function chooseDuration(minutes) {
     const s = UI.s;
     if (!s.pendingCustomerId || s.phase !== 'active') return;
     const r = State.perform(s, 'duration', s.pendingCustomerId, minutes);
+    if (r.ok && s.selected) UI.menuDismissed = `${s.selected.kind}:${s.selected.id}`;
     UI.toast(r.msg, r.ok ? 'good' : 'bad');
     UI.Sound.play('tap');
     UI.refresh(true);
@@ -128,7 +156,8 @@
     if (!rec || cancelled || rec.moved || !UI.gfx) return;
     if (UI.s.phase !== 'active') return;
     const hit = UI.gfx.pick(UI.s, rec.x, rec.y, { touch: rec.type !== 'mouse' });
-    if (hit) UI.select(hit);
+    if (hit?.kind === 'customer') UI.tapCustomer(hit.id);
+    else if (hit) UI.select(hit);
   };
   canvas.addEventListener('pointerup', (e) => endPointer(e, false));
   canvas.addEventListener('pointercancel', (e) => endPointer(e, true));
@@ -161,13 +190,9 @@
     const el = e.target.closest('[data-act]');
     if (el) UI.performFromEl(el);
   });
-  $('durationButtons').addEventListener('click', (e) => {
-    const el = e.target.closest('[data-act]');
-    if (el) UI.performFromEl(el);
-  });
   $('queueList').addEventListener('click', (e) => {
     const el = e.target.closest('[data-customer]');
-    if (el) UI.select({ kind: 'customer', id: Number(el.dataset.customer) });
+    if (el) UI.tapCustomer(Number(el.dataset.customer));
   });
   $('crisisList').addEventListener('click', (e) => {
     const card = e.target.closest('[data-kind]');
@@ -178,6 +203,21 @@
     UI.gfx?.setHover(card ? { kind: card.dataset.kind, id: Number(card.dataset.id) } : null);
   });
   $('crisisList').addEventListener('pointerleave', () => UI.gfx?.setHover(null));
+  $('jobList').addEventListener('click', (e) => {
+    const s = UI.s;
+    const up = e.target.closest('[data-job-up]'), del = e.target.closest('[data-job-cancel]');
+    if (!up && !del) return;
+    const r = up ? State.moveTaskUp(s, Number(up.dataset.jobUp)) : State.cancelTask(s, Number(del.dataset.jobCancel));
+    UI.toast(r.msg, r.ok ? 'good' : 'bad');
+    UI.Sound.play(r.ok ? 'click' : 'bad');
+    State.save(s);
+    UI.refresh(true);
+  });
+  $('jobList').addEventListener('pointerover', (e) => {
+    const row = e.target.closest('[data-kind]');
+    UI.gfx?.setHover(row ? { kind: row.dataset.kind, id: Number(row.dataset.id) } : null);
+  });
+  $('jobList').addEventListener('pointerleave', () => UI.gfx?.setHover(null));
   $('fallbackBoard').addEventListener('click', (e) => {
     const card = e.target.closest('[data-kind]');
     if (card) UI.select({ kind: card.dataset.kind, id: Number(card.dataset.id) });
@@ -217,6 +257,7 @@
     } else if (active && !e.repeat) {
       if (['1', '2', '3'].includes(e.key)) UI.chooseDuration(Number(e.key) * 30);
       else if (e.key === 'n' || e.key === 'N') nextCustomer();
+      else if ((e.key === 'a' || e.key === 'A') && s.pendingCustomerId) UI.quickSeat(s.pendingCustomerId);
       else if (e.key === 'r' || e.key === 'R') {
         const opt = State.options(s, s.selected).find((o) => o.act === 'restart');
         if (opt && s.selected?.kind === 'pc') UI.performFromEl({ dataset: { act: 'restart', id: String(s.selected.id) }, disabled: opt.disabled });

@@ -19,12 +19,18 @@
     $('noWebgl').hidden = false;
   });
 
+  UI.gfx?.setHat(ns.Meta.equipped());
+
   UI.s = State.getSaved() || State.create();
   if (UI.s.phase === 'prep' && UI.s.day >= 2 && !UI.s.perkDraft?.length && !UI.s.perkChoiceMade) State.draftPerks(UI.s);
   if (UI.s.phase === 'prep' && UI.s.day === 1) UI.s.dayGoal = State.calcRevenueGoal(UI.s, UI.s.day);
 
+  // browsers only allow audio after a tap/key: any of these unlocks it (iOS wants touchend)
+  for (const type of ['pointerdown', 'keydown', 'touchend']) document.addEventListener(type, () => UI.Sound.unlock(), { passive: true });
+
   /* ---------- simulation events → popups, particles and sounds ---------- */
   let lastBell = 0;
+  let lastWarn = 0;
   function handleFx() {
     const s = UI.s;
     const gfx = UI.gfx;
@@ -94,6 +100,12 @@
         case 'walkout':
           UI.Sound.play('bad');
           break;
+        case 'patienceLow':
+          if (performance.now() - lastWarn > 1500) {
+            lastWarn = performance.now();
+            UI.Sound.play('warn');
+          }
+          break;
         case 'perk':
           UI.Sound.play('perk');
           break;
@@ -109,14 +121,24 @@
   }
 
   /* ---------- panels + HUD refresh (cheap: ~4×/s and after every action) ---------- */
-  UI.deskSig = '';
   UI.refresh = function refresh(force = false) {
-    UI.renderDesk(force);
     UI.renderWorldMenu(force);
+    UI.renderJobs();
     UI.renderQueue();
     UI.renderCrises();
     UI.tickDesk();
     UI.refreshHud();
+    const s = UI.s;
+    // today's target reached: one fanfare per shift
+    if (s.phase === 'active') {
+      if (!UI.goalHit && State.shiftTakings(s) >= State.calcRevenueGoal(s, s.day)) {
+        UI.goalHit = true;
+        UI.Sound.play('goal');
+        UI.toast('🎯 Target hari ini dicapai! Teruskan untuk lebih banyak bintang.', 'good');
+      }
+    } else if (s.phase !== 'paused') UI.goalHit = false;
+    // music follows the shift: bright by day, moody at night, busier in peak hour; silent in menus and on pause
+    UI.Sound.music(s.phase === 'active' ? { night: ns.dayPart(CFG.DAY_START_MINUTES + s.elapsed * CFG.GAME_MINUTE_RATE).id === 'night', peak: !!s.peakActive } : null);
     const h = UI.hint();
     const bubble = $('hintBubble');
     bubble.hidden = !h;
@@ -154,9 +176,53 @@
     }
   }
 
+  /* ---------- performance overlay + report (for testing on real phones) ---------- */
+  const perfEl = $('perfHud');
+  const perf = { frames: 0, ms: 0, slow: 0, worst: 0, winFrames: 0, winMs: 0, winWorst: 0, fps: 0, shown: 0, sample: 0, started: 0 };
+  const showPerf = () => /[?&]fps\b/.test(location.search) || !!UI.settings.showFps;
+  function perfReport() {
+    const g = UI.gfx?.stats?.() || {};
+    const avg = perf.ms ? (perf.frames / perf.ms) * 1000 : 0;
+    return [
+      'ABANG CC 2007 — laporan prestasi',
+      `Peranti: ${navigator.userAgent}`,
+      `Skrin: ${innerWidth}x${innerHeight} @${devicePixelRatio}x · ${screen.width}x${screen.height}`,
+      `GPU: ${UI.gfx?.gpuInfo?.() || 'tiada WebGL'}`,
+      `Kualiti: ${UI.settings.quality}${UI.settings.qualityChosen ? ' (dipilih)' : ' (auto)'}`,
+      `Purata FPS: ${avg.toFixed(1)} dalam ${(perf.ms / 1000).toFixed(0)} s (${perf.frames} frame)`,
+      `Frame lambat (>33 ms): ${perf.slow} (${perf.frames ? ((perf.slow / perf.frames) * 100).toFixed(1) : 0}%) · terburuk ${perf.worst.toFixed(0)} ms`,
+      `Bina scene (JS): ${(g.buildMs || 0).toFixed(1)} ms · instance: ${g.instances || '?'} · draw call: ${g.draws ?? g.drawCalls ?? '?'}`,
+    ].join('\n');
+  }
+  UI.perfReport = perfReport;
+  perfEl.addEventListener('click', () => {
+    const text = perfReport();
+    if (navigator.clipboard && location.protocol !== 'file:') navigator.clipboard.writeText(text).then(() => UI.toast('Laporan prestasi disalin!', 'good')).catch(() => UI.toast(text));
+    else UI.toast('Salin dari konsol: ABCC.UI.perfReport()');
+    console.log(text);
+  });
+  function perfFrame(now, rawMs) {
+    if (!showPerf()) { if (!perfEl.hidden) perfEl.hidden = true; return; }
+    if (rawMs > 0 && rawMs < 1000) { // ignore the first frame and tab-switch gaps
+      perf.frames++; perf.ms += rawMs; perf.winFrames++; perf.winMs += rawMs;
+      perf.winWorst = Math.max(perf.winWorst, rawMs); perf.worst = Math.max(perf.worst, rawMs);
+      if (rawMs > 33.4) perf.slow++;
+    }
+    if (now - perf.shown > 500) {
+      perf.shown = now;
+      perf.fps = perf.winMs ? (perf.winFrames / perf.winMs) * 1000 : 0;
+      const g = UI.gfx?.stats?.() || {};
+      perfEl.hidden = false;
+      perfEl.className = `perf-hud ${perf.fps < 25 ? 'bad' : perf.fps < 50 ? 'slow' : ''}`;
+      perfEl.textContent = `FPS ${perf.fps.toFixed(0)} · terburuk ${perf.winWorst.toFixed(0)} ms · bina ${(g.buildMs || 0).toFixed(1)} ms · ${UI.settings.quality} · ${innerWidth}×${innerHeight}@${devicePixelRatio}`;
+      perf.winFrames = 0; perf.winMs = 0; perf.winWorst = 0;
+    }
+  }
+
   function frame(now) {
     const s = UI.s;
     const rawMs = last ? now - last : 16;
+    perfFrame(now, last ? rawMs : 0);
     const dt = last ? Math.min(0.07, rawMs / 1000) : 0;
     last = now;
     if (s.phase === 'active' && !UI.frozen) State.update(s, dt); // tests freeze time and step it by hand

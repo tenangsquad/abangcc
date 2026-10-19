@@ -33,7 +33,7 @@
   }
 
   /* ---------- settings (kept separate from the game save) ---------- */
-  UI.settings = { sound: true, quality: defaultQuality(), reduceMotion: false, hints: true, qualityChosen: false };
+  UI.settings = { sound: true, music: true, quality: defaultQuality(), reduceMotion: false, hints: true, qualityChosen: false };
   try {
     Object.assign(UI.settings, JSON.parse(localStorage.getItem(CFG.SETTINGS) || '{}'));
   } catch {

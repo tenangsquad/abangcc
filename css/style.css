@@ -234,14 +234,8 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .patience.mid i { background: var(--yellow); } .patience.low i { background: var(--coral); }
 .combo-row { display: flex; justify-content: space-between; margin-top: 9px; padding-top: 8px; border-top: 2.5px dashed #d9c9a4; font: 600 13px var(--font-display); color: var(--ink-2); }
 
-.desk h2 { margin: 0 0 2px; font: 700 20px/1.15 var(--font-display); }
-.desk p { margin: 3px 0; font-size: 14px; line-height: 1.4; color: var(--ink-2); }
-.desk .says { display: inline-block; margin: 4px 0; padding: 4px 10px; background: var(--white); border: 2.5px solid var(--ink); border-radius: 14px 14px 14px 3px; font-size: 14px; color: var(--ink); }
 .status-badge { display: inline-block; vertical-align: middle; margin-left: 4px; padding: 0 9px; font: 700 12px var(--font-display); letter-spacing: .04em; background: var(--mint); border: 2px solid var(--ink); border-radius: 999px; }
 .status-badge.bad { background: var(--coral); color: var(--white); } .status-badge.busy { background: var(--sky); }
-.dur-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
-.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-.action-grid:empty, .dur-grid:empty { display: none; }
 .meter-row { display: grid; gap: 7px; }
 .meter { display: grid; gap: 3px; }
 .meter-head { display: flex; justify-content: space-between; align-items: baseline; font: 600 13px var(--font-display); }
@@ -312,7 +306,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .perk small { flex: 1; font-size: 14px; line-height: 1.4; color: var(--ink-2); }
 .settlement { display: grid; grid-template-columns: 1fr auto; gap: 8px 14px; margin: 14px 0; padding: 14px 16px; background: var(--white); border: 3px solid var(--ink); border-radius: 18px; font: 600 17px var(--font-display); }
 .settlement span:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; }
-.settlement .good { color: var(--mint-d); } .settlement .bad { color: var(--coral); } .settlement .net-sales { color: var(--green); }
+.settlement .good { color: var(--mint-d); } .settlement .bad { color: var(--coral); }
 .stars { display: flex; justify-content: center; gap: 6px; margin: 8px 0 0; font-size: 54px; line-height: 1; }
 .stars span { filter: grayscale(1) opacity(.35); transform: scale(.8); }
 .stars span.on { filter: drop-shadow(0 4px 0 var(--ink)); animation: star-pop .6s var(--ease-pop) both; transform: scale(1); }
@@ -376,7 +370,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   .toast-root { bottom: 44px; } .toast { font-size: 13px; padding: 6px 12px; }
   .sidebar { display: grid; grid-template-columns: 1fr 1fr; align-content: start; gap: 10px; padding: 0 4px 12px; }
   .sidebar .card.alerts, .sidebar .card.vitals { grid-column: 1 / -1; }
-  .card { padding: 9px 10px 11px; } .desk h2 { font-size: 17px; }
+  .card { padding: 9px 10px 11px; }
   .meter-row { grid-template-columns: 1fr 1fr; gap: 6px 12px; }
   .pc-chip .tag { font-size: 10px; padding: 1px 6px 1px 4px; } .pc-chip .state { display: none; } .pc-chip .prog { width: 54px; height: 6px; }
   .person-tag .bub { font-size: 11px; }
@@ -433,7 +427,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .bd-row { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; font: 600 14px var(--font-display); }
 .bd-row b { font-variant-numeric: tabular-nums; }
 .bd-row.neg b { color: var(--coral); }
-.bd-row.total { margin: 3px 0; padding: 4px 0; border-top: 2.5px dashed #d9c9a4; border-bottom: 2.5px dashed #d9c9a4; color: var(--green); } .bd-row.total b { color: var(--green); }
+.bd-row.total { margin: 3px 0; padding: 4px 0; border-top: 2.5px dashed #d9c9a4; border-bottom: 2.5px dashed #d9c9a4; } .bd-row.total b { color: var(--mint-d); }
 .bd-foot { margin-top: 4px; font: 700 11px var(--font-body); color: var(--ink-3); }
 
 /* camera controls */
@@ -460,21 +454,34 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .crisis:disabled { opacity: 1; cursor: default; }
 .crisis.event { background: #fff7d6; } .crisis.suspicious { background: #fff0c9; } .crisis.loudvideo { background: #ffe9e4; } .crisis.fight { background: #ffdfe4; } .crisis.nomouse { background: #eaf1ff; }
 
-/* Abang's Desk */
-.desk .warn { margin: 4px 0; padding: 5px 9px; background: #fff0d6; border: 2.5px solid var(--ink); border-radius: 12px; font-size: 13px; line-height: 1.35; color: #8a2a12; }
-.desk .hint-line { font-weight: 700; color: var(--ink-2); font-size: 12px; }
-.desk .where { margin: 4px 0 2px; font-weight: 800; color: var(--ink-2); font-size: 13px; }
-.desk .cctv { margin: 4px 0; font-size: 12px; font-weight: 800; padding: 3px 9px; border-radius: 999px; border: 2.5px solid var(--ink); display: inline-block; }
-.desk .cctv.sus { background: #ffd6d6; } .desk .cctv.ok { background: #d6f5e6; }
-.desk .patience { margin: 5px 0 6px; }
+/* Arahan Abang (the jobs he has lined up) */
+.job-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.job { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 5px; background: var(--white); border: 2.5px solid var(--ink); border-radius: 14px; box-shadow: 0 2px 0 var(--ink); }
+.job.active { background: #fff3b3; }
+.job-n { flex: none; width: 24px; height: 24px; display: grid; place-content: center; font: 700 13px var(--font-display); background: var(--yellow); border: 2px solid var(--ink); border-radius: 50%; }
+.job-main { flex: 1; min-width: 0; display: grid; }
+.job-main b { font: 700 13.5px/1.2 var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.job-main small { font: 700 11px/1.2 var(--font-body); color: var(--ink-3); }
+.job-btn { flex: none; width: 28px; height: 28px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--paper-2); font: 700 13px var(--font-display); line-height: 1; padding: 0; }
+.job-btn:hover { background: var(--sky); } .job-btn[data-job-cancel]:hover { background: var(--coral); color: var(--white); }
+.job-empty { padding: 2px 2px 0; font: 700 12.5px/1.3 var(--font-body); color: var(--ink-3); }
+.count.full { background: var(--coral); color: var(--white); }
+@media (pointer: coarse) { .job-btn { width: 36px; height: 36px; } }
+
+/* PC info inside the pop-up menu */
 .btn.wanted { outline: 3px solid var(--yellow); outline-offset: 1px; }
-.action-grid .btn.stack { text-align: center; }
-.action-grid .btn.stack small { white-space: normal; line-height: 1.15; }
 .combo { font: 700 13px var(--font-display); color: var(--ink-2); letter-spacing: 0; text-transform: none; }
 
 /* perk cards */
 .perk small.up { color: #1a6a4a; } .perk small.down { color: #a1243b; } .perk small.upkeep { color: var(--ink-3); font-weight: 800; }
 .perk .own { font-style: normal; font-size: 12px; padding: 0 6px; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 999px; vertical-align: middle; }
+.headline { display: flex; align-items: center; gap: 12px; margin: 10px 0; padding: 10px 14px; background: #fff0d6; border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 3px 0 var(--ink); }
+.headline.win { background: #e1f7ec; }
+.headline .hl-ico { flex: none; width: 42px; height: 42px; display: grid; place-content: center; font-size: 24px; background: var(--white); border: 2.5px solid var(--ink); border-radius: 14px; }
+.headline b { display: block; font: 700 16px/1.25 var(--font-display); color: var(--ink); }
+.headline small { display: block; margin-top: 2px; font: 700 13px/1.35 var(--font-body); color: var(--ink-2); }
+.notice.unlock { background: #e1f7ec; }
+.perk.hat.locked { opacity: .7; } .perk.hat.locked .perk-icon { filter: grayscale(1); }
 .notice.why ul { margin: 6px 0 0; padding-left: 20px; } .notice.why li { margin: 3px 0; font-weight: 700; }
 
 /* no-WebGL fallback board */
@@ -483,14 +490,14 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .fb-pc { display: grid; justify-items: center; gap: 2px; padding: 10px 6px; background: var(--white); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 4px 0 var(--ink); font: 700 14px var(--font-display); }
 .fb-pc span { font-size: 28px; } .fb-pc small { font: 700 11px var(--font-body); color: var(--ink-3); } .fb-pc.sel { background: #fff3b3; } .fb-pc.bad { background: #ffe0dc; }
 
-/* ---------- desktop: all four panels fit one viewport (no page scroll, no sidebar scroll) ----------
-   Abang's Desk and Status Kedai never shrink; the alert list and the queue give way and scroll inside their cards. */
+/* ---------- desktop: all three panels fit one viewport (no page scroll, no sidebar scroll) ----------
+   Status Kedai never shrinks; the alert list and the queue give way and scroll inside their cards. */
 @media (min-width: 861px) {
   .sidebar { display: flex; flex-direction: column; gap: 10px; overflow: hidden; padding: 0 4px 8px 2px; }
   .sidebar .card { flex: 0 0 auto; min-height: 0; }
   .card.alerts { flex: 0 3 auto; display: flex; flex-direction: column; min-height: 58px; }
   .card.queue { flex: 1 1 130px; display: flex; flex-direction: column; min-height: 112px; }
-  .card.desk, .card.vitals { flex: 0 0 auto; }
+  .card.vitals, .card.jobs { flex: 0 0 auto; }
   .crisis-list { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; padding: 0 3px 4px 1px; scrollbar-width: thin; }
   .queue-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 3px 4px 1px; scrollbar-width: thin; }
   .meter-row { grid-template-columns: 1fr 1fr; gap: 6px 14px; }
@@ -508,16 +515,10 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   .queue-item { padding: 3px 8px 3px 5px; grid-template-columns: 32px 1fr; gap: 8px; box-shadow: 0 2px 0 var(--ink); }
   .queue-avatar { width: 32px; height: 32px; font-size: 17px; border-width: 2.5px; }
   .queue-name { font-size: 13.5px; } .patience { height: 7px; margin-top: 3px; }
-  .desk h2 { font-size: 16px; } .desk p { font-size: 12.5px; margin: 2px 0; } .desk .says { font-size: 12.5px; padding: 2px 8px; margin: 2px 0; }
-  .desk .warn { font-size: 12px; padding: 3px 8px; margin: 3px 0; }
-  .dur-grid, .action-grid { margin-top: 6px; gap: 6px; }
   .btn { min-height: 38px; padding: 5px 10px; font-size: 14px; box-shadow: 0 3px 0 var(--ink); }
   .btn.stack { padding: 4px 6px; } .btn small { font-size: 10px; }
   .meter-head { font-size: 12px; } .meter-head b { font-size: 13px; } .meter-track { height: 9px; border-width: 2px; }
   .meter-row { gap: 4px 12px; }
-}
-@media (min-width: 861px) and (max-height: 720px) {
-  .desk p { display: none; } .desk p.warn, .desk p.where, .desk p.cctv { display: block; }
 }
 
 /* ---------- phones: scene on top, contextual panels as compact strips below ---------- */
@@ -546,7 +547,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 @media (max-width: 860px) { .hint { left: 50%; transform: translateX(-50%); max-width: calc(100% - 120px); } }
 
 /* ==========================================================================
-   11. Modals that never hide their buttons, and a phone dock that puts the Desk first
+   11. Modals that never hide their buttons, and a phone dock that puts the queue first
    ========================================================================== */
 .modal-card { display: flex; flex-direction: column; }
 .modal-card > .modal-actions { position: sticky; bottom: -24px; z-index: 3; margin: 14px -28px -24px; padding: 12px 28px 22px; background: linear-gradient(to top, var(--paper) 72%, rgba(255, 248, 234, 0)); border-radius: 0 0 26px 26px; }
@@ -560,6 +561,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   .badges { margin: 8px 0; gap: 6px; } .badges span { font-size: 13px; padding: 2px 10px; }
   .notice { padding: 7px 12px; font-size: 14px; margin: 6px 0; }
   .notice.why ul { margin-top: 3px; } .notice.why li { margin: 1px 0; }
+  .headline { padding: 6px 10px; margin: 6px 0; gap: 10px; } .headline .hl-ico { width: 34px; height: 34px; font-size: 20px; } .headline b { font-size: 14.5px; } .headline small { font-size: 12px; }
   .perk { padding: 10px; gap: 4px; } .perk .perk-icon { width: 44px; height: 44px; font-size: 26px; } .perk small { font-size: 13px; line-height: 1.3; }
   .modal-card h2 { margin: 8px 0 4px; font-size: 18px; }
 }
@@ -570,8 +572,9 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 
 @media (max-width: 860px) {
   .stage { grid-template-rows: minmax(230px, 52%) minmax(0, 1fr); }
-  /* the Desk is the contextual panel: keep it right under the scene; a real alert jumps ahead of it */
-  .card.desk { order: 1; } .card.queue { order: 2; } .card.alerts { order: 3; } .card.vitals { order: 4; }
+  /* the queue sits right under the scene; a real alert jumps ahead of it */
+  .card.queue { order: 1; } .card.jobs { order: 2; } .card.alerts { order: 3; } .card.vitals { order: 4; }
+  .card.jobs.idle { display: none; }
   .card.alerts.urgent { order: 0; }
   .card.alerts.calm .crisis-list { display: none; }
   .card.alerts.calm .card-title { margin-bottom: 0; }
@@ -579,11 +582,6 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   .card.queue { padding-bottom: 6px; }
   .queue-item { min-width: 150px; }
   .queue-list { padding-bottom: 4px; }
-  .desk h2 { font-size: 16px; }
-  .desk p { font-size: 12.5px; margin: 2px 0; }
-  .desk .says { font-size: 12.5px; padding: 2px 8px; }
-  .desk .warn { font-size: 12px; padding: 3px 8px; }
-  .dur-grid, .action-grid { margin-top: 6px; gap: 6px; }
   .hint { left: 8px; transform: none; max-width: calc(100% - 132px); font-size: 12px; }
   .zoom-ctl .btn { min-width: 36px; min-height: 36px; padding: 2px 8px; }
 }
@@ -595,6 +593,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 
 /* phones held sideways: scene left, slim dock right — must come after the generic phone rules */
 @media (max-height: 520px) and (orientation: landscape) {
+  .card.jobs.idle { display: none; }
   .stage { grid-template-columns: minmax(0, 1fr) 270px; grid-template-rows: minmax(0, 1fr); }
   .sidebar { padding-bottom: 4px; }
   .card.alerts.calm { display: none; }
@@ -616,7 +615,17 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .wm-head em { font-style: normal; color: var(--coral); }
 .wm-x { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--white); font: 700 12px var(--font-display); line-height: 1; }
 .wm-hint { margin: 3px 0 0; font: 700 11.5px/1.3 var(--font-body); color: var(--ink-2); }
+.wm-info { margin: 4px 0 0; font: 700 12.5px/1.35 var(--font-body); color: var(--ink-2); }
+.wm-info b { color: var(--ink); }
+.wm-info.warn { padding: 4px 9px; background: #fff0d6; border: 2.5px solid var(--ink); border-radius: 12px; color: #8a2a12; }
+.wm-info.cctv { display: inline-block; padding: 2px 9px; border: 2.5px solid var(--ink); border-radius: 999px; font-weight: 800; color: var(--ink); }
+.wm-info.cctv.sus { background: #ffd6d6; } .wm-info.cctv.ok { background: #d6f5e6; }
+.world-menu .patience { margin: 6px 0 2px; }
 .wm-actions { display: grid; gap: 6px; margin-top: 7px; }
+.wm-actions.dur { grid-template-columns: repeat(3, 1fr); }
+.wm-actions.dur .btn { justify-content: center; text-align: center; padding: 4px 4px; }
+.wm-actions.dur .btn.stack { align-items: center; }
+.wm-actions.dur .btn[data-act="autoseat"] { grid-column: 1 / -1; }
 .wm-actions .btn { min-height: 40px; padding: 4px 10px; font-size: 14px; justify-content: flex-start; text-align: left; box-shadow: 0 3px 0 var(--ink); }
 .wm-actions .btn.stack { align-items: flex-start; }
 .wm-actions .btn small { white-space: normal; line-height: 1.15; }
@@ -699,3 +708,8 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   .ld-row { margin-bottom: 4px; font-size: 13px; }
   .ld-bar { height: 14px; }
 }
+
+/* ---------- FPS overlay (Settings → Tunjuk FPS, or add ?fps to the address). Tap it to copy a performance report. ---------- */
+.perf-hud { position: fixed; left: 6px; bottom: 6px; z-index: 90; max-width: calc(100vw - 12px); padding: 3px 8px; font: 600 11px/1.35 ui-monospace, Consolas, monospace; text-align: left; color: #8cffc1; background: rgba(20, 10, 60, .85); border: 1.5px solid rgba(140, 255, 193, .5); border-radius: 8px; }
+.perf-hud[hidden] { display: none; }
+.perf-hud.slow { color: #ffd23f; } .perf-hud.bad { color: #ff8a8a; }

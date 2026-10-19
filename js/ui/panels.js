@@ -1,9 +1,9 @@
 /* ==========================================================================
-   4d. SIDEBAR PANELS — Situasi Panas, Pelanggan Menunggu, Abang's Desk
+   4d. SIDEBAR PANELS — Situasi Panas, Pelanggan Menunggu, and the menu on the thing you tapped
    --------------------------------------------------------------------------
    Situasi Panas is an ALERT list: it says what is wrong and where, and a tap on a card
    selects that thing in the room. It never holds the resolution buttons — those live in
-   Abang's Desk, next to the object you selected.
+   the pop-up menu that opens right next to the customer, PC or object you selected.
    ========================================================================== */
 (function (ns) {
   'use strict';
@@ -111,7 +111,7 @@
     }
   };
 
-  /* --------------------------------------------------------------- Abang's Desk */
+  /* ------------------------------------------------------- menu building blocks */
   function btn(o, targetId, extra = '') {
     return `<button type="button" class="btn ${o.css || ''} ${o.sub ? 'stack' : ''}" ${o.disabled ? 'disabled' : ''} data-act="${o.act}" data-id="${targetId}" ${o.choice ? `data-choice="${o.choice}"` : ''} ${extra}>${safe(o.label)}${o.sub ? `<small>${safe(o.sub)}</small>` : ''}</button>`;
   }
@@ -120,69 +120,44 @@
     return `<div class="patience ${pct < 30 ? 'low' : pct < 60 ? 'mid' : ''}" data-patience="${c.id}" aria-label="Kesabaran ${Math.round(pct)}%"><i style="width:${pct}%"></i></div>`;
   };
 
-  /** Signature of everything that changes what the desk shows — re-render only when it changes. */
-  function deskSignature(s) {
-    const sel = s.selected;
-    const opts = sel?.kind === 'customer' ? '' : State.options(s, sel).map((o) => o.act + (o.choice || '') + (o.disabled ? '!' : '')).join(',');
-    const p = sel?.kind === 'pc' ? byId(s.pcs, sel.id) : null;
-    const ev = p ? (s.activeIssues || []).find((e) => e.pcId === p.id || e.partnerPcId === p.id) : null;
-    return [s.phase, sel?.kind, sel?.id, s.pendingCustomerId, s.pendingDuration, opts, p && [p.status, p.fault, p.issue, p.customerId, Math.floor(p.health / 5), p.lingerTime > 0 ? 1 : 0].join(''), ev && ev.searched ? 's' : '', ev && ev.cctvHint != null ? 'c' : '', State.pendingCount(s)].join('|');
-  }
-
-  UI.renderDesk = function renderDesk(force) {
-    const s = UI.s;
-    const sig = deskSignature(s);
-    if (!force && sig === UI.deskSig) return;
-    UI.deskSig = sig;
-
-    const pend = s.pendingCustomerId ? byId(s.customers, s.pendingCustomerId) : null;
-    const sel = s.selected;
-    let html = '', durations = '', actions = '';
-
-    if (pend && sel?.kind === 'customer' && ['waiting', 'arriving'].includes(pend.status)) {
-      const wanted = pend.requestedMinutes;
-      html = `<h2>${safe(pend.emoji)} ${safe(pend.name)}</h2><span class="says">“Bang, ${wanted} minit!”</span>
-        ${patienceBar(pend)}
-        <p>${s.pendingDuration ? `✅ ${s.pendingDuration} min dipilih. <b>Sekarang tap PC kosong</b> yang berkelip hijau.` : 'Pilih tempoh sewaan dahulu ↓ (★ = permintaan pelanggan)'}</p>`;
-      durations = State.durationOptions(s, pend.id).map((d) => `<button type="button" class="btn stack ${d.chosen ? 'mint' : 'paper'} ${d.wanted ? 'wanted' : ''}" data-act="duration" data-id="${pend.id}" data-choice="${d.minutes}">${d.minutes} MIN<small>${fmtMoney(d.price)} · <kbd>${d.minutes / 30}</kbd>${d.wanted ? ' ★' : ''}</small></button>`).join('');
-    } else if (sel?.kind === 'event' && State.eventById(s, sel.id)) {
-      const ev = State.eventById(s, sel.id);
-      const def = EVENTS[ev.type];
-      html = `<h2>${safe(def.emoji)} ${safe(def.title)}</h2><span class="says">${safe(def.say)}</span>
-        <p class="where">📍 ${safe(whereOf(s, ev))} · <b data-evtimer="${ev.id}">${Math.ceil(ev.time)}</b>s</p>`;
-      html += '<p class="hint-line">👆 Pilihan ada pada menu di atas objek itu dalam bilik.</p>';
-    } else {
-      const p = byId(s.pcs, sel?.id || 1);
-      if (!p) html = '<h2>Pilih PC, pelanggan atau kejadian</h2>';
-      else {
-        const occupant = byId(s.customers, p.customerId);
-        const stateLabel = p.fault ? [FAULTS[p.fault].short, 'bad'] : p.issue ? ['MASALAH', 'bad'] : p.lingerTime > 0 ? ['LEPAK', 'busy'] : p.status === 'busy' ? ['MAIN', 'busy'] : p.status === 'job' ? ['KERJA', 'busy'] : ['SEDIA', ''];
-        const ev = (s.activeIssues || []).find((e) => e.pcId === p.id || e.partnerPcId === p.id);
-        html = `<h2>🖥️ PC ${pad2(p.id)}<span class="status-badge ${stateLabel[1]}">${stateLabel[0]}</span></h2>
-          <p>Keadaan <b>${Math.round(p.health)}%</b> · Tier ${p.tier}${occupant ? ` · ${safe(occupant.emoji)} ${safe(occupant.name)}` : ''}</p>`;
-        if (p.fault && p.status === 'fault') html += `<p class="warn">${FAULTS[p.fault].icon} ${FAULTS[p.fault].label}.${p.fault === 'hardware' ? ' Perlu repair!' : ' Pilih tindakan pada menu atas PC.'}</p>`;
-        else if (p.issue && ev) {
-          const info = ISSUES[ev.type];
-          html += `<p class="warn">${safe(PC_ISSUE_ICON[ev.type])} <b>${safe(info.title)}</b> · <b data-evtimer="pc${p.id}">${Math.ceil(ev.time)}</b>s<br><span class="hint-line">${safe(info.hint)}</span></p>`;
-          if (ev.type === 'suspicious' && ev.cctvHint != null) html += `<p class="cctv ${ev.cctvHint ? 'sus' : 'ok'}">📷 CCTV: ${ev.cctvHint ? 'gerak-geri nampak tak kena' : 'nampak biasa-biasa saja'} <small>(tak 100% tepat)</small></p>`;
-        } else if (p.lingerTime > 0) html += `<p class="warn">🌙 ${safe(occupant?.name)} masih lepak. Sambung atau suruh balik?</p>`;
-        else if (occupant) html += `<p>Sedang main · <b data-evtimer="play${p.id}">${Math.ceil(Math.max(0, p.occupiedSeconds))}</b>s lagi.</p>`;
-        else if (p.status === 'job') html += `<p>🔧 ${safe(p.job?.type || 'kerja')} sedang berjalan…</p>`;
-        else html += '<p>Tap pelanggan di queue, pilih minit, kemudian tap PC ini.</p>';
-      }
+  /* ------------------------------------------------------------ Arahan Abang */
+  const TASK_NAME = { restart: '↻ Restart', repair: '🔧 Repair', cool: '❄️ Sejukkan', reset: '📡 Reset sambungan', soft: '🗣️ Tegur baik-baik', harsh: '📢 Tuduh & halau', warn: '🔊 Tegur', calm: '🕊️ Leraikan', eject: '👋 Halau', close: '✖️ Tutup laman', search: '🔍 Geledah', replace: '🛒 Mouse baru' };
+  function taskText(s, t) {
+    if (t.entityKind === 'event') {
+      const ev = State.eventById(s, t.entityId);
+      if (!ev) return { text: 'Kejadian dah tamat', target: null };
+      const ch = EVENTS[ev.type].choices.find((c) => c.id === t.opts?.choice);
+      return { text: `${EVENTS[ev.type].emoji} ${ch ? ch.label.replace(/^\S+\s/, '') : EVENTS[ev.type].title}`, sub: EVENTS[ev.type].title, target: { kind: 'event', id: ev.id } };
     }
-    const pending = State.pendingCount(s);
-    $('taskCount').hidden = !pending;
-    setText($('taskCount'), `${pending}/${CFG.MAX_COMMANDS}`);
-    $('selectionPanel').innerHTML = html;
-    $('durationButtons').innerHTML = durations;
-    $('actionButtons').innerHTML = actions;
+    return { text: `${TASK_NAME[t.kind] || t.kind} · PC ${pad2(t.entityId)}`, target: { kind: 'pc', id: t.entityId } };
+  }
+  let jobKey = '';
+  /** The list of jobs Abang has lined up (max 3): what he is on, what is waiting, with reorder / cancel. */
+  UI.renderJobs = function renderJobs() {
+    const s = UI.s;
+    const tasks = State.taskList(s);
+    const key = tasks.map((t, i) => `${t.id}:${i}:${t === s.activeTask ? (t.remaining === null ? 'w' : 'k') : 'q'}`).join('|');
+    $('jobsPanel').classList.toggle('idle', !tasks.length);
+    setText($('taskCount'), `${tasks.length}/${CFG.MAX_COMMANDS}`);
+    $('taskCount').classList.toggle('full', tasks.length >= CFG.MAX_COMMANDS);
+    if (key === jobKey) return;
+    jobKey = key;
+    $('jobList').innerHTML = tasks.length
+      ? tasks.map((t, i) => {
+          const info = taskText(s, t);
+          const active = t === s.activeTask;
+          const state = active ? (t.remaining === null ? '🚶 menuju…' : '🔧 sedang buat') : i === 1 && s.activeTask ? '⏳ seterusnya' : `⏳ #${i + 1}`;
+          const canUp = !active && s.commands.indexOf(t) > 0;
+          const canCancel = !(active && t.remaining !== null);
+          return `<li class="job ${active ? 'active' : ''}" ${info.target ? `data-kind="${info.target.kind}" data-id="${info.target.id}"` : ''}><span class="job-n">${i + 1}</span><span class="job-main"><b>${safe(info.text)}</b><small>${state}</small></span>${canUp ? `<button type="button" class="job-btn" data-job-up="${t.id}" title="Dahulukan" aria-label="Dahulukan arahan ${i + 1}">↑</button>` : ''}${canCancel ? `<button type="button" class="job-btn" data-job-cancel="${t.id}" title="Batalkan" aria-label="Batalkan arahan ${i + 1}">✕</button>` : ''}</li>`;
+        }).join('')
+      : '<li class="job-empty">Abang free. Tap PC atau kejadian untuk bagi arahan.</li>';
   };
 
-  /** Live numbers in the desk (countdowns, patience bars) without rebuilding the buttons. */
+  /** Live numbers in the pop-up menu (countdowns, patience bar) without rebuilding its buttons. */
   UI.tickDesk = function tickDesk() {
     const s = UI.s;
-    for (const el of document.querySelectorAll('#selectionPanel [data-evtimer], #worldMenu [data-evtimer]')) {
+    for (const el of document.querySelectorAll('#worldMenu [data-evtimer]')) {
       const id = el.dataset.evtimer;
       let v = null;
       if (id.startsWith('pc')) v = (s.activeIssues || []).find((e) => e.pcId === Number(id.slice(2)) || e.partnerPcId === Number(id.slice(2)))?.time;
@@ -190,7 +165,7 @@
       else v = State.eventById(s, Number(id))?.time;
       if (v != null) setText(el, String(Math.ceil(Math.max(0, v))));
     }
-    for (const el of $('selectionPanel').querySelectorAll('[data-patience]')) {
+    for (const el of $('worldMenu').querySelectorAll('[data-patience]')) {
       const c = byId(s.customers, Number(el.dataset.patience));
       if (!c) continue;
       const pct = State.patiencePct(c);
@@ -200,48 +175,72 @@
     }
   };
 
-  /* ------------------------------------------------- the menu on the PC itself */
+  /* ------------------------------------------- the menu on the thing you tapped */
   UI.menuDismissed = null;
+  UI.menuTapped = null; // what the player last tapped, so a default selection never pops an info card by itself
   UI.menuTarget = null;
   const menuKey = (sel) => (sel ? `${sel.kind}:${sel.id}` : null);
   let menuSig = '';
 
   /**
-   * Actions live on the thing you clicked: tap a PC (or a door crowd / puddle / fuse box) and its choices
-   * pop up right there in the room. The sidebar Desk only describes what you selected.
+   * Actions live on the thing you clicked: tap a customer (30 / 60 / 90 min), a PC, or a door crowd / puddle /
+   * fuse box and its choices pop up right there in the room. There is no separate side panel for them.
    */
   UI.renderWorldMenu = function renderWorldMenu(force) {
     const s = UI.s;
     const el = $('worldMenu');
     const sel = s.selected;
     let opts = [];
-    let title = '', hint = '', timerId = null, timer = 0;
-    if (s.phase === 'active' && (sel?.kind === 'pc' || sel?.kind === 'event')) {
+    let title = '', hint = '', info = '', infoSig = '', timerId = null, timer = 0, mode = '', showEmpty = false;
+    if (s.phase === 'active' && sel?.kind === 'customer') {
+      const c = byId(s.customers, sel.id);
+      if (c && c.id === s.pendingCustomerId && ['waiting', 'arriving'].includes(c.status)) {
+        mode = 'dur';
+        title = `${c.emoji} ${c.name}`;
+        hint = `“Bang, ${c.requestedMinutes} minit!” · ★ = permintaan pelanggan`;
+        info = patienceBar(c);
+        opts = State.durationOptions(s, c.id).map((d) => ({ act: 'duration', choice: d.minutes, label: `${d.minutes} MIN${d.wanted ? ' ★' : ''}`, sub: `${fmtMoney(d.price)} · tekan ${d.minutes / 30}`, css: `${d.chosen ? 'mint' : 'paper'} ${d.wanted ? 'wanted' : ''}` }));
+        opts.push({ act: 'autoseat', label: '⚡ Auto-duduk', sub: `★ ${c.requestedMinutes} min + PC terdekat · tekan A · atau tap dua kali`, css: 'sky', disabled: !State.idlePCs(s).length || s.powerOutage > 0 });
+      }
+    } else if (s.phase === 'active' && (sel?.kind === 'pc' || sel?.kind === 'event')) {
       opts = State.options(s, sel);
       if (sel.kind === 'pc') {
         const p = byId(s.pcs, sel.id);
         const ev = (s.activeIssues || []).find((e) => e.pcId === sel.id || e.partnerPcId === sel.id);
+        const occupant = p && byId(s.customers, p.customerId);
         if (p?.fault && p.status === 'fault') title = `${FAULTS[p.fault].icon} PC ${pad2(p.id)} · ${FAULTS[p.fault].label}`;
         else if (p?.issue && ev) { title = `${PC_ISSUE_ICON[ev.type]} PC ${pad2(p.id)} · ${ISSUES[ev.type].title}`; timerId = `pc${p.id}`; timer = ev.time; hint = ISSUES[ev.type].hint; }
         else if (p?.lingerTime > 0) title = `🌙 PC ${pad2(p.id)} · Pelanggan lepak`;
         else title = `🖥️ PC ${pad2(p.id)}`;
+        if (p) {
+          showEmpty = true; // a plain tap on a PC still tells you how it is doing
+          infoSig = [p.status, p.fault, p.issue, p.customerId, Math.floor(p.health / 5), p.lingerTime > 0 ? 1 : 0, ev?.cctvHint, p.job?.type].join('');
+          info = `<p class="wm-info">Keadaan <b>${Math.round(p.health)}%</b> · Tier ${p.tier}${occupant ? ` · ${safe(occupant.emoji)} ${safe(occupant.name)}` : ''}</p>`;
+          if (p.fault && p.status === 'fault' && p.fault === 'hardware') info += '<p class="wm-info warn">Hardware rosak — perlu repair!</p>';
+          if (ev?.type === 'suspicious' && ev.cctvHint != null) info += `<p class="wm-info cctv ${ev.cctvHint ? 'sus' : 'ok'}">📷 CCTV: ${ev.cctvHint ? 'gerak-geri nampak tak kena' : 'nampak biasa-biasa saja'} <small>(tak 100% tepat)</small></p>`;
+          if (!p.fault && !p.issue && !(p.lingerTime > 0)) {
+            if (occupant) info += `<p class="wm-info">Sedang main · <b data-evtimer="play${p.id}">${Math.ceil(Math.max(0, p.occupiedSeconds))}</b>s lagi.</p>`;
+            else if (p.status === 'job') info += `<p class="wm-info">🔧 ${safe(p.job?.type || 'kerja')} sedang berjalan…</p>`;
+            else if (p.status === 'free') info += '<p class="wm-info">Kosong. Tap pelanggan, pilih minit, kemudian tap PC ini.</p>';
+          }
+        }
       } else {
         const ev = State.eventById(s, sel.id);
         if (ev) { title = `${EVENTS[ev.type].emoji} ${EVENTS[ev.type].title}`; timerId = String(ev.id); timer = ev.time; hint = EVENTS[ev.type].say; }
       }
     }
     const key = menuKey(sel);
-    const show = opts.length > 0 && UI.menuDismissed !== key;
+    const show = (opts.length > 0 || (showEmpty && title && UI.menuTapped === key)) && UI.menuDismissed !== key;
     if (!show) {
       if (!el.hidden) { el.hidden = true; menuSig = ''; }
       UI.menuTarget = null;
       return;
     }
-    const sig = key + '|' + opts.map((o) => o.act + (o.choice || '') + (o.disabled ? '!' : '')).join(',');
+    const sig = key + '|' + opts.map((o) => o.act + (o.choice || '') + (o.disabled ? '!' : '')).join(',') + '|' + infoSig;
     if (force || sig !== menuSig) {
       menuSig = sig;
-      const id = sel.kind === 'event' ? sel.id : sel.id;
-      el.innerHTML = `<div class="wm-head"><b>${safe(title)}${timerId ? ` · <em data-evtimer="${timerId}">${Math.ceil(timer)}</em>s` : ''}</b><button type="button" class="wm-x" data-close aria-label="Tutup menu">✕</button></div>${hint ? `<div class="wm-hint">${safe(hint)}</div>` : ''}<div class="wm-actions">${opts.map((o) => btn(o, id)).join('')}</div>`;
+      const id = sel.id;
+      el.innerHTML = `<div class="wm-head"><b>${safe(title)}${timerId ? ` · <em data-evtimer="${timerId}">${Math.ceil(timer)}</em>s` : ''}</b><button type="button" class="wm-x" data-close aria-label="Tutup menu">✕</button></div>${hint ? `<div class="wm-hint">${safe(hint)}</div>` : ''}${info}${opts.length ? `<div class="wm-actions ${mode}">${opts.map((o) => btn(o, id)).join('')}</div>` : ''}`;
     }
     el.hidden = false;
     UI.menuTarget = { kind: sel.kind, id: sel.id };

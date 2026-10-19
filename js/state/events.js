@@ -4,7 +4,7 @@
    An event is something you can walk up to: people waiting at the door (gang, mak,
    download, truancy, LAN group, the inspecting officer), the fuse box (blackout), a
    puddle (spill) or a suspect by the snack machine (snack theft). The player selects
-   it in the 3D room — or taps "Tengok" in Situasi Panas — and chooses in Abang's Desk.
+   it in the 3D room — or taps "Tengok" in Situasi Panas — and chooses in the pop-up menu on it.
    Most choices send Abang walking first; the outcome lands when he arrives.
    ========================================================================== */
 (function (ns) {
@@ -92,7 +92,7 @@
 
   /* ---------- choices ---------- */
 
-  /** Choices for Abang's Desk, with disabled flags (cost) already applied. */
+  /** Choices for the pop-up menu, with disabled flags (cost) already applied. */
   function eventOptions(s, ev) {
     const def = EVENTS[ev.type];
     return def.choices.map((ch) => ({

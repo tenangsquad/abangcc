@@ -138,6 +138,26 @@
     return S.ok(exact ? 'Sewaan berjaya!' : 'Salah masa — pelanggan dapat potongan harga.');
   }
 
+  /**
+   * One-step seating ("auto-duduk"): book the length the customer asked for (★) and give them the free PC that is
+   * nearest to them. Same rules as doing it by hand, so it can never pay more or less than the correct manual pick.
+   */
+  function quickSeat(s, customerId) {
+    if (s.phase !== 'active') return S.fail('Buka shift dulu.');
+    const c = byId(s.customers, customerId);
+    if (!c || !QUEUE_STATES.includes(c.status)) return S.fail('Pelanggan dah tak menunggu.');
+    if (s.powerOutage > 0) return S.fail('Elektrik tengah padam!');
+    const free = idlePCs(s);
+    if (!free.length) return S.fail('Tiada PC kosong sekarang.');
+    const dist = (p) => Math.hypot(ROOM.seatFor(p).x - c.x, ROOM.seatFor(p).y - c.y);
+    const pc = free.reduce((best, p) => (dist(p) < dist(best) - 1e-6 ? p : best), free[0]);
+    const r = chooseRental(s, c.id, c.requestedMinutes);
+    if (!r.ok) return r;
+    const done = assignToPC(s, pc.id);
+    if (!done.ok) return done;
+    return S.ok(`⚡ ${c.name}: ${c.requestedMinutes} min di PC ${pc.id}.`);
+  }
+
   function bumpWrong(s, c, minutes, info) {
     S.bump(s, 'rep', RENTAL.wrongRep);
     s.shiftStats.complaints++;
@@ -251,7 +271,7 @@
   function updatePeople(s, dt) {
     const drain = S.patienceDrain(s);
     for (const c of s.customers) {
-      S.updateMove(c, dt, c.status === 'event' ? 2.2 : 2.0);
+      S.updateMove(c, dt, c.status === 'event' ? 2.2 : CFG.CUSTOMER_SPEED);
       c.sitBlend = clamp((c.sitBlend || 0) + (c.status === 'playing' ? dt * 3.8 : -dt * 5.4), 0, 1);
 
       if (c.status === 'arriving' && !c.destination) c.status = 'waiting';
@@ -282,10 +302,15 @@
         // Stand in line facing the counter (a slight turn so the face stays readable from the camera).
         if (!c.destination) c.facing = (c.facing ?? 0) + ns.shortestAngle(c.facing ?? 0, -1.2) * (1 - Math.exp(-6 * dt));
         c.patience -= dt * drain;
+        if (c.patience > 0 && !c.lowWarned && c.patience / Math.max(1, c.patienceMax) < 0.25) {
+          c.lowWarned = true; // one warning beep per customer
+          S.emit('patienceLow', { customerId: c.id });
+        }
         if (c.patience <= 0) {
           releaseCustomer(s, c, `${c.name} bosan tunggu dan balik.`);
           S.bump(s, 'rep', -2);
           s.shiftStats.walkouts++;
+          s.shiftStats.queueWalkouts++;
           s.shiftStats.walkoutLost += S.priceFor(c.requestedMinutes, { tier: 1 }, c.game);
           S.emit('walkout', { customerId: c.id });
         }
@@ -300,5 +325,5 @@
   }
 
   Object.assign(S, { inQueue, idlePCs, queueCap, patiencePct, makeCustomer, compactQueue, joinQueue, releaseCustomer, refreshActs });
-  Object.assign(State, { spawn, chooseRental, assignToPC, assignCustomer, inQueue, idlePCs, patiencePct, releaseCustomer, updatePeople, queueCap: S.queueCap });
+  Object.assign(State, { spawn, chooseRental, assignToPC, quickSeat, assignCustomer, inQueue, idlePCs, patiencePct, releaseCustomer, updatePeople, queueCap: S.queueCap });
 })(window.ABCC);

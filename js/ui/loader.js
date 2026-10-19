@@ -3,13 +3,13 @@
    --------------------------------------------------------------------------
    The markup (wallpaper + bar) is plain HTML in index.html so it paints before any script runs.
    This file only drives the bar and removes the screen. It stays up for at least MIN_MS so the
-   wallpaper is actually seen (≈1.7 s), then fades out once main.js calls Loader.done().
+   wallpaper is actually seen (≈3 s), then fades out once main.js calls Loader.done().
    Skip it with ?noloader in the address, or { "noLoader": true } in the saved settings (tests do this).
    ========================================================================== */
 (function (ns) {
   'use strict';
 
-  const MIN_MS = 1700; // the loader is on screen at least this long
+  const MIN_MS = 3000; // the loader is on screen at least this long
   const FADE_MS = 450;
   const GIVE_UP_MS = 7000; // if the game never reports ready (a script error), don't trap the player behind the splash
 

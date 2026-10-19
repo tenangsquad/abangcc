@@ -8,7 +8,7 @@
   const S = ns.S;
   const State = (ns.State = ns.State || {});
 
-  const newStats = () => ({ served: 0, complaints: 0, repairs: 0, incidents: 0, inspections: 0, walkouts: 0, walkoutLost: 0, wrongDuration: 0, wrongLost: 0, falseAccusations: 0, pcDownSec: 0, idleWhileWaiting: 0, blackoutSec: 0 });
+  const newStats = () => ({ served: 0, complaints: 0, repairs: 0, incidents: 0, inspections: 0, walkouts: 0, queueWalkouts: 0, walkoutLost: 0, wrongDuration: 0, wrongLost: 0, falseAccusations: 0, pcDownSec: 0, idleWhileWaiting: 0, blackoutSec: 0 });
 
   function create(seed) {
     return {
@@ -164,21 +164,38 @@
     return true;
   }
 
-  /** The "why did we miss it" lines on a failed shift report, biggest loss first. */
-  function explainShortfall(s, b) {
+  /** Everything that cost the shop money, biggest first, each with a one-line fix. Feeds the report's headline and its "why" list. */
+  function leakLines(s, b) {
     const st = s.shiftStats;
     const lines = [];
-    const refundByKind = {};
-    for (const e of s.shiftLedger) if (e.cat === 'refund') refundByKind[e.kind] = (refundByKind[e.kind] || 0) - e.amount;
-    if (-b.refunds > 0) lines.push({ cost: -b.refunds, icon: '↩️', text: `Refund RM${(-b.refunds / 100).toFixed(2)} (restart, salah tuduh, PC rosak) mengurangkan jualan.` });
-    if (st.walkouts > 0) lines.push({ cost: st.walkoutLost || st.walkouts * 150, icon: '🚶', text: `${st.walkouts} pelanggan balik sebelum sempat main — kira-kira ${fmtMoney(st.walkoutLost || st.walkouts * 150)} jualan hilang.` });
-    if (st.wrongDuration > 0) lines.push({ cost: st.wrongLost, icon: '⏱️', text: `${st.wrongDuration} kali tempoh sewaan salah — ${fmtMoney(st.wrongLost)} hilang.` });
-    if (st.falseAccusations > 0) lines.push({ cost: 300 * st.falseAccusations, icon: '😬', text: `${st.falseAccusations} salah tuduh — pelanggan keluar dan reputasi jatuh.` });
-    if (st.pcDownSec > 20) lines.push({ cost: st.pcDownSec * 8, icon: '🔧', text: `PC rosak/diselenggara sejumlah ${Math.round(st.pcDownSec)} saat-PC — kapasiti terbuang.` });
-    if (st.idleWhileWaiting > 12) lines.push({ cost: st.idleWhileWaiting * 10, icon: '🖥️', text: `PC kosong ${Math.round(st.idleWhileWaiting)} saat-PC ketika pelanggan menunggu. Assign lebih cepat!` });
-    if (st.blackoutSec > 3) lines.push({ cost: st.blackoutSec * 20, icon: '⚡', text: `Blackout ${Math.round(st.blackoutSec)} saat menghentikan semua sewaan.` });
-    if (st.served === 0) lines.push({ cost: 9999, icon: '🧾', text: 'Tiada pelanggan dilayan langsung.' });
-    return lines.sort((a, b2) => b2.cost - a.cost).slice(0, 3).map(({ icon, text }) => ({ icon, text }));
+    const refunded = -b.refunds;
+    const queueWalk = st.queueWalkouts || 0;
+    const faultWalk = Math.max(0, (st.walkouts || 0) - queueWalk);
+    const walkCost = (n) => (st.walkouts ? (st.walkoutLost || st.walkouts * 150) * (n / st.walkouts) : 0);
+    if (refunded > 0) lines.push({ cost: refunded, icon: '↩️', text: `Refund RM${(refunded / 100).toFixed(2)} (restart, salah tuduh, PC rosak) mengurangkan jualan.`, head: `Refund ${fmtMoney(refunded)} makan jualan`, tip: 'Kalau PC panas atau internet putus, guna Sejukkan / Reset (percuma, tiada refund).' });
+    if (queueWalk > 0) lines.push({ cost: walkCost(queueWalk) || queueWalk * 150, icon: '🚶', text: `${queueWalk} pelanggan balik sebelum sempat main — kira-kira ${fmtMoney(walkCost(queueWalk) || queueWalk * 150)} jualan hilang.`, head: `${queueWalk} pelanggan balik marah sebab beratur terlalu lama`, tip: 'Layan yang bar kesabarannya paling merah dulu. Tap dua kali pelanggan = auto-duduk, lebih pantas.' });
+    if (faultWalk > 0) lines.push({ cost: walkCost(faultWalk) || faultWalk * 150, icon: '🖥️', text: `${faultWalk} pelanggan balik sebab PC mereka rosak.`, head: `${faultWalk} pelanggan balik sebab PC rosak`, tip: 'Baiki PC yang ada pelanggan dahulu. Rak Spare Parts mempercepatkan repair.' });
+    if (st.wrongDuration > 0) lines.push({ cost: st.wrongLost, icon: '⏱️', text: `${st.wrongDuration} kali tempoh sewaan salah — ${fmtMoney(st.wrongLost)} hilang.`, head: `${st.wrongDuration} kali tempoh sewaan salah (−${fmtMoney(st.wrongLost)})`, tip: 'Pilih tempoh bertanda ★, atau guna auto-duduk yang sentiasa pilih ★.' });
+    if (st.falseAccusations > 0) lines.push({ cost: 300 * st.falseAccusations, icon: '😬', text: `${st.falseAccusations} salah tuduh — pelanggan keluar dan reputasi jatuh.`, head: `${st.falseAccusations} pelanggan dituduh salah`, tip: 'Bila tak pasti, pilih Tegur baik-baik. CCTV memberi petunjuk (tak 100% tepat).' });
+    if (st.pcDownSec > 20) lines.push({ cost: st.pcDownSec * 8, icon: '🔧', text: `PC rosak/diselenggara sejumlah ${Math.round(st.pcDownSec)} saat-PC — kapasiti terbuang.`, head: `PC tak dapat digunakan ${Math.round(st.pcDownSec)} saat-PC`, tip: 'Baiki PC rosak cepat. Repair makan masa, jadi beri arahan awal.' });
+    if (st.idleWhileWaiting > 12) lines.push({ cost: st.idleWhileWaiting * 10, icon: '🖥️', text: `PC kosong ${Math.round(st.idleWhileWaiting)} saat-PC ketika pelanggan menunggu. Assign lebih cepat!`, head: `PC kosong ${Math.round(st.idleWhileWaiting)} saat-PC ketika orang menunggu`, tip: 'Assign terus. Tap dua kali pelanggan untuk auto-duduk.' });
+    if (st.blackoutSec > 3) lines.push({ cost: st.blackoutSec * 20, icon: '⚡', text: `Blackout ${Math.round(st.blackoutSec)} saat menghentikan semua sewaan.`, head: `Blackout ${Math.round(st.blackoutSec)} saat`, tip: 'Terus ke kotak fius bila lampu padam. RM8 itu murah berbanding jualan yang hilang.' });
+    if (st.served === 0) lines.push({ cost: 9999, icon: '🧾', text: 'Tiada pelanggan dilayan langsung.', head: 'Tiada pelanggan dilayan', tip: 'Tap pelanggan di queue, pilih minit, kemudian tap PC kosong.' });
+    return lines.sort((a, b2) => b2.cost - a.cost);
+  }
+
+  /** The "why did we miss it" lines on a failed shift report, biggest loss first. */
+  function explainShortfall(s, b) {
+    return leakLines(s, b).slice(0, 3).map(({ icon, text }) => ({ icon, text }));
+  }
+
+  /** One line for the top of every shift report: the main thing that went wrong (or, on a good day, what still leaked) and how to fix it. */
+  function shiftHeadline(s, b, goalMet) {
+    const top = leakLines(s, b)[0];
+    if (top) return { kind: goalMet ? 'win' : 'fail', icon: top.icon, text: top.head, tip: top.tip };
+    return goalMet
+      ? { kind: 'win', icon: '🌟', text: 'Hari yang bersih — tiada kebocoran besar.', tip: 'Beli perk baru untuk sasaran yang makin tinggi.' }
+      : { kind: 'fail', icon: '📉', text: 'Kedai kurang ramai hari ini.', tip: 'Tiada kesilapan besar. Poster Promosi atau lebih banyak PC menarik dan melayan lebih ramai pelanggan.' };
   }
 
   function endShift(s) {
@@ -241,6 +258,7 @@
       net: income - paid.bills - expense,
       shortfall: Math.max(0, goal - income),
       reasons: goalMet ? [] : explainShortfall(s, b),
+      headline: shiftHeadline(s, b, goalMet),
       endingCash: s.cash,
       combo: s.bestCombo,
       heroSaved: s.heroSaved,
@@ -256,6 +274,7 @@
       // 1–3 stars: 1 = goal missed, 2 = goal met, 3 = goal beaten by 40% with a healthy reputation.
       stars: !goalMet ? 1 : income >= goal * 1.4 && s.rep >= 55 ? 3 : 2,
     };
+    report.unlocked = goalMet && ns.Meta ? ns.Meta.recordDay(s.day, report.stars).map((h) => h.id) : []; // cosmetic hats kept across runs
     s.lastReport = report;
     s.reports.push(report);
     s.dayFailed = !goalMet;
