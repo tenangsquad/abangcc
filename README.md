@@ -158,11 +158,13 @@ Clear certain days and Abang unlocks new hats: 🎧 **Headphone Gamer** (clear d
 | Next customer in the queue | `N` | Tap them in the queue |
 | Pick duration | `1` `2` `3` | Tap 30 / 60 / 90 |
 | Seat in one step | Double-click a customer, or `A` | Double-tap a customer |
-| Zoom | Mouse wheel or `+` `-` | Pinch or buttons |
+| Zoom | Mouse wheel or `+` `-` | Pinch |
 | Pan (when zoomed) | Drag | Drag |
 | Restart the selected PC | `R` | Use the PC's menu |
 
 The camera is fixed isometric and never rotates. Zooming is optional.
+
+**On a phone:** hold it **sideways**. The game switches to a phone layout by itself: the 3D shop fills the whole screen, with the cash and clock top-left, the daily target and buttons top-right, the waiting queue bottom-left and Abang's tasks and shop status bottom-right. Held upright you get a "Putar telefon" card and the shift pauses until you turn it. (Android Chrome also goes fullscreen and locks to landscape on your first tap; iPhone Safari can't lock the screen, so turn it by hand.) Same game and same save as on a PC, only the layout differs. To preview it on a PC, add `?layout=phone` to the address (`?layout=desktop` forces the PC layout).
 
 **Sound:** the ♫ button mutes everything. In Settings you can turn the **Muzik** (a small looping tune that gets slower and moodier at night and busier in peak hour) off separately. You hear a coin sound for every sale, a soft warning beep when a waiting customer is almost out of patience, and a fanfare when you reach the day's target.
 

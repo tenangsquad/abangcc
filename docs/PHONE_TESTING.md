@@ -41,7 +41,7 @@ Play one normal run for **3 to 5 days** and note:
 | **Pop-up menus** | The 30/60/90 and PC menus fit on screen above the sidebar, with buttons you can hit with a thumb. |
 | **Double-tap** | Tapping a customer twice quickly seats them (⚡ Auto-duduk). |
 | **Pinch / drag** | Two-finger pinch zooms the scene, one-finger drag pans it when zoomed. The page itself never scrolls or zooms. |
-| **Rotate** | Portrait and landscape both work; turning the phone mid-game doesn't break anything. |
+| **Rotate** | Sideways is the phone layout. Upright shows the "Putar telefon" card and pauses the shift; turning back lets you resume (Sambung shift). On Android the first tap should go fullscreen and lock landscape. iPhone cannot lock, so it only shows the card. |
 | **Sound** | Sound and music start after the first tap (iPhone is strict about this). Silent switch / volume behaves as expected. |
 | **Switching apps** | Leaving the browser pauses the shift; coming back resumes it. |
 | **Battery / heat** | After 10 minutes the phone is not too hot. |

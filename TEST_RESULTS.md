@@ -34,7 +34,7 @@ Run on 2026-10-18 on Windows 11, Node 25.6, Chrome (headless, software WebGL via
 | 19 | Perks change gameplay and visible equipment | ✅ pass | logic A19 · browser (new desk appears) |
 | 20 | Save/load after refresh | ✅ pass | logic A20 · browser A20 |
 | 21 | One click/tap reliably works | ✅ pass | browser — 8 trials, 0 misfires |
-| 22 | Mobile UI usable | ✅ pass (emulated iPhone 16, portrait + landscape) | browser A22/A22b |
+| 22 | Mobile UI usable | ⚠️ the phone layout was rewritten (landscape corner docks, rotate card). Tests A22/A22b/Layouts were rewritten to match but **not re-run yet** (no Node on the machine that made the change); checked by screenshot at 874×402, 874×335 and 667×375 | browser A22/A22b/Layouts |
 | 23 | 3D scene renders, not an image | ✅ pass | browser A1/A23 (pixel sampling) |
 | 24 | Desktop fits with no scrolling | ✅ pass at 1366×768, 1440×900, 1920×1080 | browser A24 |
 

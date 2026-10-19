@@ -731,6 +731,168 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .perf-hud.slow { color: #ffd23f; } .perf-hud.bad { color: #ff8a8a; }
 
 </style>
+<style>
+/* ==========================================================================
+   ABANG CC: 2007 — PHONE LAYOUT (landscape)
+   --------------------------------------------------------------------------
+   Only active when js/ui/layout.js sets <html data-layout="phone">. The desktop layout in style.css is untouched.
+   The 3D scene fills the whole screen; the panels sit in its four corners ("docks"):
+       top-left      phase · cash · clock            top-right     countdown · target · buttons
+       bottom-left   alerts · waiting queue          bottom-right  Abang's tasks · shop status
+   Sized for an iPhone 16 Pro held sideways (874 × 402 CSS px) and kept clear of the notch / home bar.
+   ========================================================================== */
+
+html[data-layout="phone"] {
+  --dk: 8px; /* gap between a dock and the screen edge */
+  --sl: max(var(--dk), env(safe-area-inset-left, 0px));
+  --sr: max(var(--dk), env(safe-area-inset-right, 0px));
+  --st: max(6px, env(safe-area-inset-top, 0px));
+  --sb: max(6px, env(safe-area-inset-bottom, 0px));
+}
+
+/* ---- the scene is the page ---- */
+html[data-layout="phone"] #app { display: block; padding: 0; gap: 0; }
+html[data-layout="phone"] .topbar,
+html[data-layout="phone"] .ticker,
+html[data-layout="phone"] .sidebar,
+html[data-layout="phone"] .zoom-ctl { display: none; }
+html[data-layout="phone"] .stage { position: absolute; inset: 0; display: block; }
+html[data-layout="phone"] .viewport { position: absolute; inset: 0; border: 0; border-radius: 0; box-shadow: none; }
+html[data-layout="phone"] .vp-top { display: none; }
+
+/* ---- the four corner docks ---- */
+html[data-layout="phone"] .dock { position: absolute; z-index: 4; display: flex; flex-direction: column; gap: 4px; pointer-events: none; max-height: calc(100% - var(--st) - var(--sb)); }
+html[data-layout="phone"] .dock > * { pointer-events: auto; }
+html[data-layout="phone"] .dock-tl { left: var(--sl); top: var(--st); align-items: flex-start; }
+html[data-layout="phone"] .dock-tr { right: var(--sr); top: var(--st); align-items: flex-end; }
+html[data-layout="phone"] .dock-bl { left: var(--sl); bottom: var(--sb); justify-content: flex-end; align-items: flex-start; width: 182px; }
+html[data-layout="phone"] .dock-br { right: var(--sr); bottom: var(--sb); justify-content: flex-end; align-items: flex-end; width: 192px; }
+
+/* top docks: slim pills */
+html[data-layout="phone"] .dock .chip { font-size: 10px; padding: 2px 9px; border-width: 2px; box-shadow: 0 2px 0 var(--ink); letter-spacing: .02em; max-width: 190px; }
+html[data-layout="phone"] .dock .chip-timer { font-size: 12px; }
+html[data-layout="phone"] .dock .hud-pill { flex: none; padding: 2px 9px; gap: 7px; border-width: 2px; border-radius: 11px; box-shadow: 0 2px 0 var(--ink); }
+html[data-layout="phone"] .dock .pill-icon, html[data-layout="phone"] .dock .hud-pill.clock .sky { font-size: 17px; }
+html[data-layout="phone"] .dock .pill-label { font-size: 8px; letter-spacing: .05em; overflow: hidden; text-overflow: ellipsis; max-width: 96px; }
+html[data-layout="phone"] .dock .hud-pill strong { font-size: 15px; line-height: 1.1; }
+html[data-layout="phone"] .dock .hud-pill.cash { min-width: 0; } html[data-layout="phone"] .dock .hud-pill.cash strong { font-size: 18px; }
+html[data-layout="phone"] .dock .hud-pill.clock { min-width: 0; }
+html[data-layout="phone"] .dock .hud-pill.goal { flex: none; width: 184px; padding: 3px 9px 4px; gap: 2px; }
+html[data-layout="phone"] .dock .goal-top { display: none; }
+html[data-layout="phone"] .dock .goal-bar { height: 8px; border-width: 2px; }
+html[data-layout="phone"] .dock .goal-foot { font-size: 10px; white-space: nowrap; } html[data-layout="phone"] .dock .goal-foot strong { font-size: 13px; } html[data-layout="phone"] .dock .goal-foot .rest { font-size: 10px; }
+html[data-layout="phone"] .dock .top-actions { margin: 0; gap: 5px; }
+html[data-layout="phone"] .dock .btn-icon { width: 34px; height: 34px; font-size: 14px; border-width: 2px; border-radius: 10px; box-shadow: 0 2px 0 var(--ink); }
+
+/* bottom docks: compact cards */
+html[data-layout="phone"] .dock .card { flex: none; width: 100%; min-height: 0; padding: 4px 7px 6px; border-width: 2px; border-radius: 12px; box-shadow: 0 2px 0 var(--ink); background: rgba(255, 248, 234, .95); }
+html[data-layout="phone"] .dock .card-title { margin: 0 0 3px; font-size: 9.5px; letter-spacing: .03em; white-space: nowrap; }
+html[data-layout="phone"] .dock .card-title > span:first-child { overflow: hidden; text-overflow: ellipsis; }
+html[data-layout="phone"] .dock .count { min-width: 18px; padding: 0 5px; font-size: 10px; border-width: 2px; }
+html[data-layout="phone"] .dock .card.alerts { background: #ffe9e4; }
+html[data-layout="phone"] .dock .card.alerts.calm { display: none; }
+html[data-layout="phone"] .dock .crisis-list, html[data-layout="phone"] .dock .queue-list { flex-direction: column; gap: 3px; max-height: 98px; padding: 0 2px 3px 0; overflow-x: hidden; overflow-y: auto; scrollbar-width: none; }
+html[data-layout="phone"] .dock .crisis-list { max-height: 64px; }
+html[data-layout="phone"] .dock .crisis { grid-template-columns: 26px 1fr auto; gap: 6px; padding: 2px 6px 2px 4px; min-width: 0; width: 100%; border-width: 2px; border-radius: 10px; box-shadow: 0 2px 0 var(--ink); }
+html[data-layout="phone"] .dock .crisis .ico { width: 26px; height: 26px; font-size: 14px; border-width: 2px; } html[data-layout="phone"] .dock .crisis .ico span { width: 18px; height: 18px; }
+html[data-layout="phone"] .dock .crisis b { font-size: 11px; line-height: 1.15; } html[data-layout="phone"] .dock .crisis small { display: none; } html[data-layout="phone"] .dock .crisis .look { padding: 0 6px; font-size: 9px; border-width: 1.5px; letter-spacing: .03em; }
+html[data-layout="phone"] .dock .queue-item { grid-template-columns: 24px 1fr; gap: 6px; padding: 1px 6px 2px 3px; min-width: 0; width: 100%; border-width: 2px; border-radius: 10px; box-shadow: 0 2px 0 var(--ink); }
+html[data-layout="phone"] .dock .queue-avatar { width: 24px; height: 24px; font-size: 13px; border-width: 2px; }
+html[data-layout="phone"] .dock .queue-name { font-size: 12px; gap: 3px; } html[data-layout="phone"] .dock .want { font-size: 9px; padding: 0 5px; border-width: 1.5px; }
+html[data-layout="phone"] .dock .patience { height: 5px; margin-top: 2px; border-width: 1.5px; }
+html[data-layout="phone"] .dock .queue-list .empty { margin: 0; padding: 2px 0; font-size: 11px; }
+html[data-layout="phone"] .dock .card.queue { flex: none; display: block; }
+html[data-layout="phone"] .dock .card.jobs.idle { display: none; }
+html[data-layout="phone"] .dock .job-list { gap: 3px; }
+html[data-layout="phone"] .dock .meter-row { grid-template-columns: 1fr 1fr; gap: 3px 8px; }
+html[data-layout="phone"] .dock .meter { gap: 1px; }
+html[data-layout="phone"] .dock .meter-head { font-size: 10px; white-space: nowrap; } html[data-layout="phone"] .dock .meter-head span { overflow: hidden; text-overflow: ellipsis; } html[data-layout="phone"] .dock .meter-head b { font-size: 11px; }
+html[data-layout="phone"] .dock .meter-track { height: 6px; border-width: 1.5px; }
+html[data-layout="phone"] .dock .combo { font-size: 10px; }
+
+/* ---- things that float over the scene ---- */
+html[data-layout="phone"] .hint { left: 50%; transform: translateX(-50%); bottom: var(--sb); max-width: calc(100% - 360px); padding: 3px 11px; font-size: 11px; border-width: 2px; }
+html[data-layout="phone"] .hint .step { width: 18px; height: 18px; font-size: 11px; }
+html[data-layout="phone"] .toast-root { bottom: 40px; width: min(60%, 360px); }
+html[data-layout="phone"] .toast { font-size: 12px; padding: 4px 11px; border-width: 2px; border-radius: 12px; box-shadow: 0 2px 0 var(--ink); }
+html[data-layout="phone"] .crisis-overlay { top: var(--st); }
+html[data-layout="phone"] .world-alert { font-size: 12px; padding: 3px 11px; border-width: 2px; box-shadow: 0 2px 0 var(--ink); }
+html[data-layout="phone"] .world-menu { width: min(268px, calc(100% - 12px)); }
+html[data-layout="phone"] .breakdown { position: fixed; left: 50%; right: auto; top: auto; bottom: var(--sb); width: min(420px, 60vw); transform: translateX(-50%); z-index: 9; }
+html[data-layout="phone"] .pc-chip .tag { font-size: 10px; } html[data-layout="phone"] .pc-chip .prog { width: 56px; height: 6px; }
+html[data-layout="phone"] .person-tag .bub { font-size: 11px; }
+
+/* ---- pop-ups and menus: short screen, keep them inside it ---- */
+html[data-layout="phone"] .modal-root { padding: var(--st) var(--sr) var(--sb) var(--sl); }
+html[data-layout="phone"] .modal-card { max-height: calc(100dvh - var(--st) - var(--sb)); padding: 14px 18px 16px; border-radius: 22px; }
+html[data-layout="phone"] .modal-card > .modal-actions { margin: 8px -18px -16px; padding: 8px 18px 14px; }
+
+/* ---- held upright: ask for a turn (js/ui/layout.js also pauses the shift) ---- */
+.rotate-hint { display: none; position: fixed; inset: 0; z-index: 200; place-content: center; text-align: center; padding: 24px; color: var(--white);
+  background: radial-gradient(circle at 50% 30%, #5a3fc0, #1e1456 75%); font-family: var(--font-display); }
+.rotate-hint b { display: block; margin-top: 14px; font-size: 24px; text-shadow: 0 3px 0 var(--ink); }
+.rotate-hint small { display: block; margin-top: 6px; font: 700 14px var(--font-body); color: #d9d0ff; }
+.rh-phone { display: block; font-size: 84px; line-height: 1; animation: rh-turn 2.4s ease-in-out infinite; }
+@keyframes rh-turn { 0%, 15% { transform: rotate(0); } 55%, 100% { transform: rotate(-90deg); } }
+@media (orientation: portrait) { html[data-layout="phone"] .rotate-hint { display: grid; } }
+
+/* ---- the action menu that pops up on a PC / customer: small enough to leave the scene visible ---- */
+html[data-layout="phone"] .world-menu { width: min(236px, calc(100% - 12px)); padding: 5px 8px 7px; border-width: 2.5px; border-radius: 14px; }
+html[data-layout="phone"] .wm-head b { font-size: 13px; }
+html[data-layout="phone"] .wm-x { width: 24px; height: 24px; border-width: 2px; font-size: 11px; }
+html[data-layout="phone"] .wm-hint { margin-top: 1px; font-size: 10px; }
+html[data-layout="phone"] .wm-info { margin-top: 2px; font-size: 11px; }
+html[data-layout="phone"] .world-menu .patience { height: 6px; margin: 3px 0 1px; }
+html[data-layout="phone"] .wm-actions { gap: 4px; margin-top: 5px; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
+html[data-layout="phone"] .wm-actions.dur { grid-template-columns: repeat(3, 1fr); }
+html[data-layout="phone"] .wm-actions .btn { min-height: 36px; padding: 2px 6px; font-size: 13px; border-width: 2.5px; border-radius: 11px; box-shadow: 0 2px 0 var(--ink); }
+html[data-layout="phone"] .wm-actions .btn small { font-size: 9.5px; }
+html[data-layout="phone"] .world-menu { bottom: auto; } /* style.css pins it to the bottom on short screens — here it floats next to its target */
+
+/* when an alert is up, the queue gives up some height so the stack stays out of the counter area */
+html[data-layout="phone"] .dock-bl:has(.card.alerts:not(.calm)) .queue-list { max-height: 62px; }
+
+/* ---- full-screen dialogs (intro, pause, results, perks, settings): everything scaled for a 402 px tall screen ---- */
+html[data-layout="phone"] .modal-card { width: min(100%, 660px); }
+html[data-layout="phone"] .modal-eyebrow { padding: 1px 10px; font-size: 10px; }
+html[data-layout="phone"] .modal-card h1 { margin: 4px 0 2px; font-size: 26px; }
+html[data-layout="phone"] .modal-card h2 { margin: 7px 0 3px; font-size: 15px; }
+html[data-layout="phone"] .modal-card p { margin: 3px 0; font-size: 13px; line-height: 1.4; }
+html[data-layout="phone"] .modal-lead { font-size: 14px !important; }
+html[data-layout="phone"] .modal-hero { margin: 7px 0; padding: 7px 12px; border-width: 2.5px; border-radius: 14px; }
+html[data-layout="phone"] .badges { gap: 5px; margin: 6px 0; } html[data-layout="phone"] .badges span { padding: 1px 9px; font-size: 11px; border-width: 2px; }
+html[data-layout="phone"] .notice { margin: 5px 0; padding: 5px 10px; font-size: 12px; border-width: 2.5px; border-radius: 11px; }
+html[data-layout="phone"] .modal-actions { gap: 8px; margin-top: 8px; }
+html[data-layout="phone"] .btn.big { min-height: 40px; padding: 5px 16px; font-size: 15px; border-radius: 13px; }
+html[data-layout="phone"] .settlement { gap: 2px 10px; margin: 5px 0; padding: 5px 10px; font-size: 13px; border-width: 2.5px; border-radius: 12px; }
+html[data-layout="phone"] .stars { font-size: 28px; margin: 0; }
+html[data-layout="phone"] .store-grid { gap: 7px; margin: 6px 0; }
+html[data-layout="phone"] .perk { padding: 7px 9px; gap: 2px; border-width: 2.5px; border-radius: 13px; box-shadow: 0 3px 0 var(--ink); }
+html[data-layout="phone"] .perk .perk-icon { width: 34px; height: 34px; font-size: 20px; border-width: 2.5px; border-radius: 11px; }
+html[data-layout="phone"] .perk strong { font-size: 14px; } html[data-layout="phone"] .perk small { font-size: 11px; line-height: 1.25; }
+html[data-layout="phone"] .switch-row { padding: 5px 0; font-size: 14px; }
+html[data-layout="phone"] .seg .btn { min-height: 32px; font-size: 13px; padding: 2px 10px; }
+html[data-layout="phone"] .headline { padding: 4px 9px; margin: 4px 0; } html[data-layout="phone"] .headline .hl-ico { width: 28px; height: 28px; font-size: 16px; }
+html[data-layout="phone"] .headline b { font-size: 13px; } html[data-layout="phone"] .headline small { font-size: 11px; }
+html[data-layout="phone"] .intro-nav { margin-top: 8px; }
+html[data-layout="phone"] .modal-eyebrow { align-self: flex-start; }
+
+/* ---- smaller phones (iPhone SE / mini sideways) and Safari with its toolbar showing: trim the docks so they stay off the counter ---- */
+@media (max-width: 780px) {
+  html[data-layout="phone"] .dock-bl { width: 168px; } html[data-layout="phone"] .dock-br { width: 176px; }
+  html[data-layout="phone"] .dock .goal-foot .rest { display: none; }
+  html[data-layout="phone"] .dock .hud-pill.goal { width: 160px; }
+  html[data-layout="phone"] .dock .btn-icon { width: 32px; height: 32px; }
+  html[data-layout="phone"] .dock .queue-name { font-size: 11px; }
+}
+@media (max-height: 360px) {
+  html[data-layout="phone"] .dock .queue-list { max-height: 62px; }
+  html[data-layout="phone"] .dock .crisis-list { max-height: 34px; }
+  html[data-layout="phone"] .dock .card.vitals .card-title { display: none; }
+  html[data-layout="phone"] .dock .hud-pill.clock .pill-label { display: none; }
+}
+
+</style>
 </head>
 <body>
 
@@ -1216,6 +1378,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   <footer class="ticker"><span class="ticker-tag">CC NEWS</span><span id="tickerText">Selamat datang ke pekan. Hari ni semua PC okay… rasanya.</span></footer>
 </div>
 
+<div class="rotate-hint" id="rotateHint" role="alert"><div><span class="rh-phone" aria-hidden="true">📱</span><b>Putar telefon ke landskap</b><small>Turn your phone sideways to play</small></div></div>
 <div id="modalRoot" class="modal-root"></div>
 <button type="button" id="perfHud" class="perf-hud" hidden title="Ketik untuk salin laporan prestasi"></button>
 
@@ -1316,6 +1479,106 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
       ready = true;
     },
   };
+})((window.ABCC = window.ABCC || {}));
+
+</script>
+<script>
+/* ---- js/ui/layout.js ---- */
+/* ==========================================================================
+   4b. LAYOUT — one game, two layouts ("desktop" and "phone")
+   --------------------------------------------------------------------------
+   The phone layout is for touch phones held sideways: the 3D scene fills the whole screen and the
+   panels sit in its four corners (cash + clock top-left, target + buttons top-right, waiting queue
+   bottom-left, shop status + tasks bottom-right). Nothing else changes: same game, same save.
+   • Picked once at start: a touch screen whose short side is ≤ 600 px → "phone", anything else → "desktop".
+     Force one with ?layout=phone or ?layout=desktop (handy for testing on a PC).
+   • "phone" moves the existing panel elements into four corner docks (same nodes, so every id and
+     listener keeps working); "desktop" puts them straight back where index.html has them.
+   • Held upright, a phone shows a "turn your phone" card and the shift is paused. Android Chrome is also
+     asked for fullscreen + landscape on the first tap (iPhone Safari cannot lock orientation, so it relies on the card).
+   ========================================================================== */
+(function (ns) {
+  'use strict';
+
+  const root = document.documentElement;
+  const $ = (id) => document.getElementById(id);
+  const DOCKS = {
+    tl: () => [$('worldPhase'), $('cashPill'), document.querySelector('.hud-pill.clock')],
+    tr: () => [$('worldCountdown'), $('goalPill'), document.querySelector('.top-actions')],
+    bl: () => [$('crisisPanel'), document.querySelector('.card.queue')],
+    br: () => [$('jobsPanel'), document.querySelector('.card.vitals')],
+  };
+  const homes = new Map(); // element → comment node left where it lived on the desktop layout
+
+  /** Which layout this device should use. */
+  function detect() {
+    const m = /[?&]layout=(phone|desktop)\b/.exec(location.search);
+    if (m) return m[1];
+    try {
+      const touch = matchMedia('(pointer: coarse)').matches;
+      return touch && Math.min(screen.width, screen.height) <= 600 ? 'phone' : 'desktop';
+    } catch (e) {
+      return 'desktop';
+    }
+  }
+
+  function toPhone() {
+    const vp = $('viewport');
+    if (!vp || vp.querySelector('.dock')) return;
+    for (const [name, list] of Object.entries(DOCKS)) {
+      const dock = document.createElement('div');
+      dock.className = `dock dock-${name}`;
+      for (const el of list()) {
+        if (!el) continue;
+        const mark = document.createComment(el.id || el.className);
+        el.replaceWith(mark);
+        homes.set(el, mark);
+        dock.appendChild(el);
+      }
+      vp.appendChild(dock);
+    }
+  }
+
+  function toDesktop() {
+    for (const [el, mark] of homes) mark.replaceWith(el);
+    homes.clear();
+    document.querySelectorAll('.dock').forEach((d) => d.remove());
+  }
+
+  function apply(name) {
+    if (root.dataset.layout === name) return name;
+    root.dataset.layout = name;
+    if (name === 'phone') toPhone();
+    else toDesktop();
+    return name;
+  }
+
+  const layout = apply(detect());
+  if (layout === 'phone') {
+    // Android Chrome: fullscreen + landscape lock, which needs a user gesture. Everything else just ignores this.
+    const lock = () => {
+      document.removeEventListener('pointerup', lock);
+      try {
+        const el = root;
+        const full = !document.fullscreenElement && el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : null;
+        Promise.resolve(full).then(() => screen.orientation?.lock?.('landscape')).catch(() => {});
+      } catch (e) {
+        /* not supported — the rotate card covers it */
+      }
+    };
+    document.addEventListener('pointerup', lock);
+
+    // Held upright: the card covers the screen, so also pause the shift until the phone is turned.
+    const upright = matchMedia('(orientation: portrait)');
+    const pauseIfUpright = () => {
+      const UI = ns.UI;
+      if (!upright.matches || !UI?.s || UI.s.phase !== 'active') return;
+      UI.togglePause();
+    };
+    upright.addEventListener?.('change', pauseIfUpright);
+  }
+
+  ns.Layout = { current: () => root.dataset.layout, apply, detect };
 })((window.ABCC = window.ABCC || {}));
 
 </script>
@@ -1578,6 +1841,26 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
       quotes: ['a/s/l? haha.', 'Channel #kl-lepak tengah rancak!'] },
   ];
 
+  /* ---------- how a customer travels from the queue to their PC ----------
+     speed    world units / second (largest single-frame step must stay < 0.5 — browser test A7)
+     stride   walk-cycle radians per world unit: a lower value = longer, slower-looking steps
+     GAIT_ODDS  [walk, run, joy] weights per archetype; the pick is a hash of the customer id, so it is deterministic */
+  const GAITS = {
+    walk: { speed: 3.0, stride: 5.4 },
+    run: { speed: 5.0, stride: 3.9 },
+    joy: { speed: 4.4, stride: 2.9 }, // running and bounding with both arms up
+  };
+  const GAIT_ODDS = {
+    uncle: [0.85, 0.15, 0], fps: [0.3, 0.45, 0.25], hot: [0.3, 0.6, 0.1], student: [0.6, 0.25, 0.15], mmorpg: [0.4, 0.2, 0.4],
+    rm1: [0.1, 0.3, 0.6], arena: [0.25, 0.4, 0.35], lepak: [0.9, 0.1, 0], mirc: [0.65, 0.2, 0.15],
+  };
+  /** Which gait a customer uses on the way to the PC. Pure function of (id, type): no RNG is consumed. */
+  function gaitFor(id, typeId) {
+    const odds = GAIT_ODDS[typeId] || [0.5, 0.3, 0.2];
+    const r = Math.abs(Math.sin(id * 78.233 + 1.7) * 43758.5453) % 1;
+    return r < odds[0] ? 'walk' : r < odds[0] + odds[1] ? 'run' : 'joy';
+  }
+
   /* ---------- special events ----------
      Every event is a physical thing in the room: people at the door (kind 'npc'), the fuse box ('power'),
      a puddle ('floor') or a suspect by the snack machine ('machine'). The player selects it in the 3D scene
@@ -1625,7 +1908,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
     nomouse: { icon: '🖱️', title: 'Mouse hilang', hint: 'Tak boleh guna tanpa mouse.', time: 13 },
   };
 
-  Object.assign(ns, { CFG, RENTAL, DIRECTOR, ROOM, FAULTS, GAMES, PERKS, TYPES, EVENTS, ISSUES, SPECIALS, priceForMinutes, sessionSecondsFor, clamp, lerp, damp, byId, fmtMoney, clock, dayPart, shortestAngle });
+  Object.assign(ns, { CFG, RENTAL, DIRECTOR, ROOM, FAULTS, GAMES, PERKS, TYPES, GAITS, gaitFor, EVENTS, ISSUES, SPECIALS, priceForMinutes, sessionSecondsFor, clamp, lerp, damp, byId, fmtMoney, clock, dayPart, shortestAngle });
 })((window.ABCC = window.ABCC || {}));
 
 </script>
@@ -2012,7 +2295,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
       entity.y += (entity.vy / velMag) * travel;
     }
     entity.moveIntensity = Math.min(1, velMag / Math.max(0.01, speed));
-    entity.walkCycle = (entity.walkCycle || 0) + travel * 5.4;
+    entity.walkCycle = (entity.walkCycle || 0) + travel * (entity.stride || 5.4);
 
     if (velMag > 0.04) {
       const target = Math.atan2(entity.vx, entity.vy);
@@ -2405,6 +2688,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
     pc.sessionGame = c.game;
     pc.lingerTime = 0;
     c.status = 'walkToPc';
+    c.gait = ns.gaitFor(c.id, c.type);
     c.destination = ROOM.seatFor(pc);
     s.shiftStats.served++;
     s.pendingCustomerId = s.pendingCustomerId === c.id ? null : s.pendingCustomerId;
@@ -2466,7 +2750,10 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   function updatePeople(s, dt) {
     const drain = S.patienceDrain(s);
     for (const c of s.customers) {
-      S.updateMove(c, dt, c.status === 'event' ? 2.2 : CFG.CUSTOMER_SPEED);
+      // on the way to a PC each customer has their own gait (walk / run / run-with-joy); everyone else walks
+      const gait = c.status === 'walkToPc' ? ns.GAITS[c.gait] || ns.GAITS.walk : null;
+      c.stride = gait ? gait.stride : 0;
+      S.updateMove(c, dt, c.status === 'event' ? 2.2 : gait ? gait.speed * (CFG.CUSTOMER_SPEED / ns.GAITS.walk.speed) : CFG.CUSTOMER_SPEED);
       c.sitBlend = clamp((c.sitBlend || 0) + (c.status === 'playing' ? dt * 3.8 : -dt * 5.4), 0, 1);
 
       if (c.status === 'arriving' && !c.destination) c.status = 'waiting';
@@ -2930,6 +3217,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
       c.issue = null;
       if (stayers.includes(c.id)) {
         c.status = 'walkToPc';
+        c.gait = 'walk'; // back to the seat after a fight: no skipping
         c.destination = ROOM.seatFor(p);
       }
       p.issue = null;
@@ -5722,7 +6010,7 @@ window.ABCC.GfxEngine = (function () {
 
     // customers
     if (e.status === 'leaving') return { state: 'LEAVE', angry: (e.patience ?? 1) <= 0 };
-    if (moving) return { state: 'WALK' };
+    if (moving) return { state: 'WALK', gait: e.status === 'walkToPc' ? e.gait || 'walk' : 'walk' };
     if (act === 'argue') return { state: 'ANGRY' };
     if (sit > 0.05 && sit < 0.92 && e.status === 'playing') return { state: 'SIT' };
     if (sit >= 0.92 || (sit > 0.2 && e.status === 'playing')) {
@@ -5739,7 +6027,7 @@ window.ABCC.GfxEngine = (function () {
     return ctx.turning ? { state: 'TURN' } : { state: 'IDLE' };
   }
 
-  const base = { fwdL: 0, fwdR: 0, outL: 0.1, outR: 0.1, bendL: 0.18, bendR: 0.18, inL: 0, inR: 0, lean: 0, headYaw: 0, headNod: 0, mood: 'happy', hop: 0, legs: 'stand' };
+  const base = { fwdL: 0, fwdR: 0, outL: 0.1, outR: 0.1, bendL: 0.18, bendR: 0.18, inL: 0, inR: 0, lean: 0, headYaw: 0, headNod: 0, mood: 'happy', hop: 0, legs: 'stand', legAmp: 1, kneeAmp: 1, mouth: 0 };
 
   /**
    * Target pose for a state. Angles are radians (see drawPerson for how they map onto the rig).
@@ -5752,6 +6040,15 @@ window.ABCC.GfxEngine = (function () {
       case 'WALK': {
         const sw = Math.sin(c.phase) * 0.72 * c.mi;
         Object.assign(p, { fwdL: -sw, fwdR: sw, bendL: 0.18 + 0.4 * c.mi, bendR: 0.18 + 0.4 * c.mi, lean: 0.1 * c.mi, legs: 'walk', headNod: 0.05 });
+        if (st.gait === 'run') {
+          // sprint: long leg swing, high knees, elbows tucked and pumping, leaning into it
+          const pump = Math.sin(c.phase) * 1.0 * c.mi;
+          Object.assign(p, { fwdL: -pump, fwdR: pump, outL: 0.06, outR: 0.06, bendL: 1.45 * c.mi + 0.18, bendR: 1.45 * c.mi + 0.18, lean: 0.3 * c.mi, headNod: 0.08, hop: Math.abs(Math.sin(c.phase)) * 0.045 * c.mi, legAmp: 1.45, kneeAmp: 1.5, mood: 'focus' });
+        } else if (st.gait === 'joy') {
+          // running and bounding with both arms thrown up, mouth open, a little hop every stride
+          const b = Math.sin(c.phase);
+          Object.assign(p, { fwdL: 2.7 + b * 0.35 * c.mi, fwdR: 2.7 - b * 0.35 * c.mi, outL: 0.45 + Math.abs(Math.sin(c.phase / 2)) * 0.25, outR: 0.45 + Math.abs(Math.sin(c.phase / 2)) * 0.25, bendL: 0.25, bendR: 0.25, lean: -0.04, headNod: -0.06 + b * 0.05, hop: Math.abs(Math.sin(c.phase / 2)) * 0.3 * c.mi, legAmp: 1.1, kneeAmp: 1.9, mouth: 1, mood: 'cheer' });
+        }
         break;
       }
       case 'LEAVE': {
@@ -6446,7 +6743,7 @@ window.ABCC.GfxEngine = (function () {
 
     function poseOf(key) {
       let p = R.poses.get(key);
-      if (!p) R.poses.set(key, (p = { fwdL: 0, fwdR: 0, outL: 0.12, outR: 0.12, bendL: 0.18, bendR: 0.18, inL: 0, inR: 0, lean: 0, look: 0, nod: 0, brow: 0, smile: 0.6, open: 0, eye: 1, seen: 0, face: null, hop: 0, yaw: 0, state: 'IDLE' }));
+      if (!p) R.poses.set(key, (p = { fwdL: 0, fwdR: 0, outL: 0.12, outR: 0.12, bendL: 0.18, bendR: 0.18, inL: 0, inR: 0, lean: 0, look: 0, nod: 0, brow: 0, smile: 0.6, open: 0, eye: 1, seen: 0, face: null, hop: 0, yaw: 0, legAmp: 1, kneeAmp: 1, state: 'IDLE' }));
       return p;
     }
 
@@ -6725,7 +7022,9 @@ window.ABCC.GfxEngine = (function () {
       const rate = mode.state === 'REACT' || mode.state === 'ANGRY' ? 14 : 11;
       for (const key2 of ['fwdL', 'fwdR', 'outL', 'outR', 'bendL', 'bendR', 'inL', 'inR', 'lean']) P[key2] = damp(P[key2], tgt[key2], rate, dt);
       P.yaw = damp(P.yaw, tgt.headYaw, 9, dt);
-      P.hop = damp(P.hop, tgt.hop, 14, dt);
+      P.hop = damp(P.hop, tgt.hop, tgt.hop > 0.1 ? 30 : 14, dt); // joyful bounds need a snappy hop or they flatten out
+      P.legAmp = damp(P.legAmp, tgt.legAmp, 10, dt);
+      P.kneeAmp = damp(P.kneeAmp, tgt.kneeAmp, 10, dt);
 
       // head targets
       let lookYaw = 0;
@@ -6736,7 +7035,7 @@ window.ABCC.GfxEngine = (function () {
       const [browT, smileT, eyeT] = Anim.MOODS[tgt.mood] || Anim.MOODS.neutral;
       P.brow = damp(P.brow, browT, 9, dt);
       P.smile = damp(P.smile, smileT, 9, dt);
-      P.open = damp(P.open, tgt.mood === 'panic' ? 1 : 0, 10, dt);
+      P.open = damp(P.open, tgt.mood === 'panic' || tgt.mouth ? 1 : 0, 10, dt);
       P.eye = damp(P.eye, eyeT, 6, dt);
 
       // placement
@@ -6749,15 +7048,15 @@ window.ABCC.GfxEngine = (function () {
       eng.cast(true);
       st.push();
       st.translate(e.x, 0, e.y);
-      shadow(e.x, e.y, 0.5 * k, 0.4 * k, 0.36);
+      shadow(e.x, e.y, 0.5 * k * (1 - P.hop * 0.8), 0.4 * k * (1 - P.hop * 0.8), 0.36 * (1 - P.hop)); // the shadow shrinks while airborne
       st.rotateY(ang);
       st.scale(k);
 
       // legs
       for (const side of [-1, 1]) {
         const ph = phase + (side > 0 ? 0 : Math.PI);
-        let f = Math.sin(ph) * 0.7 * mi;
-        let knee = Math.max(0, -Math.sin(ph + 0.9)) * 0.9 * mi;
+        let f = Math.sin(ph) * 0.7 * mi * P.legAmp;
+        let knee = Math.max(0, -Math.sin(ph + 0.9)) * 0.9 * mi * P.kneeAmp;
         if (tgt.legs === 'turn') {
           const step = Math.sin(t * 11 + (side > 0 ? 0 : Math.PI));
           f = step * 0.32;
@@ -8194,6 +8493,7 @@ window.ABCC.GfxEngine = (function () {
         if (ev) { title = `${EVENTS[ev.type].emoji} ${EVENTS[ev.type].title}`; timerId = String(ev.id); timer = ev.time; hint = EVENTS[ev.type].say; }
       }
     }
+    if (ns.Layout?.current() === 'phone') opts = opts.map((o) => (o.sub ? { ...o, sub: o.sub.replace(/ · tekan [A-Z0-9]/, '') } : o)); // no keyboard on a phone
     const key = menuKey(sel);
     const show = (opts.length > 0 || (showEmpty && title && UI.menuTapped === key)) && UI.menuDismissed !== key;
     if (!show) {
@@ -8217,7 +8517,7 @@ window.ABCC.GfxEngine = (function () {
     const s = UI.s;
     if (!UI.settings.hints || s.phase !== 'active') return null;
     const waiting = State.inQueue(s).filter((c) => c.status === 'waiting');
-    if (s.pendingCustomerId) return s.pendingDuration ? ['3', 'Tap PC kosong yang berkelip hijau'] : ['2', 'Pilih tempoh sewaan (1 / 2 / 3)'];
+    if (s.pendingCustomerId) return s.pendingDuration ? ['3', 'Tap PC kosong yang berkelip hijau'] : ['2', ns.Layout?.current() === 'phone' ? 'Pilih tempoh sewaan' : 'Pilih tempoh sewaan (1 / 2 / 3)'];
     if ((s.worldEvents || []).length) return ['!', 'Ada kejadian — tap benda yang berdenyut dalam bilik'];
     if ((s.activeIssues || []).length) return ['!', 'Tap PC yang bertanda ❗ sebelum masa tamat!'];
     if (s.pcs.some((p) => p.status === 'fault')) return ['!', 'PC rosak! Tap PC → pilih cara baiki'];

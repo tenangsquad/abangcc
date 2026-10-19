@@ -439,48 +439,73 @@ test('A24: desktop layout fits one viewport, no page scroll, panels in order —
   }
 });
 
-test('A22: mobile (iPhone 16 portrait) keeps the scene prominent and everything reachable by touch', async () => {
-  await open(393, 852, { mobile: true, dpr: 3 });
+test('A22: phone layout (iPhone 16 Pro sideways): the scene fills the screen, panels sit in the corners, everything reachable by touch', async () => {
+  await open(874, 402, { mobile: true, dpr: 3 });
   await pageReady(2, { cash: 9000 });
   await ev(`(() => { const s = ABCC.debug.state(); T.wait('student', 60, 0); T.wait('fps', 60, 1); ABCC.debug.advance(0.5); return 1; })()`);
   await sleep(350);
+  assert.equal(await ev(`document.documentElement.dataset.layout`), 'phone', 'a touch screen this small gets the phone layout');
   const m = await ev(`(() => {
-    const vp = document.getElementById('viewport').getBoundingClientRect();
-    const q = document.querySelector('.queue-item').getBoundingClientRect();
-    const sb = document.querySelector('.sidebar').getBoundingClientRect();
-    const top = document.querySelector('.topbar').getBoundingClientRect();
-    return { winW: innerWidth, winH: innerHeight, docW: document.documentElement.scrollWidth, docH: document.documentElement.scrollHeight, vpH: vp.height, vpW: vp.width, vpTop: vp.top, qH: q.height, qW: q.width, topB: top.bottom,
-             sbBottom: sb.bottom, small: [...document.querySelectorAll('.btn-icon')].map((e) => Math.min(e.getBoundingClientRect().width, e.getBoundingClientRect().height)) };
+    const box = (sel) => { const r = document.querySelector(sel).getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height }; };
+    const vp = box('#viewport');
+    const docks = Object.fromEntries(['tl', 'tr', 'bl', 'br'].map((k) => [k, box('.dock-' + k)]));
+    return { winW: innerWidth, winH: innerHeight, docW: document.documentElement.scrollWidth, docH: document.documentElement.scrollHeight, vp, docks, q: box('.queue-item'),
+             inDock: { cash: !!document.querySelector('.dock-tl #cashPill'), goal: !!document.querySelector('.dock-tr #goalPill'), queue: !!document.querySelector('.dock-bl .card.queue'), vitals: !!document.querySelector('.dock-br .card.vitals') },
+             small: [...document.querySelectorAll('.btn-icon')].map((e) => Math.min(e.getBoundingClientRect().width, e.getBoundingClientRect().height)),
+             rotateShown: getComputedStyle(document.getElementById('rotateHint')).display !== 'none' };
   })()`);
-  assert.ok(m.docW <= m.winW, 'no horizontal scroll on a phone');
-  assert.ok(m.docH <= m.winH + 1, 'no page scroll on a phone');
-  assert.ok(m.vpH >= m.winH * 0.4, `the 3D scene is prominent (${Math.round((m.vpH / m.winH) * 100)}% of the screen)`);
-  assert.ok(m.qH >= 40, `queue cards are touch sized (${m.qH}px)`);
-  assert.ok(m.small.every((v) => v >= 36), `HUD buttons are tappable ${m.small}`);
+  assert.ok(m.docW <= m.winW && m.docH <= m.winH + 1, 'no page scroll on a phone');
+  assert.ok(m.vp.w >= m.winW - 1 && m.vp.h >= m.winH - 1, `the 3D scene fills the whole screen (${Math.round(m.vp.w)}×${Math.round(m.vp.h)})`);
+  assert.deepEqual(m.inDock, { cash: true, goal: true, queue: true, vitals: true }, 'panels were moved into their corner docks');
+  assert.ok(m.docks.tl.l < m.winW / 2 && m.docks.bl.l < m.winW / 2 && m.docks.tr.r > m.winW / 2 && m.docks.br.r > m.winW / 2, 'docks balance left and right');
+  assert.ok(m.docks.bl.b <= m.winH && m.docks.br.b <= m.winH && m.docks.tl.t >= 0, 'docks stay on screen');
+  assert.ok(m.docks.bl.t > m.docks.tl.b, 'the left docks do not overlap');
+  assert.equal(m.rotateShown, false, 'no "turn your phone" card when already sideways');
+  assert.ok(m.q.h >= 28, `queue rows are big enough to tap (${m.q.h}px)`);
+  assert.ok(m.small.every((v) => v >= 32), `HUD buttons are tappable ${m.small}`);
   // touch the customer card, the duration, then a PC in the 3D scene
   const id = await S('State.inQueue(s)[0].id');
   await clickEl(`.queue-item[data-customer="${id}"]`);
   const dur = await rect('#worldMenu [data-act="duration"]');
-  assert.ok(dur.b <= m.winH && dur.t > m.vpTop, `duration buttons are on screen without scrolling (bottom ${Math.round(dur.b)} of ${m.winH})`);
-  assert.ok(dur.h >= 40, 'duration buttons are touch sized');
+  assert.ok(dur.b <= m.winH && dur.t >= 0 && dur.r <= m.winW, `duration buttons are on screen without scrolling (bottom ${Math.round(dur.b)} of ${m.winH})`);
+  assert.ok(dur.h >= 34, `duration buttons are touch sized (${dur.h}px)`);
+  assert.ok(!/tekan \d/.test(await ev(`document.getElementById('worldMenu').textContent`)), 'no keyboard hints on a phone');
   await clickEl('#worldMenu [data-act="duration"][data-choice="60"]');
   await clickWorld('pc', 1, { touch: true });
   assert.equal(await S('s.pcs[0].customerId'), id, 'a single tap on the PC in the 3D scene assigned the customer');
-  await shot('09_mobile_portrait');
+  await shot('09_phone_landscape');
   assert.deepEqual(b.consoleErrors, []);
 });
 
-test('A22b: phones held sideways still work', async () => {
-  await open(852, 393, { mobile: true, dpr: 3 });
+test('A22b: held upright, a phone shows the "turn your phone" card and the shift pauses until it is turned back', async () => {
+  await open(874, 402, { mobile: true, dpr: 2 });
   await pageReady(1);
-  await ev(`T.wait('student', 60, 0); ABCC.debug.advance(0.3); 1`);
+  assert.equal(await S('s.phase'), 'active');
+  await b.viewport(402, 874, { dpr: 2, mobile: true }); // turn the phone upright
+  await sleep(400);
+  assert.equal(await S('s.phase'), 'paused', 'the shift is paused while the phone is upright');
+  assert.notEqual(await ev(`getComputedStyle(document.getElementById('rotateHint')).display`), 'none', 'the card is shown');
+  await shot('10_phone_portrait');
+  await b.viewport(874, 402, { dpr: 2, mobile: true });
   await sleep(300);
-  const m = await ev(`(() => ({ docW: document.documentElement.scrollWidth, winW: innerWidth, docH: document.documentElement.scrollHeight, winH: innerHeight, vpW: document.getElementById('viewport').getBoundingClientRect().width }))()`);
-  assert.ok(m.docW <= m.winW && m.docH <= m.winH + 1);
-  assert.ok(m.vpW > m.winW * 0.55, 'scene takes the bigger share in landscape');
-  const vh = await ev(`document.getElementById('viewport').getBoundingClientRect().bottom`);
-  assert.ok(vh > m.winH * 0.9, `the scene reaches the bottom of the screen in landscape (bottom ${Math.round(vh)} of ${m.winH})`);
-  await shot('10_mobile_landscape');
+  assert.equal(await ev(`getComputedStyle(document.getElementById('rotateHint')).display`), 'none', 'the card goes away when turned back');
+});
+
+test('Layouts: desktop is the default on a PC, and switching to phone and back moves every panel without losing one', async () => {
+  await open(1366, 768);
+  assert.equal(await ev(`ABCC.Layout.current()`), 'desktop');
+  const before = await ev(`document.querySelector('.sidebar').children.length + ':' + document.querySelector('.topbar').children.length + ':' + document.querySelector('.vp-top').children.length`);
+  assert.equal(before, '4:5:2');
+  await ev(`ABCC.Layout.apply('phone'); 1`);
+  assert.equal(await ev(`document.querySelectorAll('.dock').length`), 4);
+  assert.equal(await ev(`document.querySelector('.sidebar').children.length`), 0, 'the sidebar is empty on the phone layout');
+  await ev(`ABCC.Layout.apply('desktop'); 1`);
+  assert.equal(await ev(`document.querySelectorAll('.dock').length`), 0);
+  assert.equal(await ev(`document.querySelector('.sidebar').children.length + ':' + document.querySelector('.topbar').children.length + ':' + document.querySelector('.vp-top').children.length`), before, 'every panel is back where it started');
+  assert.deepEqual(await ev(`[...document.querySelectorAll('.sidebar > .card')].map((c) => c.className.split(' ')[1])`), ['alerts', 'queue', 'jobs', 'vitals'], 'in the original order');
+  await open(1366, 768, { url: INDEX + '?layout=phone' });
+  assert.equal(await ev(`document.documentElement.dataset.layout`), 'phone', '?layout=phone forces the phone layout on a PC');
+  assert.deepEqual(b.consoleErrors, []);
 });
 
 test('Phase 3: the day moves from bright afternoon to golden hour to night (lighting + sky + lamps)', async () => {
@@ -647,7 +672,7 @@ test('Music: it only plays during a shift, follows the Muzik setting and the ♫
 });
 
 test('Phone readiness: on an emulated phone with the CPU slowed 6×, the game keeps running without errors, and the FPS overlay and report work', async () => {
-  await open(390, 844, { mobile: true, dpr: 3 });
+  await open(844, 390, { mobile: true, dpr: 3 });
   await b.send('Emulation.setCPUThrottlingRate', { rate: 6 });
   try {
     await b.goto(INDEX + '?fps');

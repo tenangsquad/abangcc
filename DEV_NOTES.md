@@ -28,3 +28,10 @@ User decision: **update the game** (ALPHA_12, ALPHA_11 untouched), scope **"all 
 - [x] M2 renderer DONE (lighting.js, anim.js, props.js, characters.js, picking.js, scene.js, engine upgrades). NOT done: static scene caching.
 - [x] M3 UI DONE (js/ui/*.js, CSS sections 10–11). Phone dock puts Desk first; sticky modal buttons.
 - [x] M4 DONE: 46 logic + 21 browser tests pass; README, TEST_RESULTS, ../Requirements_Alignment_ALPHA_12.md written; dist built. Static scene cache deliberately skipped (JS build ≈1.6 ms).
+
+## Phone layout (one game, two layouts)
+- `js/ui/layout.js` sets `<html data-layout="phone|desktop">` once at start (touch screen with short side ≤ 600 px → phone; `?layout=phone|desktop` overrides). On "phone" it moves the existing panel nodes into four corner docks inside `#viewport` (`.dock-tl/tr/bl/br`) and puts them back on "desktop" (`ABCC.Layout.apply(name)`), so ids and listeners never change.
+- All phone styling lives in `css/phone.css`, every rule under `html[data-layout="phone"]`; `style.css` (desktop) is untouched. The scene is full-bleed behind the docks, so the room is height-limited (≈ 40 % bigger than the old sidebar layout on an iPhone 16 Pro).
+- Designed for 874×402 (iPhone 16 Pro sideways, safe-area insets via `env()`); also checked at 874×335 (Safari with toolbar) and 667×375.
+- Upright: `.rotate-hint` card (pure CSS) + `layout.js` pauses the shift on the orientation change. Android Chrome gets fullscreen + landscape lock on the first tap; iOS can't lock, so it only has the card.
+- Screenshots for this were taken with a headless Chrome driven over CDP from PowerShell (no Node on that machine); `tests/browser.test.mjs` A22 / A22b / Layouts were rewritten but not run there.

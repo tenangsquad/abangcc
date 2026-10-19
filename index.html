@@ -14,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/phone.css">
 </head>
 <body>
 
@@ -499,11 +500,13 @@
   <footer class="ticker"><span class="ticker-tag">CC NEWS</span><span id="tickerText">Selamat datang ke pekan. Hari ni semua PC okay… rasanya.</span></footer>
 </div>
 
+<div class="rotate-hint" id="rotateHint" role="alert"><div><span class="rh-phone" aria-hidden="true">📱</span><b>Putar telefon ke landskap</b><small>Turn your phone sideways to play</small></div></div>
 <div id="modalRoot" class="modal-root"></div>
 <button type="button" id="perfHud" class="perf-hud" hidden title="Ketik untuk salin laporan prestasi"></button>
 
 <!-- scripts: classic (non-module) so the game also opens straight from file:// — order matters -->
 <script src="js/ui/loader.js"></script>
+<script src="js/ui/layout.js"></script>
 <script src="js/core/config.js"></script>
 <script src="js/state/core.js"></script>
 <script src="js/state/economy.js"></script>
