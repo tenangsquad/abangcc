@@ -136,7 +136,7 @@
       entity.y += (entity.vy / velMag) * travel;
     }
     entity.moveIntensity = Math.min(1, velMag / Math.max(0.01, speed));
-    entity.walkCycle = (entity.walkCycle || 0) + travel * 5.4;
+    entity.walkCycle = (entity.walkCycle || 0) + travel * (entity.stride || 5.4);
 
     if (velMag > 0.04) {
       const target = Math.atan2(entity.vx, entity.vy);

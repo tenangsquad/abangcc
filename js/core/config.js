@@ -255,6 +255,26 @@
       quotes: ['a/s/l? haha.', 'Channel #kl-lepak tengah rancak!'] },
   ];
 
+  /* ---------- how a customer travels from the queue to their PC ----------
+     speed    world units / second (largest single-frame step must stay < 0.5 — browser test A7)
+     stride   walk-cycle radians per world unit: a lower value = longer, slower-looking steps
+     GAIT_ODDS  [walk, run, joy] weights per archetype; the pick is a hash of the customer id, so it is deterministic */
+  const GAITS = {
+    walk: { speed: 3.0, stride: 5.4 },
+    run: { speed: 5.0, stride: 3.9 },
+    joy: { speed: 4.4, stride: 2.9 }, // running and bounding with both arms up
+  };
+  const GAIT_ODDS = {
+    uncle: [0.85, 0.15, 0], fps: [0.3, 0.45, 0.25], hot: [0.3, 0.6, 0.1], student: [0.6, 0.25, 0.15], mmorpg: [0.4, 0.2, 0.4],
+    rm1: [0.1, 0.3, 0.6], arena: [0.25, 0.4, 0.35], lepak: [0.9, 0.1, 0], mirc: [0.65, 0.2, 0.15],
+  };
+  /** Which gait a customer uses on the way to the PC. Pure function of (id, type): no RNG is consumed. */
+  function gaitFor(id, typeId) {
+    const odds = GAIT_ODDS[typeId] || [0.5, 0.3, 0.2];
+    const r = Math.abs(Math.sin(id * 78.233 + 1.7) * 43758.5453) % 1;
+    return r < odds[0] ? 'walk' : r < odds[0] + odds[1] ? 'run' : 'joy';
+  }
+
   /* ---------- special events ----------
      Every event is a physical thing in the room: people at the door (kind 'npc'), the fuse box ('power'),
      a puddle ('floor') or a suspect by the snack machine ('machine'). The player selects it in the 3D scene
@@ -302,5 +322,5 @@
     nomouse: { icon: '🖱️', title: 'Mouse hilang', hint: 'Tak boleh guna tanpa mouse.', time: 13 },
   };
 
-  Object.assign(ns, { CFG, RENTAL, DIRECTOR, ROOM, FAULTS, GAMES, PERKS, TYPES, EVENTS, ISSUES, SPECIALS, priceForMinutes, sessionSecondsFor, clamp, lerp, damp, byId, fmtMoney, clock, dayPart, shortestAngle });
+  Object.assign(ns, { CFG, RENTAL, DIRECTOR, ROOM, FAULTS, GAMES, PERKS, TYPES, GAITS, gaitFor, EVENTS, ISSUES, SPECIALS, priceForMinutes, sessionSecondsFor, clamp, lerp, damp, byId, fmtMoney, clock, dayPart, shortestAngle });
 })((window.ABCC = window.ABCC || {}));

@@ -210,6 +210,7 @@
     pc.sessionGame = c.game;
     pc.lingerTime = 0;
     c.status = 'walkToPc';
+    c.gait = ns.gaitFor(c.id, c.type);
     c.destination = ROOM.seatFor(pc);
     s.shiftStats.served++;
     s.pendingCustomerId = s.pendingCustomerId === c.id ? null : s.pendingCustomerId;
@@ -271,7 +272,10 @@
   function updatePeople(s, dt) {
     const drain = S.patienceDrain(s);
     for (const c of s.customers) {
-      S.updateMove(c, dt, c.status === 'event' ? 2.2 : CFG.CUSTOMER_SPEED);
+      // on the way to a PC each customer has their own gait (walk / run / run-with-joy); everyone else walks
+      const gait = c.status === 'walkToPc' ? ns.GAITS[c.gait] || ns.GAITS.walk : null;
+      c.stride = gait ? gait.stride : 0;
+      S.updateMove(c, dt, c.status === 'event' ? 2.2 : gait ? gait.speed * (CFG.CUSTOMER_SPEED / ns.GAITS.walk.speed) : CFG.CUSTOMER_SPEED);
       c.sitBlend = clamp((c.sitBlend || 0) + (c.status === 'playing' ? dt * 3.8 : -dt * 5.4), 0, 1);
 
       if (c.status === 'arriving' && !c.destination) c.status = 'waiting';
