@@ -1,0 +1,870 @@
+// Gameplay-logic tests (no browser): node --test tests/
+// Each test names the acceptance scenario (A#) from Requirements.md it covers.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { loadGame, newShift, run, makeStorage } from './load-state.mjs';
+
+const fresh = (opts) => {
+  const { ns } = loadGame(opts);
+  return { ns, State: ns.State, S: ns.S };
+};
+
+/** Put a customer straight into the queue and run until they are waiting. */
+function addWaiting(ns, s, typeId = 'student', requested = 60) {
+  const c = ns.S.makeCustomer(s, typeId, { requestedMinutes: requested });
+  c.status = 'waiting';
+  c.x = ns.ROOM.queueSlot(0).x;
+  c.y = ns.ROOM.queueSlot(0).y;
+  c.queueIndex = ns.State.inQueue(s).length;
+  s.customers.push(c);
+  return c;
+}
+/** Select customer + duration + PC through the same API the UI uses, then walk them to the seat. */
+function seat(ns, s, { type = 'student', requested = 60, minutes = requested, pcId = 1 } = {}) {
+  const c = addWaiting(ns, s, type, requested);
+  ns.State.select(s, { kind: 'customer', id: c.id });
+  assert.ok(ns.State.perform(s, 'duration', c.id, minutes).ok);
+  const r = ns.State.select(s, { kind: 'pc', id: pcId });
+  assert.ok(r.ok, r.msg);
+  for (let i = 0; i < 400 && c.status !== 'playing'; i++) ns.State.update(s, 0.05);
+  assert.equal(c.status, 'playing', 'customer should reach the chair and sit');
+  return c;
+}
+/** A shift where random trouble is off, so tests control exactly what happens. */
+function calmShift(ns, opts) {
+  const s = newShift(ns, opts);
+  s.spawnCooldown = 1e9;
+  s.eventCooldown = 1e9;
+  s.beatPlan = [];
+  s.specialAt = [];
+  s.inspectionScheduled = 1e9;
+  return s;
+}
+const advance = (ns, s, sec) => run(ns, s, sec);
+/** Arrays built inside the vm realm don't deepEqual host arrays; compare plain JSON copies. */
+const plain = (x) => JSON.parse(JSON.stringify(x));
+
+/* ---------------------------------------------------------------- A2 start */
+test('A2: day 1 starts with RM35, exactly three working PCs, no perks, no auto-assign', () => {
+  const { ns, State } = fresh();
+  const s = State.create(1);
+  assert.equal(s.cash, 3500);
+  assert.equal(s.pcs.length, 3);
+  assert.equal(s.perks.length, 0);
+  assert.ok(s.pcs.every((p) => p.status === 'free' && !p.fault));
+  assert.equal('autoDesk' in s, false, 'auto assign must be gone');
+  assert.equal(State.calcRevenueGoal(s, 1), 3000);
+  assert.equal(ns.CFG.SHIFT, 120, 'a day is two real minutes');
+});
+
+test('7.6: targets climb +RM3 a day for the first 10 days, then +RM4, later +RM5 — whatever the shop looks like', () => {
+  const { ns, State } = fresh();
+  const s = State.create(1);
+  const days = [1, 2, 3, 4, 5, 10, 11, 12, 20, 21, 22, 30];
+  assert.deepEqual(plain(days.map((d) => State.calcRevenueGoal(s, d) / 100)), [30, 33, 36, 39, 42, 57, 61, 65, 97, 102, 107, 147]);
+  // PC count and difficulty preset do not change the numbers
+  while (s.pcs.length < 6) ns.State.addPc(s);
+  for (const preset of ['santai', 'biasa', 'mencabar']) {
+    s.preset = preset;
+    assert.deepEqual(plain([1, 2, 3, 10].map((d) => State.calcRevenueGoal(s, d) / 100)), [30, 33, 36, 57], preset);
+  }
+});
+
+/* ------------------------------------------------------ A4 customers/queue */
+test('A4/A5: customers arrive with a requested duration and patience drains', () => {
+  const { ns, State } = fresh();
+  const s = newShift(ns, { seed: 3 });
+  s.spawnCooldown = 0;
+  s.eventCooldown = 1e9;
+  s.beatPlan = [];
+  advance(ns, s, 8);
+  const q = State.inQueue(s);
+  assert.ok(q.length >= 1);
+  for (const c of q) assert.ok([30, 60, 90].includes(c.requestedMinutes));
+  const c = q.find((x) => x.status === 'waiting');
+  assert.ok(c, 'someone is waiting');
+  const before = c.patience;
+  advance(ns, s, 3);
+  assert.ok(c.patience < before, 'patience must go down while waiting');
+});
+
+test('7.4: patience reaching zero makes the customer leave (and costs reputation)', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  const c = addWaiting(ns, s, 'hot', 60);
+  const rep = s.rep;
+  c.patience = 0.2;
+  advance(ns, s, 1);
+  assert.ok(['leaving', 'gone'].includes(c.status) || !s.customers.includes(c));
+  assert.ok(s.rep < rep);
+  assert.equal(s.shiftStats.walkouts, 1);
+});
+
+test('A15/7.4: peak hours increase customer pressure', () => {
+  const { ns, S } = fresh();
+  const s = newShift(ns, { seed: 9 });
+  s.peakActive = false;
+  const calmDrain = S.patienceDrain(s);
+  const calmEvery = Array.from({ length: 40 }, () => S.spawnInterval(s)).reduce((a, b) => a + b) / 40;
+  s.peakActive = true;
+  assert.ok(S.patienceDrain(s) > calmDrain * 1.3, 'patience drops faster at peak');
+  const peakEvery = Array.from({ length: 40 }, () => S.spawnInterval(s)).reduce((a, b) => a + b) / 40;
+  assert.ok(peakEvery < calmEvery * 0.6, 'customers arrive more often at peak');
+});
+
+/* ----------------------------------------------- A6–A9 assignment / billing */
+test('A6/A7: manual assignment walks the customer to the chair, then they play', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  const c = seat(ns, s, { pcId: 2 });
+  const pc = State.byId(s.pcs, 2);
+  assert.equal(pc.status, 'busy');
+  const chair = ns.ROOM.seatFor(pc);
+  assert.ok(Math.hypot(c.x - chair.x, c.y - chair.y) < 0.2, 'sits at the chair, not at the desk');
+});
+
+test('A8: the right duration pays the list price (RM1 / RM2 / RM3)', () => {
+  const { ns, State } = fresh();
+  for (const [minutes, sen] of [[30, 100], [60, 200], [90, 300]]) {
+    const s = calmShift(ns);
+    seat(ns, s, { requested: minutes, minutes });
+    assert.equal(State.breakdown(s).rental, sen, `${minutes} min`);
+  }
+});
+
+test('A9 (B2 fix): a wrong duration NEVER pays more than the right one, and is penalised', () => {
+  const { ns, State } = fresh();
+  for (const requested of [30, 60, 90]) {
+    const correct = (() => {
+      const s = calmShift(ns);
+      seat(ns, s, { requested, minutes: requested });
+      return State.breakdown(s).rental;
+    })();
+    for (const chosen of [30, 60, 90].filter((m) => m !== requested)) {
+      const s = calmShift(ns);
+      const rep = s.rep;
+      seat(ns, s, { requested, minutes: chosen });
+      const paid = State.breakdown(s).rental;
+      assert.ok(paid < correct, `asked ${requested}, gave ${chosen}: paid ${paid} must be < ${correct}`);
+      assert.ok(s.rep < rep, 'wrong duration costs reputation');
+    }
+  }
+});
+
+test('A9: a wrong duration cuts the payment by exactly 50% and costs reputation', () => {
+  const { ns, State } = fresh();
+  // billed on the shorter of (asked, given) at half price, so a wrong pick can never out-earn the right one
+  for (const [requested, chosen, expected] of [[60, 30, 50], [60, 90, 100], [90, 60, 100], [30, 90, 50]]) {
+    const s = calmShift(ns);
+    const rep = s.rep;
+    seat(ns, s, { requested, minutes: chosen });
+    assert.equal(State.breakdown(s).rental, expected, `asked ${requested}, gave ${chosen}`);
+    assert.equal(s.rep, rep + ns.RENTAL.wrongRep, 'reputation drops');
+  }
+});
+
+test('A9b: session lengths are snappy — 30 min = 10 s, 60 min = 16 s, 90 min = 22 s of real time', () => {
+  const { ns, State } = fresh();
+  for (const [minutes, seconds] of [[30, 10], [60, 16], [90, 22]]) {
+    const s = calmShift(ns);
+    const c = seat(ns, s, { requested: minutes, minutes });
+    const pc = State.byId(s.pcs, 1);
+    const left = pc.occupiedSeconds;
+    assert.ok(left <= seconds && left > seconds - 4, `${minutes} min starts at ~${seconds}s (the walk to the chair eats a little): ${left}`);
+    advance(ns, s, left - 0.3);
+    assert.equal(pc.status, 'busy', 'still playing just before the end');
+    advance(ns, s, 0.6);
+    assert.equal(pc.status, 'free', `${minutes} min session is over after ~${seconds}s`);
+    assert.notEqual(c.status, 'playing');
+  }
+});
+
+test('Reliability: a customer is never charged twice, an occupied PC cannot be assigned', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  const c = seat(ns, s, { pcId: 1 });
+  const paid = State.breakdown(s).rental;
+  // same customer again
+  s.pendingCustomerId = c.id;
+  s.pendingDuration = 60;
+  assert.equal(State.assignToPC(s, 1).ok, false, 'PC 1 is occupied');
+  assert.equal(State.assignCustomer(s, c, State.byId(s.pcs, 2), 60), null, 'a playing customer cannot be re-assigned');
+  assert.equal(State.breakdown(s).rental, paid);
+  // recordOnce keeps a double click from charging twice
+  assert.ok(ns.S.recordOnce(s, 'k', 'rental', 100, 'x'));
+  assert.equal(ns.S.recordOnce(s, 'k', 'rental', 100, 'x'), null);
+});
+
+test('Reliability: a stale customer selection is cleared when they walk out', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  const c = addWaiting(ns, s);
+  State.select(s, { kind: 'customer', id: c.id });
+  c.patience = 0.05;
+  advance(ns, s, 1);
+  assert.equal(s.pendingCustomerId, null);
+});
+
+/* -------------------------------------------------- A10/A11 restart refunds */
+test('A10/A11: restarting a PC refunds exactly 25% — cash, net sales and target progress all drop', () => {
+  const { ns, State, S } = fresh();
+  const s = calmShift(ns);
+  seat(ns, s, { requested: 60 }); // RM2.00
+  const pc = State.byId(s.pcs, 1);
+  const cashBefore = s.cash;
+  const netBefore = State.shiftTakings(s);
+  State.breakPc(s, pc, null, { kind: 'bsod' });
+  assert.equal(State.perform(s, 'restart', 1).ok, true);
+  advance(ns, s, 12);
+  const b = State.breakdown(s);
+  assert.equal(b.refunds, -50, '25% of RM2.00');
+  assert.equal(s.cash, cashBefore - 50);
+  assert.equal(State.shiftTakings(s), netBefore - 50);
+  assert.equal(b.net, b.rental + b.other + b.refunds);
+});
+
+test('A11: one incident can never refund twice (restart + auto-restart race, double click)', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  seat(ns, s, { requested: 60 });
+  const pc = State.byId(s.pcs, 1);
+  State.breakPc(s, pc, null, { kind: 'glitch' });
+  State.perform(s, 'restart', 1);
+  State.perform(s, 'restart', 1); // duplicate click
+  advance(ns, s, 20); // long enough for the auto-restart timer to have fired too
+  assert.equal(State.breakdown(s).refunds, -50);
+  // a *second* incident with a new customer is a new refund
+  seat(ns, s, { requested: 30, pcId: 1 });
+  State.breakPc(s, pc, null, { kind: 'bsod' });
+  State.perform(s, 'restart', 1);
+  advance(ns, s, 8);
+  assert.equal(State.breakdown(s).refunds, -50 - 25);
+});
+
+test('A11: an unattended software crash auto-restarts with a single 25% refund', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  seat(ns, s, { requested: 90 }); // RM3.00
+  State.breakPc(s, State.byId(s.pcs, 1), null, { kind: 'glitch' });
+  advance(ns, s, 16);
+  assert.equal(State.breakdown(s).refunds, -75);
+  assert.equal(State.byId(s.pcs, 1).fault, null);
+});
+
+/* ---------------------------------------------------------- PC fault kinds */
+test('Phase 8: every fault kind has its own fix and its own consequence', () => {
+  const { ns, State } = fresh();
+  const need = {
+    freeze: 'restart', bsod: 'restart', glitch: 'restart', overheat: 'cool', noconn: 'reset', hardware: 'repair',
+  };
+  for (const [kind, fix] of Object.entries(need)) {
+    const s = calmShift(ns);
+    seat(ns, s, { requested: 60 });
+    State.breakPc(s, State.byId(s.pcs, 1), null, { kind });
+    const acts = State.options(s, { kind: 'pc', id: 1 }).map((o) => o.act);
+    assert.ok(acts.includes(fix), `${kind} offers ${fix}: ${acts}`);
+  }
+});
+
+test('Phase 8: cooling / resetting keeps the customer and charges nothing; repair costs money and time', () => {
+  const { ns, State } = fresh();
+  for (const [kind, fix] of [['overheat', 'cool'], ['noconn', 'reset']]) {
+    const s = calmShift(ns);
+    const c = seat(ns, s, { requested: 90 });
+    State.breakPc(s, State.byId(s.pcs, 1), null, { kind });
+    State.perform(s, fix, 1);
+    advance(ns, s, 10);
+    assert.equal(State.byId(s.pcs, 1).fault, null);
+    assert.equal(c.status, 'playing', 'customer stays');
+    assert.equal(State.breakdown(s).refunds, 0);
+  }
+  const s = calmShift(ns);
+  seat(ns, s, { requested: 60 });
+  State.breakPc(s, State.byId(s.pcs, 1), null, { kind: 'hardware' });
+  const cash = s.cash;
+  State.perform(s, 'repair', 1);
+  advance(ns, s, 5);
+  assert.equal(State.byId(s.pcs, 1).status, 'job', 'PC is unavailable while being repaired');
+  assert.equal(State.perform(s, 'duration', 99, 30).ok, false);
+  assert.ok(s.cash < cash, 'repair costs money');
+  advance(ns, s, 20);
+  assert.equal(State.byId(s.pcs, 1).status, 'free');
+});
+
+test('Crash refund rule: every crash that ends a paid session refunds exactly 25% — once per incident', () => {
+  const { ns, State } = fresh();
+  const cases = [
+    ['restart (software crash)', 'glitch', (s) => State.perform(s, 'restart', 1), 1],
+    ['repair under a customer', 'hardware', (s) => State.perform(s, 'repair', 1), 1],
+    ['BSOD left alone (customer quits)', 'bsod', () => {}, 20],
+    ['no internet left alone', 'noconn', () => {}, 20],
+    ['overheating left alone', 'overheat', () => {}, 20],
+    ['software crash left alone (auto-restart)', 'glitch', () => {}, 20],
+  ];
+  for (const [name, kind, act, wait] of cases) {
+    const s = calmShift(ns);
+    seat(ns, s, { requested: 90, minutes: 90 }); // paid RM3.00
+    const cash = s.cash;
+    const net = State.breakdown(s).net;
+    State.breakPc(s, State.byId(s.pcs, 1), null, { kind });
+    act(s);
+    act(s); // a double click must not refund twice
+    advance(ns, s, wait + 5);
+    const b = State.breakdown(s);
+    assert.equal(b.refunds, -75, `${name}: 25% of RM3.00`);
+    assert.equal(s.cash + b.expenses, cash - 75, `${name}: cash drops by the refund (a repair bill is belanja, not a refund)`);
+    assert.equal(b.net, net - 75, `${name}: net sales / target progress drop by the same amount`);
+    assert.equal(State.audit(s).ok, true, `${name}: books reconcile`);
+  }
+});
+
+test('Phase 8: a frozen screen thaws by itself without a refund; overheating left alone burns the PC', () => {
+  const { ns, State } = fresh();
+  let s = calmShift(ns);
+  const c = seat(ns, s, { requested: 90 });
+  State.breakPc(s, State.byId(s.pcs, 1), null, { kind: 'freeze' });
+  advance(ns, s, 10);
+  assert.equal(State.byId(s.pcs, 1).fault, null);
+  assert.equal(State.breakdown(s).refunds, 0);
+  assert.equal(c.status, 'playing');
+  s = calmShift(ns);
+  seat(ns, s, { requested: 90 });
+  State.breakPc(s, State.byId(s.pcs, 1), null, { kind: 'overheat' });
+  advance(ns, s, 16);
+  assert.equal(State.byId(s.pcs, 1).fault, 'hardware');
+});
+
+/* ---------------------------------------------- A12/A13 suspicious customers */
+test('Phase 6/9: a suspicious PC offers a soft and a harsh option — and never reveals guilt', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  seat(ns, s, { requested: 60 });
+  assert.ok(State.makeIncident(s, 'suspicious', State.byId(s.pcs, 1), false));
+  const opts = State.options(s, { kind: 'pc', id: 1 });
+  assert.deepEqual(plain(opts.map((o) => o.act)), ['soft', 'harsh']);
+  assert.ok(!JSON.stringify(opts).includes('guilty'), 'options leak nothing');
+  const shown = State.options(s, { kind: 'pc', id: 1 }).map((o) => o.sub).join(' ');
+  assert.ok(!/ bersalah!|terbukti/i.test(shown));
+});
+
+for (const [action, repHit, proHit, refundPct] of [['soft', -2, -3, 25], ['harsh', -7, -9, 50]]) {
+  test(`A12/A13 (B1 fix): falsely accusing (${action}) hits reputation/professionalism ONCE and refunds ${refundPct}%`, () => {
+    const { ns, State } = fresh();
+    const s = calmShift(ns);
+    const c = seat(ns, s, { requested: 60 }); // RM2.00
+    State.makeIncident(s, 'suspicious', State.byId(s.pcs, 1), false);
+    const rep = s.rep, pro = s.professionalism;
+    assert.ok(State.perform(s, action, 1).ok);
+    advance(ns, s, 8);
+    assert.equal(s.rep, rep + repHit, 'reputation');
+    assert.equal(s.professionalism, pro + proHit, 'professionalism');
+    assert.equal(State.breakdown(s).refunds, -200 * refundPct / 100, 'revenue refunded');
+    assert.ok(['leaving', 'gone'].includes(c.status) || !s.customers.includes(c), 'customer leaves upset');
+    assert.equal(s.shiftStats.falseAccusations, 1);
+  });
+}
+
+test('Phase 9: a guilty customer is warned (soft) or removed (harsh) and the shop gets safer', () => {
+  const { ns, State } = fresh();
+  for (const [action, stays] of [['soft', true], ['harsh', false]]) {
+    const s = calmShift(ns);
+    const c = seat(ns, s, { requested: 60 });
+    State.makeIncident(s, 'suspicious', State.byId(s.pcs, 1), true);
+    const compliance = s.compliance, risk = s.risk;
+    State.perform(s, action, 1);
+    advance(ns, s, 8);
+    assert.ok(s.compliance > compliance && s.risk < risk);
+    assert.equal(c.status === 'playing', stays);
+    assert.equal(State.breakdown(s).refunds, 0);
+  }
+});
+
+test('Phase 9: an unattended guilty customer raises risk and compliance falls', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  seat(ns, s, { requested: 90 });
+  State.makeIncident(s, 'suspicious', State.byId(s.pcs, 1), true);
+  const risk = s.risk;
+  advance(ns, s, 20);
+  assert.ok(s.risk > risk);
+  assert.ok(s.violationLog.length >= 1);
+});
+
+/* ---------------------------------------------------------- other incidents */
+test('Phase 6: loud video → warn / ignore; ignoring shortens the timer and then costs reputation', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  seat(ns, s, { requested: 90 });
+  State.makeIncident(s, 'loudvideo', State.byId(s.pcs, 1));
+  assert.deepEqual(plain(State.options(s, { kind: 'pc', id: 1 }).map((o) => o.act)), ['warn', 'ignore']);
+  const other = seat(ns, s, { requested: 90, pcId: 2 });
+  advance(ns, s, 0.2);
+  assert.equal(other.act, 'annoyed', 'neighbours look annoyed');
+  State.perform(s, 'ignore', 1);
+  const rep = s.rep;
+  advance(ns, s, 9);
+  assert.ok(s.rep < rep);
+});
+
+test('Phase 11: a customer fight involves TWO customers who stand up and can be calmed', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  const a = seat(ns, s, { requested: 90, pcId: 1 });
+  const b = seat(ns, s, { requested: 90, pcId: 3 });
+  assert.ok(State.makeIncident(s, 'fight', State.byId(s.pcs, 1)));
+  assert.equal(a.status, 'arguing');
+  assert.equal(b.status, 'arguing');
+  advance(ns, s, 2.5);
+  assert.ok(a.sitBlend < 0.2 && b.sitBlend < 0.2, 'both stand');
+  assert.equal(State.byId(s.pcs, 3).issue, 'fight');
+  State.perform(s, 'calm', 3); // either PC works
+  advance(ns, s, 12);
+  assert.equal(a.status, 'playing');
+  assert.equal(b.status, 'playing');
+  assert.equal(State.byId(s.pcs, 1).issue, null);
+});
+
+test('Phase 11: missing mouse makes the PC unusable until found or replaced', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  seat(ns, s, { requested: 90 });
+  const secs = () => State.byId(s.pcs, 1).occupiedSeconds;
+  State.makeIncident(s, 'nomouse', State.byId(s.pcs, 1));
+  const t = secs();
+  advance(ns, s, 3);
+  assert.equal(secs(), t, 'session clock stops without a mouse');
+  State.perform(s, 'replace', 1);
+  advance(ns, s, 6);
+  assert.equal(State.byId(s.pcs, 1).issue, null);
+  assert.ok(State.breakdown(s).expenses >= 500);
+});
+
+/* ------------------------------------------------------------- A14 officer */
+test('A14: the officer enters, walks to PCs, examines them and leaves with a verdict', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns, { seed: 21 });
+  seat(ns, s, { requested: 90, pcId: 1 });
+  seat(ns, s, { requested: 90, pcId: 2 });
+  State.startOfficer(s);
+  const npc = State.byId(s.customers, State.OFFICER_ID);
+  assert.ok(npc);
+  const startPos = { x: npc.x, y: npc.y };
+  const visited = new Set();
+  let moved = 0;
+  let left = false;
+  for (let i = 0; i < 4000 && s.phase === 'active'; i++) {
+    State.update(s, 0.05);
+    const o = s.officer;
+    if (o?.stage === 'scan' && o.hold > 0) visited.add(o.visits[o.scanIndex]);
+    if (npc.destination || npc.moveIntensity > 0.1) moved += 0.05;
+    if (!s.officer) {
+      left = true;
+      break;
+    }
+  }
+  assert.ok(left, 'officer finished and left');
+  assert.ok(moved > 3, 'actually walked');
+  assert.ok(visited.size >= 2, `inspected several PCs (${[...visited]})`);
+  assert.ok(!State.byId(s.customers, State.OFFICER_ID));
+  assert.ok(s.lastInspection && Number.isFinite(s.lastInspection.score));
+  assert.ok(startPos);
+});
+
+test('Phase 10: the verdict depends on the shop\'s state, not a dice roll', () => {
+  const { ns, State } = fresh();
+  const score = (mutate) => {
+    const s = calmShift(ns, { seed: 5 });
+    mutate(s);
+    return State.scoreOf(s, { flags: 0, attitude: 0 });
+  };
+  const clean = score((s) => Object.assign(s, { compliance: 90, professionalism: 90, risk: 10 }));
+  const messy = score((s) => Object.assign(s, { compliance: 40, professionalism: 40, risk: 80, violationLog: ['x', 'y'] }));
+  assert.ok(messy > clean + 40, `messy ${messy} vs clean ${clean}`);
+  // identical shop → identical score every time
+  assert.equal(score((s) => (s.compliance = 70)), score((s) => (s.compliance = 70)));
+  // repeated offences keep risk high
+  const s = calmShift(ns);
+  Object.assign(s, { violationLog: ['a', 'b', 'c'], risk: 60 });
+  State.inspection(s, { flags: 2, attitude: 0 });
+  assert.ok(s.risk >= 40 && s.repeatOffences === 1);
+});
+
+test('Phase 10: inspection timing differs between days', () => {
+  const { ns, State } = fresh();
+  const times = new Set();
+  for (let seed = 1; seed <= 8; seed++) {
+    const s = newShift(ns, { seed: seed * 101 });
+    times.add(s.inspectionScheduled);
+  }
+  assert.ok(times.size > 4);
+});
+
+/* ---------------------------------------------------------- A16 special events */
+test('A16: every special event exists physically and can be resolved through Abang\'s Desk', () => {
+  const { ns, State } = fresh();
+  for (const id of Object.keys(ns.EVENTS).filter((x) => x !== 'raid')) {
+    const s = calmShift(ns, { day: 4 });
+    s.perks.push('snack');
+    s.elapsed = 5; // school hours
+    const ev = State.startEvent(s, id);
+    assert.ok(ev, `${id} starts`);
+    const opts = State.options(s, { kind: 'event', id: ev.id });
+    assert.ok(opts.length >= 2, `${id} has choices`);
+    if (ev.kind === 'npc') assert.ok(ev.npcIds.length >= 1 && ev.npcIds.every((nid) => State.byId(s.customers, nid)), `${id} has visible people`);
+    if (id === 'blackout') assert.ok(s.powerOutage > 0);
+    for (const o of opts) {
+      const s2 = calmShift(ns, { day: 4 });
+      s2.perks.push('snack');
+      s2.elapsed = 5;
+      s2.cash = 5000;
+      const e2 = State.startEvent(s2, id);
+      assert.ok(State.perform(s2, 'event', e2.id, o.choice).ok, `${id}/${o.choice}`);
+      advance(ns, s2, 14);
+      assert.equal(State.eventById(s2, e2.id), undefined, `${id}/${o.choice} resolved`);
+    }
+  }
+});
+
+test('A16: events fire only under the right conditions (snack theft needs the Snack Machine, truancy only in school hours)', () => {
+  const { ns, State } = fresh();
+  let s = calmShift(ns, { day: 4 });
+  assert.equal(State.startEvent(s, 'snacktheft'), false, 'no snack machine, no snack theft');
+  s.perks.push('snack');
+  assert.ok(State.startEvent(s, 'snacktheft'));
+  s = calmShift(ns, { day: 4 });
+  s.elapsed = 5;
+  assert.ok(State.canStartEvent(s, 'truancy'), 'school hours');
+  s.elapsed = 80;
+  assert.equal(State.canStartEvent(s, 'truancy'), false, 'after school');
+});
+
+test('Phase 11: unanswered events fall back to their default consequence (no silent stalls)', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns, { day: 4 });
+  const ev = State.startEvent(s, 'spill');
+  const pc = State.byId(s.pcs, ev.data.pcId);
+  advance(ns, s, 20);
+  assert.equal(State.eventById(s, ev.id), undefined);
+  assert.ok(pc.fault, 'ignored spill damaged the PC next to it');
+});
+
+test('Phase 11: blackout stops billing, dims, blocks assignment, then restores', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  seat(ns, s, { requested: 90 });
+  const ev = State.startEvent(s, 'blackout');
+  const t = State.byId(s.pcs, 1).occupiedSeconds;
+  advance(ns, s, 2);
+  assert.equal(State.byId(s.pcs, 1).occupiedSeconds, t, 'rentals interrupted');
+  const c = addWaiting(ns, s);
+  State.select(s, { kind: 'customer', id: c.id });
+  State.perform(s, 'duration', c.id, 60);
+  assert.equal(State.select(s, { kind: 'pc', id: 2 }).ok, false, 'no new rentals in the dark');
+  State.perform(s, 'event', ev.id, 'fuse');
+  advance(ns, s, 12);
+  assert.equal(s.powerOutage, 0);
+});
+
+/* ------------------------------------------------------------ A17 retry day */
+test('A17/7.7: failing a day allows retrying the SAME day from the start-of-day checkpoint', () => {
+  const { ns, State } = fresh();
+  const s = newShift(ns, { seed: 77 });
+  const cashAtStart = s.cash;
+  s.spawnCooldown = 1e9; // nobody comes → guaranteed failure
+  s.eventCooldown = 1e9;
+  advance(ns, s, 130);
+  assert.equal(s.phase, 'result');
+  assert.equal(s.dayFailed, true);
+  const r = s.lastReport;
+  assert.equal(r.goalMet, false);
+  assert.equal(r.shortfall, r.goal, 'shortfall is explained');
+  assert.ok(r.reasons.length >= 1);
+  const retry = State.retryDay(s);
+  assert.equal(retry.day, 1);
+  assert.equal(retry.phase, 'prep');
+  assert.equal(retry.cash, cashAtStart, 'cash restored to the start of the day');
+  assert.ok(retry.reports.length === s.reports.length - 0 || retry.reports.length <= s.reports.length);
+});
+
+test('7.7: retrying keeps previously completed days and perks', () => {
+  const { ns, State } = fresh();
+  let s = newShift(ns, { seed: 31 });
+  s.spawnCooldown = 1e9; s.eventCooldown = 1e9; s.beatPlan = [];
+  s.dayGoal = 1; // trivially met
+  s.shiftLedger.push({ id: 1, kind: 'rental', cat: 'rental', amount: 99999, label: 'cheat' });
+  advance(ns, s, 130);
+  assert.equal(s.dayFailed, false);
+  State.proceed(s); // day 2
+  State.draftPerks(s);
+  s.cash = 20000;
+  State.buyPerk(s, s.perkDraft[0]);
+  const perksBought = [...s.perks];
+  State.startShift(s);
+  s.spawnCooldown = 1e9; s.eventCooldown = 1e9;
+  advance(ns, s, 130);
+  if (!s.dayFailed) s.dayFailed = true, s.lastReport.goalMet = false;
+  const retry = State.retryDay(s);
+  assert.equal(retry.day, 2);
+  assert.deepEqual(plain(retry.perks), perksBought);
+  assert.equal(retry.reports.length, 1, 'day 1 stays completed');
+});
+
+/* ------------------------------------------------------------- A18/A19 perks */
+test('A18/12: day 2 offers two different perks; only ONE can be bought; unaffordable-only is avoided', () => {
+  const { ns, State } = fresh();
+  for (let seed = 1; seed <= 30; seed++) {
+    const s = State.create(seed * 13);
+    s.day = 2;
+    s.phase = 'prep';
+    s.cash = seed % 3 === 0 ? 1600 : 6000; // sometimes nearly broke (RM16 — can only just afford the cheapest card)
+    State.draftPerks(s);
+    assert.equal(s.perkDraft.length, 2, 'two cards');
+    assert.notEqual(s.perkDraft[0], s.perkDraft[1]);
+    const prices = s.perkDraft.map((id) => State.perkDef(id).price);
+    assert.ok(prices.some((p) => p <= s.cash), `seed ${seed}: at least one affordable card (${s.perkDraft}, cash ${s.cash})`);
+  }
+  // completely broke (RM8): nothing is affordable, so the family loan must open the door
+  const broke = State.create(3);
+  broke.day = 2; broke.phase = 'prep'; broke.cash = 800;
+  State.draftPerks(broke);
+  assert.ok(State.loan(broke), 'the loan is on offer when cash is low');
+  assert.ok(broke.perkDraft.some((id) => State.perkDef(id).price <= broke.cash), 'after the loan something is affordable');
+  const s = State.create(5);
+  s.day = 2; s.phase = 'prep'; s.cash = 20000;
+  State.draftPerks(s);
+  const [a, b] = s.perkDraft;
+  assert.ok(State.buyPerk(s, a).ok);
+  assert.equal(State.buyPerk(s, b).ok, false, 'only one per day');
+});
+
+test('A18: the draft is randomised across seeds and weighted', () => {
+  const { ns, State } = fresh();
+  const seen = new Set();
+  for (let seed = 1; seed <= 40; seed++) {
+    const s = State.create(seed * 997);
+    s.day = 3; s.phase = 'prep'; s.cash = 20000;
+    State.draftPerks(s);
+    seen.add(s.perkDraft.join('+'));
+  }
+  assert.ok(seen.size > 6);
+});
+
+test('12: unselected perks return after a short cooldown, the selected one after a longer one (and respects max count)', () => {
+  const { ns, State } = fresh();
+  const s = State.create(11);
+  s.day = 2; s.phase = 'prep'; s.cash = 20000;
+  const [taken, left] = ['spares', 'filter'];
+  s.perkDraft = [taken, left]; s.perkChoiceMade = false;
+  State.buyPerk(s, taken);
+  const takenCd = s.perkCooldowns[taken] - s.day;
+  const leftCd = s.perkCooldowns[left] - s.day;
+  assert.ok(leftCd >= 2 && leftCd <= 4, `short cooldown ${leftCd}`);
+  assert.ok(takenCd >= 6 && takenCd <= 9, `long cooldown ${takenCd}`);
+  const single = State.create(3);
+  single.perks.push('snack');
+  assert.equal(State.eligiblePerks(single).some((p) => p.id === 'snack'), false, 'maxed-out perks never reappear');
+});
+
+test('A19: perks change gameplay — Add PC adds a desk, Aircond calms customers, Router adds bandwidth, CCTV gives hints', () => {
+  const { ns, State, S } = fresh();
+  let s = State.create(1); s.day = 2; s.phase = 'prep'; s.cash = 99999;
+  const pcs = s.pcs.length;
+  s.perkDraft = ['add_pc']; State.buyPerk(s, 'add_pc');
+  assert.equal(s.pcs.length, pcs + 1);
+  assert.ok(State.monthlyBills(s).electric > ns.CFG.COSTS.electric, 'more PCs → higher monthly electricity');
+  s = State.create(1); s.phase = 'prep'; s.cash = 99999; s.day = 3;
+  const drain = S.patienceDrain(s), bw = S.capBandwidth(s), upkeep = State.perkUpkeep(s);
+  s.perkDraft = ['aircond']; State.buyPerk(s, 'aircond');
+  assert.ok(S.patienceDrain(s) < drain, 'aircond: calmer');
+  assert.ok(State.perkUpkeep(s) > upkeep, 'aircond: running cost (downside)');
+  s.perkChoiceMade = false; s.perkDraft = ['router']; State.buyPerk(s, 'router');
+  assert.equal(S.capBandwidth(s), bw + 3);
+  s.perkChoiceMade = false; s.perkDraft = ['cctv']; State.buyPerk(s, 'cctv');
+  const s2 = calmShift(ns, { day: 4 });
+  s2.perks.push('cctv');
+  seat(ns, s2, { requested: 60 });
+  State.makeIncident(s2, 'suspicious', State.byId(s2.pcs, 1));
+  assert.ok('cctvHint' in s2.activeIssues[0], 'CCTV provides a hint');
+});
+
+test('12: every perk has a real downside (upkeep or behaviour change) — none is a free lunch', () => {
+  const { ns } = fresh();
+  for (const p of ns.PERKS) assert.ok(p.downside && (p.upkeep > 0 || ['add_pc', 'poster'].includes(p.id) || p.downside.length > 10), p.id);
+});
+
+/* --------------------------------------------------------- A20 save / load */
+test('A20: save → refresh → load restores the run; a corrupt save falls back to the backup', () => {
+  const storage = makeStorage();
+  let { ns, State } = fresh({ storage });
+  const s = newShift(ns, { seed: 2 });
+  s.spawnCooldown = 0;
+  advance(ns, s, 20);
+  s.cash += 123;
+  assert.ok(State.save(s));
+  State.save(s); // second write moves the first to the backup slot
+  // "refresh the browser": brand-new game instance, same storage
+  ({ ns, State } = fresh({ storage }));
+  const loaded = State.getSaved();
+  assert.ok(loaded);
+  assert.equal(loaded.cash, s.cash);
+  assert.equal(loaded.day, s.day);
+  assert.equal(loaded.phase, 'paused', 'a mid-shift save resumes paused');
+  // corrupt the main slot
+  storage.setItem(ns.CFG.SAVE, storage.getItem(ns.CFG.SAVE).slice(0, 200));
+  ({ ns, State } = fresh({ storage }));
+  const fallback = State.getSaved();
+  assert.ok(fallback, 'falls back to the backup');
+  assert.equal(fallback.day, s.day);
+});
+
+test('B8: older (v11-style) saves are migrated, never discarded', () => {
+  const storage = makeStorage();
+  const { ns, State } = fresh({ storage });
+  const old = State.create(4);
+  old.version = 11; old.day = 5; old.cash = 7777; old.phase = 'prep'; old.upgrades = ['router2']; old.autoDesk = false;
+  old.pcs.forEach((p) => { p.installed = ['puzzle']; p.storage = 10; });
+  storage.setItem(ns.CFG.SAVE_V11, JSON.stringify(old));
+  const s = State.getSaved();
+  assert.ok(s);
+  assert.equal(s.day, 5);
+  assert.equal(s.cash, 7777);
+  assert.equal('upgrades' in s, false);
+  assert.equal(s.version, ns.CFG.VERSION);
+  assert.equal('installed' in s.pcs[0], false);
+});
+
+/* ---------------------------------------------------- 7.5 bookkeeping, end of day */
+test('7.5: bookkeeping — rental / other / refunds / expenses reconcile with the cash balance', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  const start = s.cash;
+  seat(ns, s, { requested: 60 });
+  State.record(s, 'snack', 80, 'snack');
+  State.record(s, 'refund', -30, 'refund');
+  State.record(s, 'repair', -2000, 'repair');
+  const b = State.breakdown(s);
+  assert.equal(b.rental, 200);
+  assert.equal(b.other, 80);
+  assert.equal(b.refunds, -30);
+  assert.equal(b.expenses, 2000, 'a repair is an expense, not a refund');
+  assert.equal(b.net, 250, 'target progress = sales minus refunds only');
+  assert.equal(s.cash, start + b.rental + b.other + b.refunds - b.expenses, 'every sen accounted for');
+});
+
+test('7.5: no rent or bill on an ordinary day — and no belanja unless something was spent', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  seat(ns, s, { requested: 90 }); // RM3
+  advance(ns, s, 130);
+  const r = s.lastReport;
+  assert.equal(r.income, 300);
+  assert.equal(r.bills, null, 'rent and utilities are monthly, not daily');
+  assert.equal(r.billsPaid, 0);
+  assert.equal(r.expense, 0, 'nothing was spent, so there is no belanja');
+  assert.equal(r.net, 300);
+  assert.equal(s.cash, 3500 + 300);
+  assert.equal(State.audit(s).ok, true);
+});
+
+test('7.5: rent + utilities are paid once a month, AFTER the day is judged, and never count as sales', () => {
+  const { ns, State } = fresh();
+  const days = ns.CFG.BILL_CYCLE_DAYS;
+  const probe = State.create(1);
+  assert.deepEqual(plain([days - 1, days, days + 1, days * 2].map((d) => State.isBillDay(probe, d))), [false, true, false, true]);
+  const s = calmShift(ns, { day: days });
+  assert.equal(State.daysToBills(s), 1);
+  seat(ns, s, { requested: 90 });
+  advance(ns, s, 130);
+  const r = s.lastReport;
+  const bills = State.monthlyBills(s);
+  assert.equal(r.income, 300, 'bills do not touch the sales figure');
+  assert.equal(r.billsPaid, bills.rent + bills.electric + bills.internet);
+  assert.equal(r.expense, 0, 'bills are not belanja');
+  assert.equal(r.net, r.income - r.billsPaid);
+  assert.equal(s.cash, 3500 + 300 - r.billsPaid);
+  assert.equal(State.audit(s).ok, true);
+  assert.equal(State.daysToBills({ day: days + 1 }), days, 'the next month starts counting again');
+});
+
+test('7.5: belanja is booked only when money is actually spent (repairs, perk upkeep)', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  seat(ns, s, { requested: 60 });
+  State.breakPc(s, State.byId(s.pcs, 2), null, { kind: 'hardware' });
+  State.perform(s, 'repair', 2);
+  advance(ns, s, 6); // Abang walks over first; the money is only spent when he gets there
+  const spent = State.breakdown(s).expenses;
+  assert.ok(spent > 0 && State.breakdown(s).bills === 0);
+  advance(ns, s, 130);
+  assert.equal(s.lastReport.expense, spent);
+  assert.equal(s.lastReport.bills, null);
+  assert.equal(State.audit(s).ok, true, 'every sen accounted for');
+});
+
+/* ------------------------------------------------------------- archetypes etc. */
+test('4.3: all nine customer archetypes exist and can walk in', () => {
+  const { ns, State } = fresh();
+  const want = ['Pakcik Internet', 'Kaki FPS', 'Kaki Panas Baran', 'Student Assignment', 'Kaki MMORPG', 'Budak RM1', 'Kaki LAN', 'Lepak Sampai Pagi', 'Kaki MIRC'];
+  assert.deepEqual(plain(ns.TYPES.map((t) => t.name)).sort(), [...want].sort());
+  const seen = new Set();
+  for (let seed = 1; seed <= 400; seed++) {
+    const s = newShift(ns, { seed: seed * 31, day: 6 });
+    s.elapsed = 70; // late enough for the night crowd
+    s.customers = [];
+    State.spawn(s);
+    if (s.customers[0]) seen.add(s.customers[0].type);
+  }
+  assert.equal(seen.size, 9, `spawned: ${[...seen]}`);
+});
+
+test('Lepak Sampai Pagi lingers after the session; extending sells another half hour', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns, { day: 4 });
+  const c = seat(ns, s, { type: 'lepak', requested: 90 });
+  const pc = State.byId(s.pcs, 1);
+  pc.occupiedSeconds = 0.05;
+  advance(ns, s, 0.5);
+  assert.ok(pc.lingerTime > 0 && c.status === 'playing', 'still glued to the seat');
+  const before = State.breakdown(s).rental;
+  assert.deepEqual(plain(State.options(s, { kind: 'pc', id: 1 }).map((o) => o.act)), ['extend', 'sendoff']);
+  State.perform(s, 'extend', 1);
+  assert.equal(State.breakdown(s).rental, before + 100);
+  assert.ok(pc.occupiedSeconds > 4);
+});
+
+test('Director: presets scale pressure; difficulty grows with the day, the perks and the PCs', () => {
+  const { ns, S } = fresh();
+  const s = ns.State.create(1);
+  const base = S.pressure(s);
+  s.preset = 'mencabar';
+  assert.ok(S.pressure(s) > base);
+  s.preset = 'santai';
+  assert.ok(S.pressure(s) < base);
+  s.preset = 'biasa';
+  s.day = 6;
+  assert.ok(S.pressure(s) > base);
+  const p6 = S.pressure(s);
+  s.perks.push('snack');
+  assert.ok(S.pressure(s) > p6);
+});
+
+test('Movement: people keep apart and arrive at their goals without teleporting', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  const a = seat(ns, s, { requested: 90, pcId: 1 });
+  const track = [];
+  const c = addWaiting(ns, s);
+  State.select(s, { kind: 'customer', id: c.id });
+  State.perform(s, 'duration', c.id, 60);
+  State.select(s, { kind: 'pc', id: 3 });
+  let last = { x: c.x, y: c.y }, maxJump = 0;
+  for (let i = 0; i < 600 && c.status !== 'playing'; i++) {
+    State.update(s, 0.05);
+    maxJump = Math.max(maxJump, Math.hypot(c.x - last.x, c.y - last.y));
+    last = { x: c.x, y: c.y };
+    track.push(c.moveIntensity);
+  }
+  assert.equal(c.status, 'playing');
+  assert.ok(maxJump < 0.3, `no teleporting (max step ${maxJump.toFixed(3)})`);
+  assert.ok(Math.max(...track) > 0.5 && a);
+});

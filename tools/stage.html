@@ -1,0 +1,32 @@
+<!doctype html>
+<!-- Dev-only render stage: loads the state + 3D code without the game UI, so scenes can be screenshotted from tests/tools. -->
+<html><head><meta charset="utf-8"><title>ABCC stage</title>
+<style>
+  html,body{margin:0;height:100%;background:#1c1450}
+  #vp{position:absolute;inset:0;background:linear-gradient(180deg,var(--sky-a,#b7e8ff),var(--sky-b,#ffe9c9) 62%,var(--sky-c,#ffd2b0))}
+  canvas{position:absolute;inset:0;width:100%;height:100%}
+</style></head>
+<body><div id="vp"><canvas id="game3D"></canvas></div>
+<script src="../js/core/config.js"></script>
+<script src="../js/state/core.js"></script><script src="../js/state/economy.js"></script><script src="../js/state/movement.js"></script>
+<script src="../js/state/perks.js"></script><script src="../js/state/customers.js"></script><script src="../js/state/pcs.js"></script>
+<script src="../js/state/incidents.js"></script><script src="../js/state/events.js"></script><script src="../js/state/officer.js"></script>
+<script src="../js/state/actions.js"></script><script src="../js/state/shift.js"></script><script src="../js/state/save.js"></script><script src="../js/state/index.js"></script>
+<script src="../js/gfx/engine.js"></script><script src="../js/gfx/lighting.js"></script><script src="../js/gfx/anim.js"></script>
+<script src="../js/gfx/props.js"></script><script src="../js/gfx/characters.js"></script><script src="../js/gfx/picking.js"></script><script src="../js/gfx/scene.js"></script>
+<script>
+  const ns = window.ABCC, State = ns.State;
+  const gfx = ns.Gfx.create(document.getElementById('game3D'));
+  const s = State.create(2007);
+  s.phase = 'prep';
+  window.stage = { ns, State, gfx, s, ui: {} };
+  let last = 0, running = true;
+  function frame(now) {
+    const dt = last ? Math.min(0.07, (now - last) / 1000) : 0; last = now;
+    if (running && s.phase === 'active') State.update(s, dt);
+    gfx.render(s, now, window.stage.ui);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  window.stage.pause = (v) => { running = !v; };
+</script></body></html>
