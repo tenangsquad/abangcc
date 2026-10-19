@@ -158,7 +158,8 @@ test('Phase 14: HUD content, sidebar order and no old Buku Log', async () => {
   assert.match(txt, /CC NEWS/);
   assert.doesNotMatch(txt, /Buku Log/i, 'the old log panel is gone');
   const order = await ev(`[...document.querySelectorAll('.sidebar .card-title > span:first-child')].map((e) => e.textContent.replace(/[^A-Za-z' ]/g, '').trim().toUpperCase())`);
-  assert.deepEqual(order.slice(0, 4), ['SITUASI PANAS', 'PELANGGAN MENUNGGU', "ABANG'S DESK", 'STATUS KEDAI']);
+  assert.deepEqual(order.slice(0, 3), ['SITUASI PANAS', 'PELANGGAN MENUNGGU', 'STATUS KEDAI']);
+  assert.equal(await ev(`!!document.getElementById('selectionPanel') || !!document.getElementById('durationButtons')`), false, "the old Abang's Desk side panel is gone");
   for (const id of ['pauseBtn', 'soundBtn', 'settingsBtn', 'helpBtn', 'hudDay', 'hudTime', 'worldCountdown']) assert.ok(await ev(`!!document.getElementById('${id}')`), id);
   assert.match(await ev(`document.getElementById('hudDay').textContent`), /Hari 1/);
 });
@@ -191,7 +192,7 @@ test('A6/A7/A21: ONE click/tap each selects the customer, picks the duration and
     else await clickEl(`.queue-item[data-customer="${id}"]`);
     if ((await sel())?.kind !== 'customer' || (await S('s.pendingCustomerId')) !== id) { failures++; continue; }
     // 1 click: the duration button (60 = the requested ★)
-    await clickEl('#durationButtons [data-choice="60"]');
+    await clickEl('#worldMenu [data-act="duration"][data-choice="60"]');
     if ((await S('s.pendingDuration')) !== 60) { failures++; continue; }
     // 1 click/tap: the PC in the room
     await clickWorld('pc', pcId, { touch });
@@ -199,6 +200,26 @@ test('A6/A7/A21: ONE click/tap each selects the customer, picks the duration and
     if (!ok) failures++;
   }
   assert.equal(failures, 0, 'every deliberate click did exactly what it should');
+});
+
+test('Customers get their own pop-up: tapping one opens 30 / 60 / 90 beside them (not on top of them) and it closes once a length is picked', async () => {
+  await open();
+  await pageReady();
+  const id = await ev(`T.wait('student', 60, 0)`);
+  await sleep(400);
+  await clickWorld('customer', id);
+  const m = await ev(`(() => { const menu = document.getElementById('worldMenu'), r = menu.getBoundingClientRect(), p = ABCC.debug.pagePoint('customer', ${id}); return { hidden: menu.hidden, l: r.left, r: r.right, t: r.top, b: r.bottom, px: p.x, py: p.y, durs: [...menu.querySelectorAll('[data-act="duration"]')].map((e) => e.dataset.choice), wanted: menu.querySelectorAll('.wanted').length }; })()`);
+  assert.equal(m.hidden, false, 'the menu opens when the customer is tapped');
+  assert.deepEqual(m.durs, ['30', '60', '90']);
+  assert.equal(m.wanted, 1, 'the requested length is marked');
+  assert.ok(!(m.px > m.l - 10 && m.px < m.r + 10 && m.py > m.t - 10 && m.py < m.b + 10), 'the menu does not sit on top of the customer');
+  await shot('16_customer_menu');
+  await clickEl('#worldMenu [data-act="duration"][data-choice="60"]');
+  assert.equal(await S('s.pendingDuration'), 60);
+  assert.equal(await ev(`document.getElementById('worldMenu').hidden`), true, 'the menu closes so the PC to tap is clear');
+  await clickWorld('pc', 2);
+  assert.equal(await S('s.pcs[1].customerId'), id, 'then one tap on the PC seats them');
+  assert.deepEqual(b.consoleErrors, []);
 });
 
 test('A7: the customer walks to the correct chair and sits on it, facing the monitor', async () => {
@@ -236,8 +257,9 @@ test('A8/A9 + 7.5: HUD cash/target follow the ledger; the sales breakdown popove
   assert.match(bd, /Jualan bersih[^\n]*\s*RM2\.00/);
   assert.doesNotMatch(bd, /Belanja|Refund/, 'belanja and refund rows only show once something was spent / refunded');
   assert.match(bd, /sebulan sekali/, 'rent and bills are monthly');
-  const green = await ev(`(() => { const r = document.querySelector('#goalBreakdown .bd-row.total'); return [getComputedStyle(r).color, getComputedStyle(r.querySelector('b')).color]; })()`);
-  assert.deepEqual(green, ['rgb(18, 133, 58)', 'rgb(18, 133, 58)'], 'Jualan bersih is green (label and amount)');
+  const colours = await ev(`(() => { const rows = [...document.querySelectorAll('#goalBreakdown .bd-row')]; const col = (e) => getComputedStyle(e).color; const total = rows.find((r) => r.classList.contains('total')), other = rows.find((r) => !r.classList.contains('total')); return { label: col(total.querySelector('span')), otherLabel: col(other.querySelector('span')), value: col(total.querySelector('b')) }; })()`);
+  assert.equal(colours.label, colours.otherLabel, 'the Jualan bersih label has the same colour as the other labels');
+  assert.equal(colours.value, 'rgb(16, 154, 114)', 'its amount is green');
   await shot('03_breakdown');
   // a wrong duration pays less than the right one — visible in the HUD
   await ev(`(() => { const s = ABCC.debug.state(); s.shiftLedger = []; s.once = {}; s.cash = 3500; return 1; })()`);
@@ -257,7 +279,7 @@ test('Phase 6/9: tapping a suspicious PC offers a soft and a harsh option; a fal
   const buttons = await ev(`[...document.querySelectorAll('#worldMenu [data-act]')].map((e) => e.dataset.act)`);
   assert.deepEqual(buttons, ['soft', 'harsh']);
   assert.match(await ev(`document.getElementById('worldMenu').innerText`), /Tegur baik-baik/);
-  assert.equal(await ev(`document.querySelectorAll('#actionButtons button').length`), 0, 'the side panel holds no action buttons');
+  assert.equal(await ev(`document.querySelectorAll('.sidebar button[data-act]').length`), 0, 'the side panels hold no action buttons');
   const rep = await S('s.rep'), pro = await S('s.professionalism');
   await clickEl('#worldMenu [data-act="harsh"]');
   assert.equal(await ev(`document.getElementById('worldMenu').hidden`), true, 'the menu closes once the choice is made');
@@ -279,7 +301,7 @@ test('Actions are done on the PC itself: tapping a PC pops its menu right beside
   assert.equal(m.hidden, false, 'the menu opens when the PC is tapped');
   assert.deepEqual(m.acts, ['restart', 'repair']);
   assert.ok(!(m.px > m.l - 20 && m.px < m.r + 20 && m.py > m.t - 20 && m.py < m.b + 20), 'the menu does not sit on top of the PC it belongs to');
-  assert.equal(await ev(`document.querySelectorAll('#actionButtons button').length`), 0, 'nothing to click in the side panel');
+  assert.equal(await ev(`document.querySelectorAll('.sidebar button[data-act]').length`), 0, 'nothing to click in the side panels');
   await shot('14_pc_menu');
   const cash = await S('s.cash');
   await clickEl('#worldMenu [data-act="restart"]'); // one click on the PC's own menu
@@ -437,10 +459,10 @@ test('A22: mobile (iPhone 16 portrait) keeps the scene prominent and everything 
   // touch the customer card, the duration, then a PC in the 3D scene
   const id = await S('State.inQueue(s)[0].id');
   await clickEl(`.queue-item[data-customer="${id}"]`);
-  const dur = await rect('#durationButtons button');
+  const dur = await rect('#worldMenu [data-act="duration"]');
   assert.ok(dur.b <= m.winH && dur.t > m.vpTop, `duration buttons are on screen without scrolling (bottom ${Math.round(dur.b)} of ${m.winH})`);
   assert.ok(dur.h >= 40, 'duration buttons are touch sized');
-  await clickEl('#durationButtons [data-choice="60"]');
+  await clickEl('#worldMenu [data-act="duration"][data-choice="60"]');
   await clickWorld('pc', 1, { touch: true });
   assert.equal(await S('s.pcs[0].customerId'), id, 'a single tap on the PC in the 3D scene assigned the customer');
   await shot('09_mobile_portrait');
@@ -560,7 +582,7 @@ test('the standalone bundle (dist/) boots and plays the same as the folder build
   assert.equal(await ev('T.day(1)'), 'active');
 });
 
-test('Loading screen: the wallpaper shows for at least ~1.7 s with a moving progress bar, then fades away and the game is usable', async () => {
+test('Loading screen: the wallpaper shows for at least ~3 s with a moving progress bar, then fades away and the game is usable', async () => {
   await b.viewport(1366, 768, {});
   await b.goto(INDEX);
   await b.eval(`localStorage.clear(); localStorage.setItem('abangcc2007_settings', JSON.stringify({ quality: 'high', qualityChosen: true, sound: false })); 1`);
@@ -576,7 +598,7 @@ test('Loading screen: the wallpaper shows for at least ~1.7 s with a moving prog
   assert.equal(await ev(`!!document.getElementById('loader')`), false, 'the splash goes away by itself');
   assert.equal(await ev(`ABCC.Loader.active`), false);
   const ms = await ev(`ABCC.Loader.visibleMs`);
-  assert.ok(ms >= 1650 && ms < 6000, `visible for ${ms} ms (at least ~1.7 s, not forever)`);
+  assert.ok(ms >= 2900 && ms < 8000, `visible for ${ms} ms (at least ~3 s, not forever)`);
   assert.deepEqual(b.consoleErrors, []);
   assert.equal(await ev(`document.getElementById('app').getBoundingClientRect().width > 300`), true, 'the game is there');
 });

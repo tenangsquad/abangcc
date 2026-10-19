@@ -98,7 +98,7 @@
         <span>🎮 Jualan sewa</span><span class="good">+ ${fmtMoney(r.rental)}</span>
         <span>🥤 Jualan lain</span><span class="good">+ ${fmtMoney(r.other)}</span>
         ${r.refunds ? `<span>↩️ Refund</span><span class="bad">− ${fmtMoney(-r.refunds)}</span>` : ''}
-        <span class="net-sales"><b>Jualan bersih</b></span><span class="net-sales"><b>${fmtMoney(r.income)}</b></span>
+        <span>Jualan bersih</span><span class="good">${fmtMoney(r.income)}</span>
         ${r.goalMet ? '' : `<span>Kekurangan</span><span class="bad">− ${fmtMoney(r.shortfall)}</span>`}
         ${r.billsPaid ? `<span>🏠 Sewa &amp; bil bulanan</span><span class="bad">− ${fmtMoney(r.billsPaid)}</span>` : ''}
         ${r.expense ? `<span>🧾 Belanja</span><span class="bad">− ${fmtMoney(r.expense)}</span>` : ''}
@@ -129,7 +129,7 @@
   const INTRO = [
     { eye: 'SELAMAT DATANG KE ABANG CC', title: 'Kedai ini hidup huru-hara', body: 'Kau bermula dengan RM35 dan 3 PC. Tap pelanggan yang beratur, pilih masa sewaan, kemudian tap PC kosong. Semua PC sudah ada game siap-siap.', badges: ['👆 Tap komputer / pelanggan', '⚡ Shift 2 minit', '🎮 Browser sahaja'] },
     { eye: 'TARGET HARIAN', title: 'Setiap hari ada target jualan', body: 'Capai target untuk mara ke hari seterusnya. Jualan = sewa + snack + bonus, tolak refund. Sewa &amp; bil dibayar sebulan sekali (bukan setiap hari); belanja lain hanya bila kau betul-betul belanja. Kalau gagal, kau ulang hari yang sama tanpa hilang progres.', badges: ['🎯 Target jualan', '💰 Cash dibawa ke esok', '↻ Ulang bila gagal'] },
-    { eye: 'MASALAH DALAM BILIK', title: 'Selesaikan terus di tempat kejadian', body: 'PC hang, pelanggan suspicious, video bising, gaduh, blackout, air tumpah… Tap benda itu dalam bilik, pilih tindakan di Abang\'s Desk, dan Abang akan berjalan ke sana. Panel Situasi Panas hanya beri amaran.', badges: ['❓ Suspicious: tegur lembut atau tuduh berani', '↻ Restart PC = refund 25%', '🔥 Peak hour = lebih ramai'] },
+    { eye: 'MASALAH DALAM BILIK', title: 'Selesaikan terus di tempat kejadian', body: 'PC hang, pelanggan suspicious, video bising, gaduh, blackout, air tumpah… Tap benda itu dalam bilik, pilih tindakan pada menu yang muncul di sebelahnya, dan Abang akan berjalan ke sana. Panel Situasi Panas hanya beri amaran.', badges: ['❓ Suspicious: tegur lembut atau tuduh berani', '↻ Restart PC = refund 25%', '🔥 Peak hour = lebih ramai'] },
     { eye: 'PERK ROGUELITE', title: 'Mulai hari 2, pilih 1 daripada 2 perk', body: 'Tambah PC, snack machine, router, aircond, CCTV… Setiap perk ada kelebihan dan kelemahan (bil harian, risiko). Setiap run berbeza.', badges: ['🎴 2 pilihan rawak', '🧩 Build berlainan', '📈 Makin lama, makin susah'] },
   ];
   function renderOnboarding() {
@@ -155,11 +155,11 @@
       <span class="modal-eyebrow">PANDUAN PANTAS</span>
       <h1>Jaga CC. <em>Jangan panik!</em></h1>
       <div class="modal-hero">
-        <p>👤 <b>Tap pelanggan</b> yang beratur → pilih <b>30 / 60 / 90 minit</b> (<kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>) → tap PC yang berkelip hijau. Pilih sama seperti permintaan pelanggan (★) untuk bayaran penuh; salah pilih = bayaran dipotong.</p>
-        <p>🔧 <b>PC bermasalah</b> (hang, beku, panas, BSOD, internet putus, rosak)? Tap PC → pilih cara baiki di <b>Abang's Desk</b>. Restart masa ada pelanggan = refund 25% (sekali setiap kejadian).</p>
+        <p>👤 <b>Tap pelanggan</b> yang beratur → menu <b>30 / 60 / 90 minit</b> muncul di sebelahnya (<kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>) → tap PC yang berkelip hijau. Pilih sama seperti permintaan pelanggan (★) untuk bayaran penuh; salah pilih = bayaran dipotong.</p>
+        <p>🔧 <b>PC bermasalah</b> (hang, beku, panas, BSOD, internet putus, rosak)? Tap PC → pilih cara baiki pada menu di sebelah PC. Restart masa ada pelanggan = refund 25% (sekali setiap kejadian).</p>
         <p>❓ <b>PC suspicious</b>: tap PC → <b>Tegur baik-baik</b> (selamat) atau <b>Tuduh &amp; halau</b> (berani). Dia mungkin tak bersalah — salah tuduh kos reputasi, professionalism dan refund.</p>
-        <p>🎲 <b>Kejadian khas</b> (rombongan, ponteng, blackout, air tumpah, snack hilang…) muncul sebagai orang/benda dalam bilik. Tap yang berdenyut, atau kad di <b>Situasi Panas</b> (TENGOK), lalu pilih di Abang's Desk.</p>
-        <p>🖱️ Zoom kamera: roda tetikus / cubit / butang Zoom. ⌨️ <kbd>Space</kbd> pause · <kbd>N</kbd> pelanggan seterusnya · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> tempoh · <kbd>R</kbd> restart.</p>
+        <p>🎲 <b>Kejadian khas</b> (rombongan, ponteng, blackout, air tumpah, snack hilang…) muncul sebagai orang/benda dalam bilik. Tap yang berdenyut, atau kad di <b>Situasi Panas</b> (TENGOK), lalu pilih pada menu di atas benda itu.</p>
+        <p>🖱️ Zoom kamera: roda tetikus / cubit / butang Zoom. ⌨️ <kbd>Space</kbd> pause · <kbd>N</kbd> pelanggan seterusnya · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> tempoh · <kbd>R</kbd> restart PC yang dipilih.</p>
       </div>
       <div class="modal-actions"><button class="btn big mint" data-modal="back">Faham, jom main!</button></div>`);
   }

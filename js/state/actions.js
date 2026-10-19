@@ -37,7 +37,7 @@
     return out;
   }
 
-  /** Everything Abang's Desk can offer for a selection. */
+  /** Everything the pop-up menu can offer for a selection. */
   function options(s, target) {
     if (!target) return [];
     if (target.kind === 'event') {
@@ -80,7 +80,7 @@
       s.pendingCustomerId = c.id;
       s.pendingDuration = null;
       s.selected = { kind: 'customer', id: c.id };
-      return S.ok(`${c.name} minta ${c.requestedMinutes} minit. Pilih tempoh di Abang's Desk.`);
+      return S.ok(`${c.name} minta ${c.requestedMinutes} minit. Pilih tempoh pada menu.`);
     }
     if (ent.kind === 'event') {
       const ev = State.eventById(s, ent.id);
@@ -93,8 +93,8 @@
       if (!p) return S.fail('PC tak tersedia.');
       if (s.pendingCustomerId && s.pendingDuration && p.status === 'free' && !p.fault && !p.issue) return State.assignToPC(s, p.id);
       s.selected = { kind: 'pc', id: p.id };
-      if (p.fault) return S.ok(`PC ${p.id}: ${FAULTS[p.fault].label}. Pilih tindakan di Abang's Desk.`);
-      if (p.issue) return S.ok(`PC ${p.id} perlukan tindakan. Pilih di Abang's Desk.`);
+      if (p.fault) return S.ok(`PC ${p.id}: ${FAULTS[p.fault].label}. Pilih tindakan pada menu.`);
+      if (p.issue) return S.ok(`PC ${p.id} perlukan tindakan. Pilih pada menu.`);
       if (s.pendingCustomerId && !s.pendingDuration) return S.fail('Pilih tempoh sewaan dahulu.');
       return S.ok(`PC ${p.id} dipilih.`);
     }
@@ -136,7 +136,7 @@
     return queueTask(s, 'event', evId, ev.spot.x, ev.spot.y, ch.work ?? ch.walkWork ?? 1.1, { entityKind: 'event', opts: { choice: choiceId } });
   }
 
-  /** The single entry point the UI uses for any button in Abang's Desk. */
+  /** The single entry point the UI uses for any button in the pop-up menu. */
   function perform(s, act, id, choice) {
     if (s.phase !== 'active') return S.fail('Buka shift dulu.');
     if (act === 'duration') return State.chooseRental(s, id, Number(choice));
@@ -181,7 +181,7 @@
         const e = player.errand;
         if (!e.arrived) {
           player.destination = player.destination || { x: e.x, y: e.y };
-          S.updateMove(player, dt, 3.1);
+          S.updateMove(player, dt, CFG.ABANG_ERRAND_SPEED);
           if (!player.destination) e.arrived = true;
           return;
         }
@@ -200,16 +200,16 @@
       if (!atHome && !player.destination && player.idleTime > 3.5) player.destination = { x: ROOM.home.x, y: ROOM.home.y };
       // Behind the counter Abang looks out at the customers in line.
       if (atHome && !player.destination) player.facing = (player.facing ?? 0) + ns.shortestAngle(player.facing ?? 0, Math.PI / 2) * (1 - Math.exp(-6 * dt));
-      S.updateMove(player, dt, 3.1);
+      S.updateMove(player, dt, CFG.ABANG_ERRAND_SPEED);
       return;
     }
     player.idleTime = 0;
     const speed = S.taskSpeedMult(s) * (s.cleanupSlow > 0 ? 0.6 : 1);
     if (task.remaining === null) {
       if (!player.destination) player.destination = { x: task.x, y: task.y };
-      S.updateMove(player, dt, 3.5 * speed);
+      S.updateMove(player, dt, CFG.ABANG_SPEED * speed);
       if (player.destination) return;
-      task.remaining = task.work / speed;
+      task.remaining = (task.work * CFG.ABANG_WORK_SCALE) / speed;
     }
     player.working = true;
     player.moveIntensity = Math.max(0, (player.moveIntensity || 0) - dt * 7);

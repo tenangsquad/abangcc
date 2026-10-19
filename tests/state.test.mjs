@@ -868,3 +868,46 @@ test('Movement: people keep apart and arrive at their goals without teleporting'
   assert.ok(maxJump < 0.3, `no teleporting (max step ${maxJump.toFixed(3)})`);
   assert.ok(Math.max(...track) > 0.5 && a);
 });
+
+test('Floor plan: counter in the front-left corner, desks hug the back wall first, Abang can reach every desk and come home', () => {
+  const { ns, State } = fresh();
+  const { ROOM } = ns;
+  // counter fills the bottom-left corner of the left wall; the water dispenser and rack took its old place
+  assert.ok(ROOM.counter.y1 > ROOM.depth - 1 && ROOM.counter.y0 > ROOM.depth / 2, 'counter is in the front corner');
+  assert.ok(ROOM.dispenser.y < ROOM.counter.y0 - 1 && ROOM.rack.y < ROOM.counter.y0 - 0.5, 'dispenser and rack stand where the counter used to be');
+  // the first five desks all sit on the back row, so the middle of the café stays open
+  for (let i = 0; i < ROOM.perRow; i++) assert.equal(ROOM.pcSlot(i).y, ROOM.rowY[0], `desk ${i + 1} is against the back wall`);
+  assert.equal(ROOM.pcSlot(ROOM.perRow).y, ROOM.rowY[1], 'the sixth desk opens the second row');
+  assert.ok(ROOM.widthFor(3) < ROOM.widthFor(5), 'the room widens as desks are added');
+  // everything stays inside the room
+  for (let i = 0; i < ROOM.maxPcs; i++) assert.ok(ROOM.seatFor(ROOM.pcSlot(i)).y < ROOM.depth - 1);
+  // Abang walks from behind the counter to every desk and back home again, through the hatch, never teleporting
+  const s = calmShift(ns);
+  s.pcs.length = 0;
+  for (let i = 0; i < ROOM.maxPcs; i++) s.pcs.push(ns.S.makePc ? ns.S.makePc(i) : { id: i + 1, ...ROOM.pcSlot(i) });
+  for (const pc of s.pcs) {
+    s.player.destination = ROOM.staffSpotFor(pc);
+    let last = { x: s.player.x, y: s.player.y }, maxJump = 0, steps = 0;
+    while (s.player.destination && steps++ < 1200) {
+      ns.S.updateMove(s.player, 0.05, ns.CFG.ABANG_SPEED);
+      maxJump = Math.max(maxJump, Math.hypot(s.player.x - last.x, s.player.y - last.y));
+      last = { x: s.player.x, y: s.player.y };
+    }
+    assert.equal(s.player.destination, null, `Abang reaches PC ${pc.id}`);
+    assert.ok(maxJump < 0.5, `no teleporting (max step ${maxJump.toFixed(2)})`);
+    s.player.destination = { ...ROOM.home };
+    steps = 0;
+    while (s.player.destination && steps++ < 1200) ns.S.updateMove(s.player, 0.05, ns.CFG.ABANG_SPEED);
+    assert.ok(Math.hypot(s.player.x - ROOM.home.x, s.player.y - ROOM.home.y) < 0.2, `Abang gets back behind the counter from PC ${pc.id}`);
+  }
+});
+
+test('Customers: the pop-up needs no side panel — State.durationOptions gives the three lengths, with the requested one starred', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns);
+  const c = addWaiting(ns, s, 'student', 90);
+  assert.ok(State.select(s, { kind: 'customer', id: c.id }).ok);
+  const opts = State.durationOptions(s, c.id);
+  assert.deepEqual([...opts.map((o) => o.minutes)], [30, 60, 90]);
+  assert.deepEqual([...opts.filter((o) => o.wanted).map((o) => o.minutes)], [90]);
+});

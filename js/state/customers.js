@@ -251,7 +251,7 @@
   function updatePeople(s, dt) {
     const drain = S.patienceDrain(s);
     for (const c of s.customers) {
-      S.updateMove(c, dt, c.status === 'event' ? 2.2 : 2.0);
+      S.updateMove(c, dt, c.status === 'event' ? 2.2 : CFG.CUSTOMER_SPEED);
       c.sitBlend = clamp((c.sitBlend || 0) + (c.status === 'playing' ? dt * 3.8 : -dt * 5.4), 0, 1);
 
       if (c.status === 'arriving' && !c.destination) c.status = 'waiting';

@@ -41,19 +41,23 @@
   /* ---------- shop floor plan ----------
      World units are roughly metres. x runs left→right along the back wall,
      y is the depth axis (towards the camera). The entrance sits in the top-left
-     corner and the pay counter runs down the left wall. Customers queue in a
-     roped-off lane right in front of the counter (head of the line at the till,
-     tail by the door); Abang serves from behind the counter and walks out through
-     a gap at its lower end (the "hatch"). PC desks fill two rows further inside. */
+     corner and the pay counter fills the bottom-left corner of the left wall.
+     Customers queue in a roped-off lane in front of the counter (head of the line
+     at the till, tail towards the door); Abang serves from behind the counter and
+     walks out through a gap at its upper end (the "hatch"). The PC desks line the
+     back (right-hand) wall, so the middle of the café stays open: a second row only
+     appears once the first one (5 desks) is full. The water dispenser and magazine
+     rack stand on the left wall between the door and the counter. */
   const ROOM = {
-    depth: 10,
+    depth: 12,
     wallHeight: 3.3,
-    minWidth: 11.8,
+    minWidth: 11.9,
     rightMargin: 2.4,
     maxPcs: 10,
-    // PC desks: two rows (back / front), new desks are added column by column.
+    // PC desks: two rows (back / front) of `perRow`. Desks fill the back row first, column by column.
+    perRow: 5,
     firstColumnX: 4.5,
-    columnGap: 2.6,
+    columnGap: 2.5,
     rowY: [1.8, 5.4],
     // Walking lanes: one vertical lane beside the queue lane, one aisle between and one in front of the rows.
     laneX: 3.1,
@@ -62,35 +66,38 @@
     // Landmarks
     door: { x: 0.4, y: 1.3 },
     // Queue lane: slot 0 is at the till (bottom), higher slots stretch back towards the door.
-    queue: { x: 2.4, headY: 6.1, gap: 0.88, entryY: 2.7, left: 1.95, right: 2.85 },
+    queue: { x: 2.4, headY: 10.9, gap: 0.88, entryY: 7.5, left: 1.95, right: 2.85 },
     // Where groups wait just inside the door (event NPCs, and the overflow of a big queue).
     doorCluster: [{ x: 1.45, y: 1.95 }, { x: 2.05, y: 1.35 }, { x: 1.4, y: 0.85 }, { x: 2.1, y: 2.25 }],
     doorTalk: { x: 2.55, y: 2.2 }, // where Abang stands to talk to the people at the door
-    // Counter: a long desk against the left wall, from y0 to y1. Abang stands behind it.
-    counter: { x: 1.45, y0: 3.2, y1: 6.9, depth: 0.95 },
-    hatchY: 7.45, // gap below the counter that Abang uses to walk out (lines up with the front aisle)
-    home: { x: 0.62, y: 6.1 },
-    // Fuse box on the left wall between the door and the counter.
+    // Counter: a long desk against the left wall in the front corner, from y0 to y1. Abang stands behind it.
+    counter: { x: 1.45, y0: 8.0, y1: 11.7, depth: 0.95 },
+    hatchY: 7.45, // gap above the counter that Abang uses to walk out (lines up with the front aisle)
+    home: { x: 0.62, y: 10.9 },
+    // Fuse box on the left wall between the door and the water dispenser.
     fuse: { x: 0.12, y: 1.45, z: 2.75, spot: { x: 1.05, y: 2.75 } },
+    // Left-wall furniture that took the counter's old place
+    dispenser: { x: 0.75, y: 4.9 },
+    rack: { x: 0.4, y: 6.3 },
     // Offsets relative to a PC desk position
-    seatOffset: 0.78, // = the old 0.92 × pcScale: the chair sits the same relative distance from the (now smaller) desk
-    pcScale: 0.85, // desks, monitors, chairs are drawn 15% smaller …
-    charScale: 0.85, // … and so are the people, so the same room feels roomier
+    seatOffset: 0.72, // = the old 0.92 × pcScale: the chair sits the same relative distance from the (now smaller) desk
+    pcScale: 0.78, // desks, monitors, chairs are drawn 22% smaller …
+    charScale: 0.78, // … and so are the people, so the same room feels roomier
     staffOffset: { x: -0.62, y: 0.7 },
     sidestep: 0.72,
   };
   ROOM.pcSlot = (index) => ({
-    x: ROOM.firstColumnX + Math.floor(index / 2) * ROOM.columnGap,
-    y: ROOM.rowY[index % 2],
+    x: ROOM.firstColumnX + (index % ROOM.perRow) * ROOM.columnGap,
+    y: ROOM.rowY[Math.floor(index / ROOM.perRow)],
   });
   ROOM.widthFor = (pcCount) =>
-    Math.max(ROOM.minWidth, ROOM.firstColumnX + (Math.ceil(pcCount / 2) - 1) * ROOM.columnGap + ROOM.rightMargin);
+    Math.max(ROOM.minWidth, ROOM.firstColumnX + (Math.min(Math.max(pcCount, 1), ROOM.perRow) - 1) * ROOM.columnGap + ROOM.rightMargin);
   /** Slot `index` in the queue. The first four stand in the roped lane, extra people wait at the door cluster. */
   ROOM.queueSlot = (index) =>
     index < 4 ? { x: ROOM.queue.x, y: ROOM.queue.headY - index * ROOM.queue.gap } : ROOM.doorCluster[(index - 4) % ROOM.doorCluster.length];
   ROOM.queueEntry = () => ({ x: ROOM.queue.x, y: ROOM.queue.entryY });
   ROOM.inQueueLane = (p) => p.x > ROOM.queue.left && p.x < ROOM.queue.right && p.y > ROOM.queue.entryY + 0.25;
-  ROOM.behindCounter = (p) => p.x < ROOM.counter.x - ROOM.counter.depth / 2 + 0.05 && p.y > ROOM.counter.y0 - 0.2 && p.y < ROOM.hatchY + 0.6;
+  ROOM.behindCounter = (p) => p.x < ROOM.counter.x - ROOM.counter.depth / 2 + 0.05 && p.y > ROOM.hatchY - 0.3 && p.y < ROOM.counter.y1 + 0.6;
   ROOM.seatFor = (pc) => ({ x: pc.x, y: pc.y + ROOM.seatOffset });
   ROOM.staffSpotFor = (pc) => ({ x: pc.x + ROOM.staffOffset.x, y: pc.y + ROOM.staffOffset.y });
   /** Where the snack machine stands (back wall, right corner). Depends on the room width. */
@@ -109,6 +116,10 @@
     GAME_MINUTE_RATE: 6, // in-game minutes per real second → 12:00 PM … 12:00 AM
     DAY_START_MINUTES: 720,
     MAX_QUEUE: 4,
+    CUSTOMER_SPEED: 3.0, // walking speed of customers (was 2.0 — the café is now bigger, so the walk from the queue to a PC is longer)
+    ABANG_SPEED: 4.8, // world units per second when Abang rushes to a PC or an event (was 3.5)
+    ABANG_ERRAND_SPEED: 4.2, // setting up a customer's PC / walking back to the counter (was 3.1)
+    ABANG_WORK_SCALE: 0.85, // every fix / confrontation takes 15 % less time once he arrives
     MAX_COMMANDS: 3,
     START_CASH: 3500, // sen
     // Rent and utility bills are MONTHLY: paid once every BILL_CYCLE_DAYS days (at the end of that day's shift),
@@ -172,7 +183,7 @@
   };
 
   /* ---------- fault kinds a PC can develop ----------
-     `fix` lists the buttons Abang's Desk offers. `auto` = seconds until it sorts itself out
+     `fix` lists the buttons the PC's pop-up menu offers. `auto` = seconds until it sorts itself out
      (or, for 'dies', until it gets worse). Restarting during a session refunds 25 %. */
   const FAULTS = {
     glitch: { icon: '💥', label: 'Software crash', short: 'HANG', fix: ['restart', 'repair'], auto: 13, autoEnds: 'restart' },
@@ -247,7 +258,7 @@
   /* ---------- special events ----------
      Every event is a physical thing in the room: people at the door (kind 'npc'), the fuse box ('power'),
      a puddle ('floor') or a suspect by the snack machine ('machine'). The player selects it in the 3D scene
-     (or via "Tengok" in Situasi Panas) and picks a choice in Abang's Desk.
+     (or via "Tengok" in Situasi Panas) and picks a choice in the pop-up menu on it.
      choice.walk  = Abang has to walk over first      choice.remote = resolved at once (phone call)
      choice.cost  = sen, checked against cash          */
   const EVENTS = {

@@ -1,7 +1,7 @@
 /* ==========================================================================
    2g. INCIDENTS — trouble that sits on a PC (suspicious, loud video, fight, restricted, missing mouse)
    --------------------------------------------------------------------------
-   The player taps the PC, Abang's Desk offers the options, Abang walks over and
+   The player taps the PC, the pop-up menu offers the options, Abang walks over and
    the outcome lands when he arrives. Guilt is decided when the incident starts
    and is NEVER shown before the player commits (CCTV only gives an imperfect hint).
    ========================================================================== */
@@ -134,7 +134,7 @@
     s.activeIssues = (s.activeIssues || []).filter((x) => x !== ev);
   };
 
-  /** Which choices Abang's Desk offers for a PC issue (with costs/disabled flags). */
+  /** Which choices the pop-up menu offers for a PC issue (with costs/disabled flags). */
   function issueOptions(s, p) {
     const ev = eventOf(s, p.id);
     if (!ev) return [];

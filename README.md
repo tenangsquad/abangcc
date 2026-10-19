@@ -44,11 +44,11 @@ You are **Abang**, the owner of a tiny *kedai siber*. Each day (a "shift") you m
 <table>
 <tr>
 <td width="60"><h2>①</h2></td>
-<td><b>Tap a customer</b>, either in the room or in the queue at the door.</td>
+<td><b>Tap a customer</b>, either in the room or in the queue list. A small menu pops up right beside them.</td>
 </tr>
 <tr>
 <td><h2>②</h2></td>
-<td>Choose <b>30 / 60 / 90 minutes</b> (keys <code>1</code> <code>2</code> <code>3</code>). The <b>★</b> marks what they asked for. Any other length earns less, so match the ★ whenever you can.</td>
+<td>Choose <b>30 / 60 / 90 minutes</b> from that menu (keys <code>1</code> <code>2</code> <code>3</code>). The <b>★</b> marks what they asked for. Any other length earns less, so match the ★ whenever you can.</td>
 </tr>
 <tr>
 <td><h2>③</h2></td>
@@ -177,8 +177,8 @@ The camera is fixed isometric and never rotates. Zooming is optional.
 |---|---|
 | Play (no tools) | Double-click `index.html` or `dist/ABANG_CC_2007_ALPHA_12.html` |
 | Build the single-file bundle | `node tools/build.mjs` (no dependencies, Node 22+) |
-| Logic tests (51) | `node --test tests/state.test.mjs` |
-| Browser tests (23) | `node --test tests/browser.test.mjs` (needs Chrome or Edge; set `CHROME_PATH` if installed somewhere unusual). Screenshots go to `tests/screenshots/`. |
+| Logic tests (53) | `node --test tests/state.test.mjs` |
+| Browser tests (24) | `node --test tests/browser.test.mjs` (needs Chrome or Edge; set `CHROME_PATH` if installed somewhere unusual). Screenshots go to `tests/screenshots/`. |
 | Balance simulation | `node tests/sim.mjs 10 10` (three simulated skill levels play the whole campaign) |
 
 There are **no npm packages** anywhere. The browser tests drive Chrome through its DevTools protocol using Node's built-in `WebSocket`.
@@ -205,7 +205,7 @@ Everything lives in `js/core/config.js`. `DIRECTOR` is the single difficulty tab
 
 ### Loading screen
 
-An inline-SVG illustration (sunset over a shophouse street, the ABANG CC shop, Abang waving) covers the game for about 1.7 s while it boots. Edit `tools/make-wallpaper.mjs`, not the markup in `index.html`. Add `?noloader` to the address to skip it. It respects `prefers-reduced-motion`.
+An inline-SVG illustration (sunset over a shophouse street, the ABANG CC shop, Abang waving) covers the game for about 3 s while it boots. Edit `tools/make-wallpaper.mjs`, not the markup in `index.html`. Add `?noloader` to the address to skip it. It respects `prefers-reduced-motion`.
 
 ### Known limitations
 

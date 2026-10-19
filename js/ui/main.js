@@ -109,10 +109,9 @@
   }
 
   /* ---------- panels + HUD refresh (cheap: ~4×/s and after every action) ---------- */
-  UI.deskSig = '';
   UI.refresh = function refresh(force = false) {
-    UI.renderDesk(force);
     UI.renderWorldMenu(force);
+    UI.renderTaskCount();
     UI.renderQueue();
     UI.renderCrises();
     UI.tickDesk();

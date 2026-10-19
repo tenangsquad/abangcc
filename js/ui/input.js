@@ -19,14 +19,16 @@
     const s = UI.s;
     if (!ent || s.phase !== 'active') return;
     UI.menuDismissed = null; // tapping something always (re)opens its menu
+    const seating = !!(s.pendingCustomerId && s.pendingDuration && ent.kind === 'pc'); // this tap seats a customer, it is not a request for info
     const r = State.select(s, ent);
-    if (r && !r.ok && r.msg) UI.toast(r.msg, 'bad'); // successes are shown by the desk itself
+    if (r && !r.ok && r.msg) UI.toast(r.msg, 'bad'); // successes are shown by the pop-up menu itself
     UI.Sound.play(r?.ok === false ? 'bad' : 'tap');
+    UI.menuTapped = seating || window.matchMedia('(max-width: 860px)').matches ? null : `${ent.kind}:${ent.id}`; // a plain info card for a PC with nothing to fix: desktop only, never after seating
     State.save(s);
     UI.refresh(true);
   };
 
-  /** A button in Abang's Desk: duration, fix, confrontation option or event choice. */
+  /** A button in the pop-up menu: duration, fix, confrontation option or event choice. */
   UI.performFromEl = function performFromEl(el) {
     const s = UI.s;
     if (s.phase !== 'active' || el.disabled) return;
@@ -35,7 +37,7 @@
     if (r.msg && (!r.ok || act !== 'duration')) UI.toast(r.msg, r.ok ? 'good' : 'bad');
     if (r.ok) {
       UI.Sound.play(act === 'duration' ? 'tap' : 'click');
-      if (act !== 'duration' && s.selected) UI.menuDismissed = `${s.selected.kind}:${s.selected.id}`; // the choice is made: close the menu
+      if (s.selected) UI.menuDismissed = `${s.selected.kind}:${s.selected.id}`; // the choice is made: close the menu (the PC to tap next stays clear)
       State.save(s);
     } else UI.Sound.play('bad');
     UI.refresh(true);
@@ -45,6 +47,7 @@
     const s = UI.s;
     if (!s.pendingCustomerId || s.phase !== 'active') return;
     const r = State.perform(s, 'duration', s.pendingCustomerId, minutes);
+    if (r.ok && s.selected) UI.menuDismissed = `${s.selected.kind}:${s.selected.id}`;
     UI.toast(r.msg, r.ok ? 'good' : 'bad');
     UI.Sound.play('tap');
     UI.refresh(true);
@@ -158,10 +161,6 @@
       UI.renderWorldMenu(true);
       return;
     }
-    const el = e.target.closest('[data-act]');
-    if (el) UI.performFromEl(el);
-  });
-  $('durationButtons').addEventListener('click', (e) => {
     const el = e.target.closest('[data-act]');
     if (el) UI.performFromEl(el);
   });

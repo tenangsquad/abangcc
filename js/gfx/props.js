@@ -127,7 +127,7 @@
       st.pop();
     }
 
-    /** Office water dispenser: jug on top, red & blue taps, drip tray. Stands in the front-left corner. */
+    /** Office water dispenser: jug on top, red & blue taps, drip tray. Stands on the left wall between the door and the counter. */
     function waterDispenser(x, z) {
       const S = ROOM.pcScale;
       st.push();
@@ -327,41 +327,41 @@
 
       // left wall: neon, door, counter, posters, fuse box, light switch
       const neonE = clamp(0.35 + neonAmt * 0.5, 0, 1.25);
-      sign('neon', 0.18, 2.1, 8.5, 3.3, 1.03, Math.PI / 2, neonE);
-      glow(0.9, 8.5, 1.7, 1.0, '#7ff3ff', 0.12 + neonAmt * 0.28);
-      wallHalo('x', 0, 2.1, 8.5, 0.8, 2.3, [0.45, 0.95, 1], neonAmt * 0.22);
+      sign('neon', 0.18, 2.1, 5.6, 3.0, 0.94, Math.PI / 2, neonE);
+      glow(0.9, 5.6, 1.6, 1.0, '#7ff3ff', 0.12 + neonAmt * 0.28);
+      wallHalo('x', 0, 2.1, 5.6, 0.8, 2.1, [0.45, 0.95, 1], neonAmt * 0.22);
       drawDoor(s, dt);
       drawCounter(s, lampsOn, power);
       sign('posterFps', 0.19, 2.05, 3.55, 0.62, 0.82, Math.PI / 2, 0.25);
-      sign('posterMmo', 0.19, 2.1, 6.55, 0.55, 0.74, Math.PI / 2, 0.25);
-      sign('posterRace', 0.19, 1.55, 7.05, 0.42, 0.56, Math.PI / 2, 0.25);
+      sign('posterMmo', 0.19, 2.1, 7.5, 0.55, 0.74, Math.PI / 2, 0.25);
+      sign('posterRace', 0.19, 1.55, 8.05, 0.42, 0.56, Math.PI / 2, 0.25);
       if (S_has(s, 'poster')) {
         sign('posterToon', 4.95, 2.0, 0.2, 0.5, 0.66, 0, 0.25);
         if (S_count(s, 'poster') > 1) sign('posterFps', 1.0, 1.2, 0.2, 0.4, 0.52, 0, 0.25);
       }
-      sign('posterToon', 0.19, 1.75, 9.9, 0.4, 0.54, Math.PI / 2, 0.25);
+      sign('posterToon', 0.19, 1.75, 8.55, 0.4, 0.54, Math.PI / 2, 0.25);
       drawFuseBox(s, power);
       blk(0.1, 1.2, 2.3, 0.05, 0.16, 0.1, '#f6f6fb', 0.02, 0); // light switch
       blk(0.13, 1.22, 2.3, 0.03, 0.06, 0.04, '#ffd23f', 0.01, 0);
       // toy figures on a wall shelf
-      blk(0.2, 1.5, 6.95, 0.26, 0.05, 0.5, PAL.wood, 0.02, 0);
-      figure(0.2, 1.53, 6.82, 'hero', Math.PI / 2);
-      figure(0.2, 1.53, 6.98, 'wizard', Math.PI / 2);
-      figure(0.2, 1.53, 7.14, 'robot', Math.PI / 2);
+      blk(0.2, 1.5, 11.15, 0.26, 0.05, 0.5, PAL.wood, 0.02, 0);
+      figure(0.2, 1.53, 11.02, 'hero', Math.PI / 2);
+      figure(0.2, 1.53, 11.18, 'wizard', Math.PI / 2);
+      figure(0.2, 1.53, 11.34, 'robot', Math.PI / 2);
 
       // rugs & floor markings
       blk(1.1, 0, 1.3, 1.5, 0.035, 1.55, '#8a6bd6', 0.015, 0);
       drawQueueLane(s, dt);
       const carpetFrom = 3.2, carpetTo = W - 1.0;
       blk((carpetFrom + carpetTo) / 2, 0, ROOM.rowY[0] + 0.4, carpetTo - carpetFrom, 0.03, 2.9, '#cdbdff', 0.015, 0);
-      blk((carpetFrom + carpetTo) / 2, 0, ROOM.rowY[1] + 0.4, carpetTo - carpetFrom, 0.03, 2.9, '#bfe5ff', 0.015, 0);
+      if (s.pcs.length > ROOM.perRow) blk((carpetFrom + carpetTo) / 2, 0, ROOM.rowY[1] + 0.4, carpetTo - carpetFrom, 0.03, 2.9, '#bfe5ff', 0.015, 0);
 
       // lived-in corners: plants, water dispenser, magazine rack (all clear of lanes and desks)
       eng.cast(true);
-      plant(3.5, 9.15, 0.85);
+      plant(4.4, 10.9, 0.85);
       plant(W - 0.65, 3.65, 0.76);
-      waterDispenser(0.75, 9.15);
-      magazineRack(0.4, 8.3);
+      waterDispenser(ROOM.dispenser.x, ROOM.dispenser.y);
+      magazineRack(ROOM.rack.x, ROOM.rack.y);
       eng.cast(false);
 
       // repair corner and optional upgrades

@@ -250,14 +250,8 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .patience.mid i { background: var(--yellow); } .patience.low i { background: var(--coral); }
 .combo-row { display: flex; justify-content: space-between; margin-top: 9px; padding-top: 8px; border-top: 2.5px dashed #d9c9a4; font: 600 13px var(--font-display); color: var(--ink-2); }
 
-.desk h2 { margin: 0 0 2px; font: 700 20px/1.15 var(--font-display); }
-.desk p { margin: 3px 0; font-size: 14px; line-height: 1.4; color: var(--ink-2); }
-.desk .says { display: inline-block; margin: 4px 0; padding: 4px 10px; background: var(--white); border: 2.5px solid var(--ink); border-radius: 14px 14px 14px 3px; font-size: 14px; color: var(--ink); }
 .status-badge { display: inline-block; vertical-align: middle; margin-left: 4px; padding: 0 9px; font: 700 12px var(--font-display); letter-spacing: .04em; background: var(--mint); border: 2px solid var(--ink); border-radius: 999px; }
 .status-badge.bad { background: var(--coral); color: var(--white); } .status-badge.busy { background: var(--sky); }
-.dur-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
-.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-.action-grid:empty, .dur-grid:empty { display: none; }
 .meter-row { display: grid; gap: 7px; }
 .meter { display: grid; gap: 3px; }
 .meter-head { display: flex; justify-content: space-between; align-items: baseline; font: 600 13px var(--font-display); }
@@ -328,7 +322,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .perk small { flex: 1; font-size: 14px; line-height: 1.4; color: var(--ink-2); }
 .settlement { display: grid; grid-template-columns: 1fr auto; gap: 8px 14px; margin: 14px 0; padding: 14px 16px; background: var(--white); border: 3px solid var(--ink); border-radius: 18px; font: 600 17px var(--font-display); }
 .settlement span:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; }
-.settlement .good { color: var(--mint-d); } .settlement .bad { color: var(--coral); } .settlement .net-sales { color: var(--green); }
+.settlement .good { color: var(--mint-d); } .settlement .bad { color: var(--coral); }
 .stars { display: flex; justify-content: center; gap: 6px; margin: 8px 0 0; font-size: 54px; line-height: 1; }
 .stars span { filter: grayscale(1) opacity(.35); transform: scale(.8); }
 .stars span.on { filter: drop-shadow(0 4px 0 var(--ink)); animation: star-pop .6s var(--ease-pop) both; transform: scale(1); }
@@ -392,7 +386,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   .toast-root { bottom: 44px; } .toast { font-size: 13px; padding: 6px 12px; }
   .sidebar { display: grid; grid-template-columns: 1fr 1fr; align-content: start; gap: 10px; padding: 0 4px 12px; }
   .sidebar .card.alerts, .sidebar .card.vitals { grid-column: 1 / -1; }
-  .card { padding: 9px 10px 11px; } .desk h2 { font-size: 17px; }
+  .card { padding: 9px 10px 11px; }
   .meter-row { grid-template-columns: 1fr 1fr; gap: 6px 12px; }
   .pc-chip .tag { font-size: 10px; padding: 1px 6px 1px 4px; } .pc-chip .state { display: none; } .pc-chip .prog { width: 54px; height: 6px; }
   .person-tag .bub { font-size: 11px; }
@@ -449,7 +443,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .bd-row { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; font: 600 14px var(--font-display); }
 .bd-row b { font-variant-numeric: tabular-nums; }
 .bd-row.neg b { color: var(--coral); }
-.bd-row.total { margin: 3px 0; padding: 4px 0; border-top: 2.5px dashed #d9c9a4; border-bottom: 2.5px dashed #d9c9a4; color: var(--green); } .bd-row.total b { color: var(--green); }
+.bd-row.total { margin: 3px 0; padding: 4px 0; border-top: 2.5px dashed #d9c9a4; border-bottom: 2.5px dashed #d9c9a4; } .bd-row.total b { color: var(--mint-d); }
 .bd-foot { margin-top: 4px; font: 700 11px var(--font-body); color: var(--ink-3); }
 
 /* camera controls */
@@ -476,16 +470,8 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .crisis:disabled { opacity: 1; cursor: default; }
 .crisis.event { background: #fff7d6; } .crisis.suspicious { background: #fff0c9; } .crisis.loudvideo { background: #ffe9e4; } .crisis.fight { background: #ffdfe4; } .crisis.nomouse { background: #eaf1ff; }
 
-/* Abang's Desk */
-.desk .warn { margin: 4px 0; padding: 5px 9px; background: #fff0d6; border: 2.5px solid var(--ink); border-radius: 12px; font-size: 13px; line-height: 1.35; color: #8a2a12; }
-.desk .hint-line { font-weight: 700; color: var(--ink-2); font-size: 12px; }
-.desk .where { margin: 4px 0 2px; font-weight: 800; color: var(--ink-2); font-size: 13px; }
-.desk .cctv { margin: 4px 0; font-size: 12px; font-weight: 800; padding: 3px 9px; border-radius: 999px; border: 2.5px solid var(--ink); display: inline-block; }
-.desk .cctv.sus { background: #ffd6d6; } .desk .cctv.ok { background: #d6f5e6; }
-.desk .patience { margin: 5px 0 6px; }
+/* PC info inside the pop-up menu */
 .btn.wanted { outline: 3px solid var(--yellow); outline-offset: 1px; }
-.action-grid .btn.stack { text-align: center; }
-.action-grid .btn.stack small { white-space: normal; line-height: 1.15; }
 .combo { font: 700 13px var(--font-display); color: var(--ink-2); letter-spacing: 0; text-transform: none; }
 
 /* perk cards */
@@ -499,14 +485,14 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .fb-pc { display: grid; justify-items: center; gap: 2px; padding: 10px 6px; background: var(--white); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 4px 0 var(--ink); font: 700 14px var(--font-display); }
 .fb-pc span { font-size: 28px; } .fb-pc small { font: 700 11px var(--font-body); color: var(--ink-3); } .fb-pc.sel { background: #fff3b3; } .fb-pc.bad { background: #ffe0dc; }
 
-/* ---------- desktop: all four panels fit one viewport (no page scroll, no sidebar scroll) ----------
-   Abang's Desk and Status Kedai never shrink; the alert list and the queue give way and scroll inside their cards. */
+/* ---------- desktop: all three panels fit one viewport (no page scroll, no sidebar scroll) ----------
+   Status Kedai never shrinks; the alert list and the queue give way and scroll inside their cards. */
 @media (min-width: 861px) {
   .sidebar { display: flex; flex-direction: column; gap: 10px; overflow: hidden; padding: 0 4px 8px 2px; }
   .sidebar .card { flex: 0 0 auto; min-height: 0; }
   .card.alerts { flex: 0 3 auto; display: flex; flex-direction: column; min-height: 58px; }
   .card.queue { flex: 1 1 130px; display: flex; flex-direction: column; min-height: 112px; }
-  .card.desk, .card.vitals { flex: 0 0 auto; }
+  .card.vitals { flex: 0 0 auto; }
   .crisis-list { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; padding: 0 3px 4px 1px; scrollbar-width: thin; }
   .queue-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 3px 4px 1px; scrollbar-width: thin; }
   .meter-row { grid-template-columns: 1fr 1fr; gap: 6px 14px; }
@@ -524,16 +510,10 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   .queue-item { padding: 3px 8px 3px 5px; grid-template-columns: 32px 1fr; gap: 8px; box-shadow: 0 2px 0 var(--ink); }
   .queue-avatar { width: 32px; height: 32px; font-size: 17px; border-width: 2.5px; }
   .queue-name { font-size: 13.5px; } .patience { height: 7px; margin-top: 3px; }
-  .desk h2 { font-size: 16px; } .desk p { font-size: 12.5px; margin: 2px 0; } .desk .says { font-size: 12.5px; padding: 2px 8px; margin: 2px 0; }
-  .desk .warn { font-size: 12px; padding: 3px 8px; margin: 3px 0; }
-  .dur-grid, .action-grid { margin-top: 6px; gap: 6px; }
   .btn { min-height: 38px; padding: 5px 10px; font-size: 14px; box-shadow: 0 3px 0 var(--ink); }
   .btn.stack { padding: 4px 6px; } .btn small { font-size: 10px; }
   .meter-head { font-size: 12px; } .meter-head b { font-size: 13px; } .meter-track { height: 9px; border-width: 2px; }
   .meter-row { gap: 4px 12px; }
-}
-@media (min-width: 861px) and (max-height: 720px) {
-  .desk p { display: none; } .desk p.warn, .desk p.where, .desk p.cctv { display: block; }
 }
 
 /* ---------- phones: scene on top, contextual panels as compact strips below ---------- */
@@ -562,7 +542,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 @media (max-width: 860px) { .hint { left: 50%; transform: translateX(-50%); max-width: calc(100% - 120px); } }
 
 /* ==========================================================================
-   11. Modals that never hide their buttons, and a phone dock that puts the Desk first
+   11. Modals that never hide their buttons, and a phone dock that puts the queue first
    ========================================================================== */
 .modal-card { display: flex; flex-direction: column; }
 .modal-card > .modal-actions { position: sticky; bottom: -24px; z-index: 3; margin: 14px -28px -24px; padding: 12px 28px 22px; background: linear-gradient(to top, var(--paper) 72%, rgba(255, 248, 234, 0)); border-radius: 0 0 26px 26px; }
@@ -586,8 +566,8 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 
 @media (max-width: 860px) {
   .stage { grid-template-rows: minmax(230px, 52%) minmax(0, 1fr); }
-  /* the Desk is the contextual panel: keep it right under the scene; a real alert jumps ahead of it */
-  .card.desk { order: 1; } .card.queue { order: 2; } .card.alerts { order: 3; } .card.vitals { order: 4; }
+  /* the queue sits right under the scene; a real alert jumps ahead of it */
+  .card.queue { order: 1; } .card.alerts { order: 2; } .card.vitals { order: 3; }
   .card.alerts.urgent { order: 0; }
   .card.alerts.calm .crisis-list { display: none; }
   .card.alerts.calm .card-title { margin-bottom: 0; }
@@ -595,11 +575,6 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   .card.queue { padding-bottom: 6px; }
   .queue-item { min-width: 150px; }
   .queue-list { padding-bottom: 4px; }
-  .desk h2 { font-size: 16px; }
-  .desk p { font-size: 12.5px; margin: 2px 0; }
-  .desk .says { font-size: 12.5px; padding: 2px 8px; }
-  .desk .warn { font-size: 12px; padding: 3px 8px; }
-  .dur-grid, .action-grid { margin-top: 6px; gap: 6px; }
   .hint { left: 8px; transform: none; max-width: calc(100% - 132px); font-size: 12px; }
   .zoom-ctl .btn { min-width: 36px; min-height: 36px; padding: 2px 8px; }
 }
@@ -632,7 +607,16 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .wm-head em { font-style: normal; color: var(--coral); }
 .wm-x { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--white); font: 700 12px var(--font-display); line-height: 1; }
 .wm-hint { margin: 3px 0 0; font: 700 11.5px/1.3 var(--font-body); color: var(--ink-2); }
+.wm-info { margin: 4px 0 0; font: 700 12.5px/1.35 var(--font-body); color: var(--ink-2); }
+.wm-info b { color: var(--ink); }
+.wm-info.warn { padding: 4px 9px; background: #fff0d6; border: 2.5px solid var(--ink); border-radius: 12px; color: #8a2a12; }
+.wm-info.cctv { display: inline-block; padding: 2px 9px; border: 2.5px solid var(--ink); border-radius: 999px; font-weight: 800; color: var(--ink); }
+.wm-info.cctv.sus { background: #ffd6d6; } .wm-info.cctv.ok { background: #d6f5e6; }
+.world-menu .patience { margin: 6px 0 2px; }
 .wm-actions { display: grid; gap: 6px; margin-top: 7px; }
+.wm-actions.dur { grid-template-columns: repeat(3, 1fr); }
+.wm-actions.dur .btn { justify-content: center; text-align: center; padding: 4px 4px; }
+.wm-actions.dur .btn.stack { align-items: center; }
 .wm-actions .btn { min-height: 40px; padding: 4px 10px; font-size: 14px; justify-content: flex-start; text-align: left; box-shadow: 0 3px 0 var(--ink); }
 .wm-actions .btn.stack { align-items: flex-start; }
 .wm-actions .btn small { white-space: normal; line-height: 1.15; }
@@ -1182,15 +1166,8 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
         <div class="queue-list" id="queueList"><p class="empty">Belum ada pelanggan.</p></div>
       </section>
 
-      <section class="card desk">
-        <h2 class="card-title"><span>3. 🧑‍🔧 Abang's Desk</span><span class="count" id="taskCount" hidden>0</span></h2>
-        <div id="selectionPanel"><h2>Pilih PC, pelanggan atau kejadian</h2><p>Tap pelanggan untuk ambil order, PC untuk urus masalah.</p></div>
-        <div class="dur-grid" id="durationButtons"></div>
-        <div class="action-grid" id="actionButtons"></div>
-      </section>
-
       <section class="card vitals">
-        <h2 class="card-title"><span>4. 📊 Status kedai</span><span class="combo" id="comboText" title="Combo tindakan pantas">⚡ x0</span></h2>
+        <h2 class="card-title"><span>3. 📊 Status kedai</span><span class="count" id="taskCount" title="Arahan yang Abang sedang buat" hidden>0</span><span class="combo" id="comboText" title="Combo tindakan pantas">⚡ x0</span></h2>
         <div class="meter-row">
           <div class="meter" title="Reputasi: pelanggan datang lebih ramai bila tinggi."><div class="meter-head"><span>⭐ Reputasi</span><b id="hudRepValue">55</b></div><div class="meter-track"><i id="hudRepBar"></i></div></div>
           <div class="meter" title="Professionalism: kedai yang diurus profesional lebih tenang dan lebih dipercayai pegawai."><div class="meter-head"><span>🤝 Profesional</span><b id="hudProValue">75</b></div><div class="meter-track"><i id="hudProBar"></i></div></div>
@@ -1214,13 +1191,13 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
    --------------------------------------------------------------------------
    The markup (wallpaper + bar) is plain HTML in index.html so it paints before any script runs.
    This file only drives the bar and removes the screen. It stays up for at least MIN_MS so the
-   wallpaper is actually seen (≈1.7 s), then fades out once main.js calls Loader.done().
+   wallpaper is actually seen (≈3 s), then fades out once main.js calls Loader.done().
    Skip it with ?noloader in the address, or { "noLoader": true } in the saved settings (tests do this).
    ========================================================================== */
 (function (ns) {
   'use strict';
 
-  const MIN_MS = 1700; // the loader is on screen at least this long
+  const MIN_MS = 3000; // the loader is on screen at least this long
   const FADE_MS = 450;
   const GIVE_UP_MS = 7000; // if the game never reports ready (a script error), don't trap the player behind the splash
 
@@ -1351,19 +1328,23 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   /* ---------- shop floor plan ----------
      World units are roughly metres. x runs left→right along the back wall,
      y is the depth axis (towards the camera). The entrance sits in the top-left
-     corner and the pay counter runs down the left wall. Customers queue in a
-     roped-off lane right in front of the counter (head of the line at the till,
-     tail by the door); Abang serves from behind the counter and walks out through
-     a gap at its lower end (the "hatch"). PC desks fill two rows further inside. */
+     corner and the pay counter fills the bottom-left corner of the left wall.
+     Customers queue in a roped-off lane in front of the counter (head of the line
+     at the till, tail towards the door); Abang serves from behind the counter and
+     walks out through a gap at its upper end (the "hatch"). The PC desks line the
+     back (right-hand) wall, so the middle of the café stays open: a second row only
+     appears once the first one (5 desks) is full. The water dispenser and magazine
+     rack stand on the left wall between the door and the counter. */
   const ROOM = {
-    depth: 10,
+    depth: 12,
     wallHeight: 3.3,
-    minWidth: 11.8,
+    minWidth: 11.9,
     rightMargin: 2.4,
     maxPcs: 10,
-    // PC desks: two rows (back / front), new desks are added column by column.
+    // PC desks: two rows (back / front) of `perRow`. Desks fill the back row first, column by column.
+    perRow: 5,
     firstColumnX: 4.5,
-    columnGap: 2.6,
+    columnGap: 2.5,
     rowY: [1.8, 5.4],
     // Walking lanes: one vertical lane beside the queue lane, one aisle between and one in front of the rows.
     laneX: 3.1,
@@ -1372,35 +1353,38 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
     // Landmarks
     door: { x: 0.4, y: 1.3 },
     // Queue lane: slot 0 is at the till (bottom), higher slots stretch back towards the door.
-    queue: { x: 2.4, headY: 6.1, gap: 0.88, entryY: 2.7, left: 1.95, right: 2.85 },
+    queue: { x: 2.4, headY: 10.9, gap: 0.88, entryY: 7.5, left: 1.95, right: 2.85 },
     // Where groups wait just inside the door (event NPCs, and the overflow of a big queue).
     doorCluster: [{ x: 1.45, y: 1.95 }, { x: 2.05, y: 1.35 }, { x: 1.4, y: 0.85 }, { x: 2.1, y: 2.25 }],
     doorTalk: { x: 2.55, y: 2.2 }, // where Abang stands to talk to the people at the door
-    // Counter: a long desk against the left wall, from y0 to y1. Abang stands behind it.
-    counter: { x: 1.45, y0: 3.2, y1: 6.9, depth: 0.95 },
-    hatchY: 7.45, // gap below the counter that Abang uses to walk out (lines up with the front aisle)
-    home: { x: 0.62, y: 6.1 },
-    // Fuse box on the left wall between the door and the counter.
+    // Counter: a long desk against the left wall in the front corner, from y0 to y1. Abang stands behind it.
+    counter: { x: 1.45, y0: 8.0, y1: 11.7, depth: 0.95 },
+    hatchY: 7.45, // gap above the counter that Abang uses to walk out (lines up with the front aisle)
+    home: { x: 0.62, y: 10.9 },
+    // Fuse box on the left wall between the door and the water dispenser.
     fuse: { x: 0.12, y: 1.45, z: 2.75, spot: { x: 1.05, y: 2.75 } },
+    // Left-wall furniture that took the counter's old place
+    dispenser: { x: 0.75, y: 4.9 },
+    rack: { x: 0.4, y: 6.3 },
     // Offsets relative to a PC desk position
-    seatOffset: 0.78, // = the old 0.92 × pcScale: the chair sits the same relative distance from the (now smaller) desk
-    pcScale: 0.85, // desks, monitors, chairs are drawn 15% smaller …
-    charScale: 0.85, // … and so are the people, so the same room feels roomier
+    seatOffset: 0.72, // = the old 0.92 × pcScale: the chair sits the same relative distance from the (now smaller) desk
+    pcScale: 0.78, // desks, monitors, chairs are drawn 22% smaller …
+    charScale: 0.78, // … and so are the people, so the same room feels roomier
     staffOffset: { x: -0.62, y: 0.7 },
     sidestep: 0.72,
   };
   ROOM.pcSlot = (index) => ({
-    x: ROOM.firstColumnX + Math.floor(index / 2) * ROOM.columnGap,
-    y: ROOM.rowY[index % 2],
+    x: ROOM.firstColumnX + (index % ROOM.perRow) * ROOM.columnGap,
+    y: ROOM.rowY[Math.floor(index / ROOM.perRow)],
   });
   ROOM.widthFor = (pcCount) =>
-    Math.max(ROOM.minWidth, ROOM.firstColumnX + (Math.ceil(pcCount / 2) - 1) * ROOM.columnGap + ROOM.rightMargin);
+    Math.max(ROOM.minWidth, ROOM.firstColumnX + (Math.min(Math.max(pcCount, 1), ROOM.perRow) - 1) * ROOM.columnGap + ROOM.rightMargin);
   /** Slot `index` in the queue. The first four stand in the roped lane, extra people wait at the door cluster. */
   ROOM.queueSlot = (index) =>
     index < 4 ? { x: ROOM.queue.x, y: ROOM.queue.headY - index * ROOM.queue.gap } : ROOM.doorCluster[(index - 4) % ROOM.doorCluster.length];
   ROOM.queueEntry = () => ({ x: ROOM.queue.x, y: ROOM.queue.entryY });
   ROOM.inQueueLane = (p) => p.x > ROOM.queue.left && p.x < ROOM.queue.right && p.y > ROOM.queue.entryY + 0.25;
-  ROOM.behindCounter = (p) => p.x < ROOM.counter.x - ROOM.counter.depth / 2 + 0.05 && p.y > ROOM.counter.y0 - 0.2 && p.y < ROOM.hatchY + 0.6;
+  ROOM.behindCounter = (p) => p.x < ROOM.counter.x - ROOM.counter.depth / 2 + 0.05 && p.y > ROOM.hatchY - 0.3 && p.y < ROOM.counter.y1 + 0.6;
   ROOM.seatFor = (pc) => ({ x: pc.x, y: pc.y + ROOM.seatOffset });
   ROOM.staffSpotFor = (pc) => ({ x: pc.x + ROOM.staffOffset.x, y: pc.y + ROOM.staffOffset.y });
   /** Where the snack machine stands (back wall, right corner). Depends on the room width. */
@@ -1419,6 +1403,10 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
     GAME_MINUTE_RATE: 6, // in-game minutes per real second → 12:00 PM … 12:00 AM
     DAY_START_MINUTES: 720,
     MAX_QUEUE: 4,
+    CUSTOMER_SPEED: 3.0, // walking speed of customers (was 2.0 — the café is now bigger, so the walk from the queue to a PC is longer)
+    ABANG_SPEED: 4.8, // world units per second when Abang rushes to a PC or an event (was 3.5)
+    ABANG_ERRAND_SPEED: 4.2, // setting up a customer's PC / walking back to the counter (was 3.1)
+    ABANG_WORK_SCALE: 0.85, // every fix / confrontation takes 15 % less time once he arrives
     MAX_COMMANDS: 3,
     START_CASH: 3500, // sen
     // Rent and utility bills are MONTHLY: paid once every BILL_CYCLE_DAYS days (at the end of that day's shift),
@@ -1482,7 +1470,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   };
 
   /* ---------- fault kinds a PC can develop ----------
-     `fix` lists the buttons Abang's Desk offers. `auto` = seconds until it sorts itself out
+     `fix` lists the buttons the PC's pop-up menu offers. `auto` = seconds until it sorts itself out
      (or, for 'dies', until it gets worse). Restarting during a session refunds 25 %. */
   const FAULTS = {
     glitch: { icon: '💥', label: 'Software crash', short: 'HANG', fix: ['restart', 'repair'], auto: 13, autoEnds: 'restart' },
@@ -1557,7 +1545,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   /* ---------- special events ----------
      Every event is a physical thing in the room: people at the door (kind 'npc'), the fuse box ('power'),
      a puddle ('floor') or a suspect by the snack machine ('machine'). The player selects it in the 3D scene
-     (or via "Tengok" in Situasi Panas) and picks a choice in Abang's Desk.
+     (or via "Tengok" in Situasi Panas) and picks a choice in the pop-up menu on it.
      choice.walk  = Abang has to walk over first      choice.remote = resolved at once (phone call)
      choice.cost  = sen, checked against cash          */
   const EVENTS = {
@@ -2422,7 +2410,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
   function updatePeople(s, dt) {
     const drain = S.patienceDrain(s);
     for (const c of s.customers) {
-      S.updateMove(c, dt, c.status === 'event' ? 2.2 : 2.0);
+      S.updateMove(c, dt, c.status === 'event' ? 2.2 : CFG.CUSTOMER_SPEED);
       c.sitBlend = clamp((c.sitBlend || 0) + (c.status === 'playing' ? dt * 3.8 : -dt * 5.4), 0, 1);
 
       if (c.status === 'arriving' && !c.destination) c.status = 'waiting';
@@ -2773,7 +2761,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 /* ==========================================================================
    2g. INCIDENTS — trouble that sits on a PC (suspicious, loud video, fight, restricted, missing mouse)
    --------------------------------------------------------------------------
-   The player taps the PC, Abang's Desk offers the options, Abang walks over and
+   The player taps the PC, the pop-up menu offers the options, Abang walks over and
    the outcome lands when he arrives. Guilt is decided when the incident starts
    and is NEVER shown before the player commits (CCTV only gives an imperfect hint).
    ========================================================================== */
@@ -2906,7 +2894,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
     s.activeIssues = (s.activeIssues || []).filter((x) => x !== ev);
   };
 
-  /** Which choices Abang's Desk offers for a PC issue (with costs/disabled flags). */
+  /** Which choices the pop-up menu offers for a PC issue (with costs/disabled flags). */
   function issueOptions(s, p) {
     const ev = eventOf(s, p.id);
     if (!ev) return [];
@@ -3184,7 +3172,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
    An event is something you can walk up to: people waiting at the door (gang, mak,
    download, truancy, LAN group, the inspecting officer), the fuse box (blackout), a
    puddle (spill) or a suspect by the snack machine (snack theft). The player selects
-   it in the 3D room — or taps "Tengok" in Situasi Panas — and chooses in Abang's Desk.
+   it in the 3D room — or taps "Tengok" in Situasi Panas — and chooses in the pop-up menu on it.
    Most choices send Abang walking first; the outcome lands when he arrives.
    ========================================================================== */
 (function (ns) {
@@ -3272,7 +3260,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 
   /* ---------- choices ---------- */
 
-  /** Choices for Abang's Desk, with disabled flags (cost) already applied. */
+  /** Choices for the pop-up menu, with disabled flags (cost) already applied. */
   function eventOptions(s, ev) {
     const def = EVENTS[ev.type];
     return def.choices.map((ch) => ({
@@ -3802,7 +3790,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
     return out;
   }
 
-  /** Everything Abang's Desk can offer for a selection. */
+  /** Everything the pop-up menu can offer for a selection. */
   function options(s, target) {
     if (!target) return [];
     if (target.kind === 'event') {
@@ -3845,7 +3833,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
       s.pendingCustomerId = c.id;
       s.pendingDuration = null;
       s.selected = { kind: 'customer', id: c.id };
-      return S.ok(`${c.name} minta ${c.requestedMinutes} minit. Pilih tempoh di Abang's Desk.`);
+      return S.ok(`${c.name} minta ${c.requestedMinutes} minit. Pilih tempoh pada menu.`);
     }
     if (ent.kind === 'event') {
       const ev = State.eventById(s, ent.id);
@@ -3858,8 +3846,8 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
       if (!p) return S.fail('PC tak tersedia.');
       if (s.pendingCustomerId && s.pendingDuration && p.status === 'free' && !p.fault && !p.issue) return State.assignToPC(s, p.id);
       s.selected = { kind: 'pc', id: p.id };
-      if (p.fault) return S.ok(`PC ${p.id}: ${FAULTS[p.fault].label}. Pilih tindakan di Abang's Desk.`);
-      if (p.issue) return S.ok(`PC ${p.id} perlukan tindakan. Pilih di Abang's Desk.`);
+      if (p.fault) return S.ok(`PC ${p.id}: ${FAULTS[p.fault].label}. Pilih tindakan pada menu.`);
+      if (p.issue) return S.ok(`PC ${p.id} perlukan tindakan. Pilih pada menu.`);
       if (s.pendingCustomerId && !s.pendingDuration) return S.fail('Pilih tempoh sewaan dahulu.');
       return S.ok(`PC ${p.id} dipilih.`);
     }
@@ -3901,7 +3889,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
     return queueTask(s, 'event', evId, ev.spot.x, ev.spot.y, ch.work ?? ch.walkWork ?? 1.1, { entityKind: 'event', opts: { choice: choiceId } });
   }
 
-  /** The single entry point the UI uses for any button in Abang's Desk. */
+  /** The single entry point the UI uses for any button in the pop-up menu. */
   function perform(s, act, id, choice) {
     if (s.phase !== 'active') return S.fail('Buka shift dulu.');
     if (act === 'duration') return State.chooseRental(s, id, Number(choice));
@@ -3946,7 +3934,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
         const e = player.errand;
         if (!e.arrived) {
           player.destination = player.destination || { x: e.x, y: e.y };
-          S.updateMove(player, dt, 3.1);
+          S.updateMove(player, dt, CFG.ABANG_ERRAND_SPEED);
           if (!player.destination) e.arrived = true;
           return;
         }
@@ -3965,16 +3953,16 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
       if (!atHome && !player.destination && player.idleTime > 3.5) player.destination = { x: ROOM.home.x, y: ROOM.home.y };
       // Behind the counter Abang looks out at the customers in line.
       if (atHome && !player.destination) player.facing = (player.facing ?? 0) + ns.shortestAngle(player.facing ?? 0, Math.PI / 2) * (1 - Math.exp(-6 * dt));
-      S.updateMove(player, dt, 3.1);
+      S.updateMove(player, dt, CFG.ABANG_ERRAND_SPEED);
       return;
     }
     player.idleTime = 0;
     const speed = S.taskSpeedMult(s) * (s.cleanupSlow > 0 ? 0.6 : 1);
     if (task.remaining === null) {
       if (!player.destination) player.destination = { x: task.x, y: task.y };
-      S.updateMove(player, dt, 3.5 * speed);
+      S.updateMove(player, dt, CFG.ABANG_SPEED * speed);
       if (player.destination) return;
-      task.remaining = task.work / speed;
+      task.remaining = (task.work * CFG.ABANG_WORK_SCALE) / speed;
     }
     player.working = true;
     player.moveIntensity = Math.max(0, (player.moveIntensity || 0) - dt * 7);
@@ -5779,7 +5767,7 @@ window.ABCC.GfxEngine = (function () {
       st.pop();
     }
 
-    /** Office water dispenser: jug on top, red & blue taps, drip tray. Stands in the front-left corner. */
+    /** Office water dispenser: jug on top, red & blue taps, drip tray. Stands on the left wall between the door and the counter. */
     function waterDispenser(x, z) {
       const S = ROOM.pcScale;
       st.push();
@@ -5979,41 +5967,41 @@ window.ABCC.GfxEngine = (function () {
 
       // left wall: neon, door, counter, posters, fuse box, light switch
       const neonE = clamp(0.35 + neonAmt * 0.5, 0, 1.25);
-      sign('neon', 0.18, 2.1, 8.5, 3.3, 1.03, Math.PI / 2, neonE);
-      glow(0.9, 8.5, 1.7, 1.0, '#7ff3ff', 0.12 + neonAmt * 0.28);
-      wallHalo('x', 0, 2.1, 8.5, 0.8, 2.3, [0.45, 0.95, 1], neonAmt * 0.22);
+      sign('neon', 0.18, 2.1, 5.6, 3.0, 0.94, Math.PI / 2, neonE);
+      glow(0.9, 5.6, 1.6, 1.0, '#7ff3ff', 0.12 + neonAmt * 0.28);
+      wallHalo('x', 0, 2.1, 5.6, 0.8, 2.1, [0.45, 0.95, 1], neonAmt * 0.22);
       drawDoor(s, dt);
       drawCounter(s, lampsOn, power);
       sign('posterFps', 0.19, 2.05, 3.55, 0.62, 0.82, Math.PI / 2, 0.25);
-      sign('posterMmo', 0.19, 2.1, 6.55, 0.55, 0.74, Math.PI / 2, 0.25);
-      sign('posterRace', 0.19, 1.55, 7.05, 0.42, 0.56, Math.PI / 2, 0.25);
+      sign('posterMmo', 0.19, 2.1, 7.5, 0.55, 0.74, Math.PI / 2, 0.25);
+      sign('posterRace', 0.19, 1.55, 8.05, 0.42, 0.56, Math.PI / 2, 0.25);
       if (S_has(s, 'poster')) {
         sign('posterToon', 4.95, 2.0, 0.2, 0.5, 0.66, 0, 0.25);
         if (S_count(s, 'poster') > 1) sign('posterFps', 1.0, 1.2, 0.2, 0.4, 0.52, 0, 0.25);
       }
-      sign('posterToon', 0.19, 1.75, 9.9, 0.4, 0.54, Math.PI / 2, 0.25);
+      sign('posterToon', 0.19, 1.75, 8.55, 0.4, 0.54, Math.PI / 2, 0.25);
       drawFuseBox(s, power);
       blk(0.1, 1.2, 2.3, 0.05, 0.16, 0.1, '#f6f6fb', 0.02, 0); // light switch
       blk(0.13, 1.22, 2.3, 0.03, 0.06, 0.04, '#ffd23f', 0.01, 0);
       // toy figures on a wall shelf
-      blk(0.2, 1.5, 6.95, 0.26, 0.05, 0.5, PAL.wood, 0.02, 0);
-      figure(0.2, 1.53, 6.82, 'hero', Math.PI / 2);
-      figure(0.2, 1.53, 6.98, 'wizard', Math.PI / 2);
-      figure(0.2, 1.53, 7.14, 'robot', Math.PI / 2);
+      blk(0.2, 1.5, 11.15, 0.26, 0.05, 0.5, PAL.wood, 0.02, 0);
+      figure(0.2, 1.53, 11.02, 'hero', Math.PI / 2);
+      figure(0.2, 1.53, 11.18, 'wizard', Math.PI / 2);
+      figure(0.2, 1.53, 11.34, 'robot', Math.PI / 2);
 
       // rugs & floor markings
       blk(1.1, 0, 1.3, 1.5, 0.035, 1.55, '#8a6bd6', 0.015, 0);
       drawQueueLane(s, dt);
       const carpetFrom = 3.2, carpetTo = W - 1.0;
       blk((carpetFrom + carpetTo) / 2, 0, ROOM.rowY[0] + 0.4, carpetTo - carpetFrom, 0.03, 2.9, '#cdbdff', 0.015, 0);
-      blk((carpetFrom + carpetTo) / 2, 0, ROOM.rowY[1] + 0.4, carpetTo - carpetFrom, 0.03, 2.9, '#bfe5ff', 0.015, 0);
+      if (s.pcs.length > ROOM.perRow) blk((carpetFrom + carpetTo) / 2, 0, ROOM.rowY[1] + 0.4, carpetTo - carpetFrom, 0.03, 2.9, '#bfe5ff', 0.015, 0);
 
       // lived-in corners: plants, water dispenser, magazine rack (all clear of lanes and desks)
       eng.cast(true);
-      plant(3.5, 9.15, 0.85);
+      plant(4.4, 10.9, 0.85);
       plant(W - 0.65, 3.65, 0.76);
-      waterDispenser(0.75, 9.15);
-      magazineRack(0.4, 8.3);
+      waterDispenser(ROOM.dispenser.x, ROOM.dispenser.y);
+      magazineRack(ROOM.rack.x, ROOM.rack.y);
       eng.cast(false);
 
       // repair corner and optional upgrades
@@ -7649,11 +7637,11 @@ window.ABCC.GfxEngine = (function () {
 <script>
 /* ---- js/ui/panels.js ---- */
 /* ==========================================================================
-   4d. SIDEBAR PANELS — Situasi Panas, Pelanggan Menunggu, Abang's Desk
+   4d. SIDEBAR PANELS — Situasi Panas, Pelanggan Menunggu, and the menu on the thing you tapped
    --------------------------------------------------------------------------
    Situasi Panas is an ALERT list: it says what is wrong and where, and a tap on a card
    selects that thing in the room. It never holds the resolution buttons — those live in
-   Abang's Desk, next to the object you selected.
+   the pop-up menu that opens right next to the customer, PC or object you selected.
    ========================================================================== */
 (function (ns) {
   'use strict';
@@ -7761,7 +7749,7 @@ window.ABCC.GfxEngine = (function () {
     }
   };
 
-  /* --------------------------------------------------------------- Abang's Desk */
+  /* ------------------------------------------------------- menu building blocks */
   function btn(o, targetId, extra = '') {
     return `<button type="button" class="btn ${o.css || ''} ${o.sub ? 'stack' : ''}" ${o.disabled ? 'disabled' : ''} data-act="${o.act}" data-id="${targetId}" ${o.choice ? `data-choice="${o.choice}"` : ''} ${extra}>${safe(o.label)}${o.sub ? `<small>${safe(o.sub)}</small>` : ''}</button>`;
   }
@@ -7770,69 +7758,17 @@ window.ABCC.GfxEngine = (function () {
     return `<div class="patience ${pct < 30 ? 'low' : pct < 60 ? 'mid' : ''}" data-patience="${c.id}" aria-label="Kesabaran ${Math.round(pct)}%"><i style="width:${pct}%"></i></div>`;
   };
 
-  /** Signature of everything that changes what the desk shows — re-render only when it changes. */
-  function deskSignature(s) {
-    const sel = s.selected;
-    const opts = sel?.kind === 'customer' ? '' : State.options(s, sel).map((o) => o.act + (o.choice || '') + (o.disabled ? '!' : '')).join(',');
-    const p = sel?.kind === 'pc' ? byId(s.pcs, sel.id) : null;
-    const ev = p ? (s.activeIssues || []).find((e) => e.pcId === p.id || e.partnerPcId === p.id) : null;
-    return [s.phase, sel?.kind, sel?.id, s.pendingCustomerId, s.pendingDuration, opts, p && [p.status, p.fault, p.issue, p.customerId, Math.floor(p.health / 5), p.lingerTime > 0 ? 1 : 0].join(''), ev && ev.searched ? 's' : '', ev && ev.cctvHint != null ? 'c' : '', State.pendingCount(s)].join('|');
-  }
-
-  UI.renderDesk = function renderDesk(force) {
-    const s = UI.s;
-    const sig = deskSignature(s);
-    if (!force && sig === UI.deskSig) return;
-    UI.deskSig = sig;
-
-    const pend = s.pendingCustomerId ? byId(s.customers, s.pendingCustomerId) : null;
-    const sel = s.selected;
-    let html = '', durations = '', actions = '';
-
-    if (pend && sel?.kind === 'customer' && ['waiting', 'arriving'].includes(pend.status)) {
-      const wanted = pend.requestedMinutes;
-      html = `<h2>${safe(pend.emoji)} ${safe(pend.name)}</h2><span class="says">“Bang, ${wanted} minit!”</span>
-        ${patienceBar(pend)}
-        <p>${s.pendingDuration ? `✅ ${s.pendingDuration} min dipilih. <b>Sekarang tap PC kosong</b> yang berkelip hijau.` : 'Pilih tempoh sewaan dahulu ↓ (★ = permintaan pelanggan)'}</p>`;
-      durations = State.durationOptions(s, pend.id).map((d) => `<button type="button" class="btn stack ${d.chosen ? 'mint' : 'paper'} ${d.wanted ? 'wanted' : ''}" data-act="duration" data-id="${pend.id}" data-choice="${d.minutes}">${d.minutes} MIN<small>${fmtMoney(d.price)} · <kbd>${d.minutes / 30}</kbd>${d.wanted ? ' ★' : ''}</small></button>`).join('');
-    } else if (sel?.kind === 'event' && State.eventById(s, sel.id)) {
-      const ev = State.eventById(s, sel.id);
-      const def = EVENTS[ev.type];
-      html = `<h2>${safe(def.emoji)} ${safe(def.title)}</h2><span class="says">${safe(def.say)}</span>
-        <p class="where">📍 ${safe(whereOf(s, ev))} · <b data-evtimer="${ev.id}">${Math.ceil(ev.time)}</b>s</p>`;
-      html += '<p class="hint-line">👆 Pilihan ada pada menu di atas objek itu dalam bilik.</p>';
-    } else {
-      const p = byId(s.pcs, sel?.id || 1);
-      if (!p) html = '<h2>Pilih PC, pelanggan atau kejadian</h2>';
-      else {
-        const occupant = byId(s.customers, p.customerId);
-        const stateLabel = p.fault ? [FAULTS[p.fault].short, 'bad'] : p.issue ? ['MASALAH', 'bad'] : p.lingerTime > 0 ? ['LEPAK', 'busy'] : p.status === 'busy' ? ['MAIN', 'busy'] : p.status === 'job' ? ['KERJA', 'busy'] : ['SEDIA', ''];
-        const ev = (s.activeIssues || []).find((e) => e.pcId === p.id || e.partnerPcId === p.id);
-        html = `<h2>🖥️ PC ${pad2(p.id)}<span class="status-badge ${stateLabel[1]}">${stateLabel[0]}</span></h2>
-          <p>Keadaan <b>${Math.round(p.health)}%</b> · Tier ${p.tier}${occupant ? ` · ${safe(occupant.emoji)} ${safe(occupant.name)}` : ''}</p>`;
-        if (p.fault && p.status === 'fault') html += `<p class="warn">${FAULTS[p.fault].icon} ${FAULTS[p.fault].label}.${p.fault === 'hardware' ? ' Perlu repair!' : ' Pilih tindakan pada menu atas PC.'}</p>`;
-        else if (p.issue && ev) {
-          const info = ISSUES[ev.type];
-          html += `<p class="warn">${safe(PC_ISSUE_ICON[ev.type])} <b>${safe(info.title)}</b> · <b data-evtimer="pc${p.id}">${Math.ceil(ev.time)}</b>s<br><span class="hint-line">${safe(info.hint)}</span></p>`;
-          if (ev.type === 'suspicious' && ev.cctvHint != null) html += `<p class="cctv ${ev.cctvHint ? 'sus' : 'ok'}">📷 CCTV: ${ev.cctvHint ? 'gerak-geri nampak tak kena' : 'nampak biasa-biasa saja'} <small>(tak 100% tepat)</small></p>`;
-        } else if (p.lingerTime > 0) html += `<p class="warn">🌙 ${safe(occupant?.name)} masih lepak. Sambung atau suruh balik?</p>`;
-        else if (occupant) html += `<p>Sedang main · <b data-evtimer="play${p.id}">${Math.ceil(Math.max(0, p.occupiedSeconds))}</b>s lagi.</p>`;
-        else if (p.status === 'job') html += `<p>🔧 ${safe(p.job?.type || 'kerja')} sedang berjalan…</p>`;
-        else html += '<p>Tap pelanggan di queue, pilih minit, kemudian tap PC ini.</p>';
-      }
-    }
-    const pending = State.pendingCount(s);
+  /** "n/3" next to the shop status: how many jobs Abang has lined up. */
+  UI.renderTaskCount = function renderTaskCount() {
+    const pending = State.pendingCount(UI.s);
     $('taskCount').hidden = !pending;
-    setText($('taskCount'), `${pending}/${CFG.MAX_COMMANDS}`);
-    $('selectionPanel').innerHTML = html;
-    $('durationButtons').innerHTML = durations;
-    $('actionButtons').innerHTML = actions;
+    setText($('taskCount'), `🧑‍🔧 ${pending}/${CFG.MAX_COMMANDS}`);
   };
 
-  /** Live numbers in the desk (countdowns, patience bars) without rebuilding the buttons. */
+  /** Live numbers in the pop-up menu (countdowns, patience bar) without rebuilding its buttons. */
   UI.tickDesk = function tickDesk() {
     const s = UI.s;
-    for (const el of document.querySelectorAll('#selectionPanel [data-evtimer], #worldMenu [data-evtimer]')) {
+    for (const el of document.querySelectorAll('#worldMenu [data-evtimer]')) {
       const id = el.dataset.evtimer;
       let v = null;
       if (id.startsWith('pc')) v = (s.activeIssues || []).find((e) => e.pcId === Number(id.slice(2)) || e.partnerPcId === Number(id.slice(2)))?.time;
@@ -7840,7 +7776,7 @@ window.ABCC.GfxEngine = (function () {
       else v = State.eventById(s, Number(id))?.time;
       if (v != null) setText(el, String(Math.ceil(Math.max(0, v))));
     }
-    for (const el of $('selectionPanel').querySelectorAll('[data-patience]')) {
+    for (const el of $('worldMenu').querySelectorAll('[data-patience]')) {
       const c = byId(s.customers, Number(el.dataset.patience));
       if (!c) continue;
       const pct = State.patiencePct(c);
@@ -7850,48 +7786,71 @@ window.ABCC.GfxEngine = (function () {
     }
   };
 
-  /* ------------------------------------------------- the menu on the PC itself */
+  /* ------------------------------------------- the menu on the thing you tapped */
   UI.menuDismissed = null;
+  UI.menuTapped = null; // what the player last tapped, so a default selection never pops an info card by itself
   UI.menuTarget = null;
   const menuKey = (sel) => (sel ? `${sel.kind}:${sel.id}` : null);
   let menuSig = '';
 
   /**
-   * Actions live on the thing you clicked: tap a PC (or a door crowd / puddle / fuse box) and its choices
-   * pop up right there in the room. The sidebar Desk only describes what you selected.
+   * Actions live on the thing you clicked: tap a customer (30 / 60 / 90 min), a PC, or a door crowd / puddle /
+   * fuse box and its choices pop up right there in the room. There is no separate side panel for them.
    */
   UI.renderWorldMenu = function renderWorldMenu(force) {
     const s = UI.s;
     const el = $('worldMenu');
     const sel = s.selected;
     let opts = [];
-    let title = '', hint = '', timerId = null, timer = 0;
-    if (s.phase === 'active' && (sel?.kind === 'pc' || sel?.kind === 'event')) {
+    let title = '', hint = '', info = '', infoSig = '', timerId = null, timer = 0, mode = '', showEmpty = false;
+    if (s.phase === 'active' && sel?.kind === 'customer') {
+      const c = byId(s.customers, sel.id);
+      if (c && c.id === s.pendingCustomerId && ['waiting', 'arriving'].includes(c.status)) {
+        mode = 'dur';
+        title = `${c.emoji} ${c.name}`;
+        hint = `“Bang, ${c.requestedMinutes} minit!” · ★ = permintaan pelanggan`;
+        info = patienceBar(c);
+        opts = State.durationOptions(s, c.id).map((d) => ({ act: 'duration', choice: d.minutes, label: `${d.minutes} MIN${d.wanted ? ' ★' : ''}`, sub: `${fmtMoney(d.price)} · tekan ${d.minutes / 30}`, css: `${d.chosen ? 'mint' : 'paper'} ${d.wanted ? 'wanted' : ''}` }));
+      }
+    } else if (s.phase === 'active' && (sel?.kind === 'pc' || sel?.kind === 'event')) {
       opts = State.options(s, sel);
       if (sel.kind === 'pc') {
         const p = byId(s.pcs, sel.id);
         const ev = (s.activeIssues || []).find((e) => e.pcId === sel.id || e.partnerPcId === sel.id);
+        const occupant = p && byId(s.customers, p.customerId);
         if (p?.fault && p.status === 'fault') title = `${FAULTS[p.fault].icon} PC ${pad2(p.id)} · ${FAULTS[p.fault].label}`;
         else if (p?.issue && ev) { title = `${PC_ISSUE_ICON[ev.type]} PC ${pad2(p.id)} · ${ISSUES[ev.type].title}`; timerId = `pc${p.id}`; timer = ev.time; hint = ISSUES[ev.type].hint; }
         else if (p?.lingerTime > 0) title = `🌙 PC ${pad2(p.id)} · Pelanggan lepak`;
         else title = `🖥️ PC ${pad2(p.id)}`;
+        if (p) {
+          showEmpty = true; // a plain tap on a PC still tells you how it is doing
+          infoSig = [p.status, p.fault, p.issue, p.customerId, Math.floor(p.health / 5), p.lingerTime > 0 ? 1 : 0, ev?.cctvHint, p.job?.type].join('');
+          info = `<p class="wm-info">Keadaan <b>${Math.round(p.health)}%</b> · Tier ${p.tier}${occupant ? ` · ${safe(occupant.emoji)} ${safe(occupant.name)}` : ''}</p>`;
+          if (p.fault && p.status === 'fault' && p.fault === 'hardware') info += '<p class="wm-info warn">Hardware rosak — perlu repair!</p>';
+          if (ev?.type === 'suspicious' && ev.cctvHint != null) info += `<p class="wm-info cctv ${ev.cctvHint ? 'sus' : 'ok'}">📷 CCTV: ${ev.cctvHint ? 'gerak-geri nampak tak kena' : 'nampak biasa-biasa saja'} <small>(tak 100% tepat)</small></p>`;
+          if (!p.fault && !p.issue && !(p.lingerTime > 0)) {
+            if (occupant) info += `<p class="wm-info">Sedang main · <b data-evtimer="play${p.id}">${Math.ceil(Math.max(0, p.occupiedSeconds))}</b>s lagi.</p>`;
+            else if (p.status === 'job') info += `<p class="wm-info">🔧 ${safe(p.job?.type || 'kerja')} sedang berjalan…</p>`;
+            else if (p.status === 'free') info += '<p class="wm-info">Kosong. Tap pelanggan, pilih minit, kemudian tap PC ini.</p>';
+          }
+        }
       } else {
         const ev = State.eventById(s, sel.id);
         if (ev) { title = `${EVENTS[ev.type].emoji} ${EVENTS[ev.type].title}`; timerId = String(ev.id); timer = ev.time; hint = EVENTS[ev.type].say; }
       }
     }
     const key = menuKey(sel);
-    const show = opts.length > 0 && UI.menuDismissed !== key;
+    const show = (opts.length > 0 || (showEmpty && title && UI.menuTapped === key)) && UI.menuDismissed !== key;
     if (!show) {
       if (!el.hidden) { el.hidden = true; menuSig = ''; }
       UI.menuTarget = null;
       return;
     }
-    const sig = key + '|' + opts.map((o) => o.act + (o.choice || '') + (o.disabled ? '!' : '')).join(',');
+    const sig = key + '|' + opts.map((o) => o.act + (o.choice || '') + (o.disabled ? '!' : '')).join(',') + '|' + infoSig;
     if (force || sig !== menuSig) {
       menuSig = sig;
-      const id = sel.kind === 'event' ? sel.id : sel.id;
-      el.innerHTML = `<div class="wm-head"><b>${safe(title)}${timerId ? ` · <em data-evtimer="${timerId}">${Math.ceil(timer)}</em>s` : ''}</b><button type="button" class="wm-x" data-close aria-label="Tutup menu">✕</button></div>${hint ? `<div class="wm-hint">${safe(hint)}</div>` : ''}<div class="wm-actions">${opts.map((o) => btn(o, id)).join('')}</div>`;
+      const id = sel.id;
+      el.innerHTML = `<div class="wm-head"><b>${safe(title)}${timerId ? ` · <em data-evtimer="${timerId}">${Math.ceil(timer)}</em>s` : ''}</b><button type="button" class="wm-x" data-close aria-label="Tutup menu">✕</button></div>${hint ? `<div class="wm-hint">${safe(hint)}</div>` : ''}${info}${opts.length ? `<div class="wm-actions ${mode}">${opts.map((o) => btn(o, id)).join('')}</div>` : ''}`;
     }
     el.hidden = false;
     UI.menuTarget = { kind: sel.kind, id: sel.id };
@@ -8060,12 +8019,12 @@ window.ABCC.GfxEngine = (function () {
     const menu = $('worldMenu');
     if (!anchors || menu.hidden || !UI.menuTarget) return;
     const t = UI.menuTarget;
-    const a = t.kind === 'pc' ? anchors.pcs.find((p) => p.id === t.id) : anchors.events.find((e) => e.id === t.id);
+    const a = t.kind === 'pc' ? anchors.pcs.find((p) => p.id === t.id) : t.kind === 'customer' ? anchors.people.find((p) => p.kind === 'customer' && p.id === t.id) : anchors.events.find((e) => e.id === t.id);
     if (!a || a.x == null) return;
     const vpW = $('viewport').clientWidth, vpH = $('viewport').clientHeight, w = menu.offsetWidth, h = menu.offsetHeight;
     const pad = 6, isPc = t.kind === 'pc';
-    // what must stay uncovered: the PC / object itself (with its label and problem bubble)
-    const keep = isPc ? { x: a.x - 78, y: a.y - 54, w: 156, h: 150 } : { x: a.x - 60, y: a.y - 20, w: 120, h: 110 };
+    // what must stay uncovered: the PC / person / object itself (with its label and problem bubble)
+    const keep = isPc ? { x: a.x - 78, y: a.y - 54, w: 156, h: 150 } : t.kind === 'customer' ? { x: a.x - 44, y: a.y - 52, w: 88, h: Math.max(120, (a.by - a.y) * 2 + 60) } : { x: a.x - 60, y: a.y - 20, w: 120, h: 110 };
     const hits = (r) => r.x < keep.x + keep.w && r.x + r.w > keep.x && r.y < keep.y + keep.h && r.y + r.h > keep.y;
     const inside = (r) => r.x >= pad && r.y >= pad && r.x + r.w <= vpW - pad && r.y + r.h <= vpH - pad;
     const spots = [
@@ -8203,7 +8162,7 @@ window.ABCC.GfxEngine = (function () {
         <span>🎮 Jualan sewa</span><span class="good">+ ${fmtMoney(r.rental)}</span>
         <span>🥤 Jualan lain</span><span class="good">+ ${fmtMoney(r.other)}</span>
         ${r.refunds ? `<span>↩️ Refund</span><span class="bad">− ${fmtMoney(-r.refunds)}</span>` : ''}
-        <span class="net-sales"><b>Jualan bersih</b></span><span class="net-sales"><b>${fmtMoney(r.income)}</b></span>
+        <span>Jualan bersih</span><span class="good">${fmtMoney(r.income)}</span>
         ${r.goalMet ? '' : `<span>Kekurangan</span><span class="bad">− ${fmtMoney(r.shortfall)}</span>`}
         ${r.billsPaid ? `<span>🏠 Sewa &amp; bil bulanan</span><span class="bad">− ${fmtMoney(r.billsPaid)}</span>` : ''}
         ${r.expense ? `<span>🧾 Belanja</span><span class="bad">− ${fmtMoney(r.expense)}</span>` : ''}
@@ -8234,7 +8193,7 @@ window.ABCC.GfxEngine = (function () {
   const INTRO = [
     { eye: 'SELAMAT DATANG KE ABANG CC', title: 'Kedai ini hidup huru-hara', body: 'Kau bermula dengan RM35 dan 3 PC. Tap pelanggan yang beratur, pilih masa sewaan, kemudian tap PC kosong. Semua PC sudah ada game siap-siap.', badges: ['👆 Tap komputer / pelanggan', '⚡ Shift 2 minit', '🎮 Browser sahaja'] },
     { eye: 'TARGET HARIAN', title: 'Setiap hari ada target jualan', body: 'Capai target untuk mara ke hari seterusnya. Jualan = sewa + snack + bonus, tolak refund. Sewa &amp; bil dibayar sebulan sekali (bukan setiap hari); belanja lain hanya bila kau betul-betul belanja. Kalau gagal, kau ulang hari yang sama tanpa hilang progres.', badges: ['🎯 Target jualan', '💰 Cash dibawa ke esok', '↻ Ulang bila gagal'] },
-    { eye: 'MASALAH DALAM BILIK', title: 'Selesaikan terus di tempat kejadian', body: 'PC hang, pelanggan suspicious, video bising, gaduh, blackout, air tumpah… Tap benda itu dalam bilik, pilih tindakan di Abang\'s Desk, dan Abang akan berjalan ke sana. Panel Situasi Panas hanya beri amaran.', badges: ['❓ Suspicious: tegur lembut atau tuduh berani', '↻ Restart PC = refund 25%', '🔥 Peak hour = lebih ramai'] },
+    { eye: 'MASALAH DALAM BILIK', title: 'Selesaikan terus di tempat kejadian', body: 'PC hang, pelanggan suspicious, video bising, gaduh, blackout, air tumpah… Tap benda itu dalam bilik, pilih tindakan pada menu yang muncul di sebelahnya, dan Abang akan berjalan ke sana. Panel Situasi Panas hanya beri amaran.', badges: ['❓ Suspicious: tegur lembut atau tuduh berani', '↻ Restart PC = refund 25%', '🔥 Peak hour = lebih ramai'] },
     { eye: 'PERK ROGUELITE', title: 'Mulai hari 2, pilih 1 daripada 2 perk', body: 'Tambah PC, snack machine, router, aircond, CCTV… Setiap perk ada kelebihan dan kelemahan (bil harian, risiko). Setiap run berbeza.', badges: ['🎴 2 pilihan rawak', '🧩 Build berlainan', '📈 Makin lama, makin susah'] },
   ];
   function renderOnboarding() {
@@ -8260,11 +8219,11 @@ window.ABCC.GfxEngine = (function () {
       <span class="modal-eyebrow">PANDUAN PANTAS</span>
       <h1>Jaga CC. <em>Jangan panik!</em></h1>
       <div class="modal-hero">
-        <p>👤 <b>Tap pelanggan</b> yang beratur → pilih <b>30 / 60 / 90 minit</b> (<kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>) → tap PC yang berkelip hijau. Pilih sama seperti permintaan pelanggan (★) untuk bayaran penuh; salah pilih = bayaran dipotong.</p>
-        <p>🔧 <b>PC bermasalah</b> (hang, beku, panas, BSOD, internet putus, rosak)? Tap PC → pilih cara baiki di <b>Abang's Desk</b>. Restart masa ada pelanggan = refund 25% (sekali setiap kejadian).</p>
+        <p>👤 <b>Tap pelanggan</b> yang beratur → menu <b>30 / 60 / 90 minit</b> muncul di sebelahnya (<kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>) → tap PC yang berkelip hijau. Pilih sama seperti permintaan pelanggan (★) untuk bayaran penuh; salah pilih = bayaran dipotong.</p>
+        <p>🔧 <b>PC bermasalah</b> (hang, beku, panas, BSOD, internet putus, rosak)? Tap PC → pilih cara baiki pada menu di sebelah PC. Restart masa ada pelanggan = refund 25% (sekali setiap kejadian).</p>
         <p>❓ <b>PC suspicious</b>: tap PC → <b>Tegur baik-baik</b> (selamat) atau <b>Tuduh &amp; halau</b> (berani). Dia mungkin tak bersalah — salah tuduh kos reputasi, professionalism dan refund.</p>
-        <p>🎲 <b>Kejadian khas</b> (rombongan, ponteng, blackout, air tumpah, snack hilang…) muncul sebagai orang/benda dalam bilik. Tap yang berdenyut, atau kad di <b>Situasi Panas</b> (TENGOK), lalu pilih di Abang's Desk.</p>
-        <p>🖱️ Zoom kamera: roda tetikus / cubit / butang Zoom. ⌨️ <kbd>Space</kbd> pause · <kbd>N</kbd> pelanggan seterusnya · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> tempoh · <kbd>R</kbd> restart.</p>
+        <p>🎲 <b>Kejadian khas</b> (rombongan, ponteng, blackout, air tumpah, snack hilang…) muncul sebagai orang/benda dalam bilik. Tap yang berdenyut, atau kad di <b>Situasi Panas</b> (TENGOK), lalu pilih pada menu di atas benda itu.</p>
+        <p>🖱️ Zoom kamera: roda tetikus / cubit / butang Zoom. ⌨️ <kbd>Space</kbd> pause · <kbd>N</kbd> pelanggan seterusnya · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> tempoh · <kbd>R</kbd> restart PC yang dipilih.</p>
       </div>
       <div class="modal-actions"><button class="btn big mint" data-modal="back">Faham, jom main!</button></div>`);
   }
@@ -8472,14 +8431,16 @@ window.ABCC.GfxEngine = (function () {
     const s = UI.s;
     if (!ent || s.phase !== 'active') return;
     UI.menuDismissed = null; // tapping something always (re)opens its menu
+    const seating = !!(s.pendingCustomerId && s.pendingDuration && ent.kind === 'pc'); // this tap seats a customer, it is not a request for info
     const r = State.select(s, ent);
-    if (r && !r.ok && r.msg) UI.toast(r.msg, 'bad'); // successes are shown by the desk itself
+    if (r && !r.ok && r.msg) UI.toast(r.msg, 'bad'); // successes are shown by the pop-up menu itself
     UI.Sound.play(r?.ok === false ? 'bad' : 'tap');
+    UI.menuTapped = seating || window.matchMedia('(max-width: 860px)').matches ? null : `${ent.kind}:${ent.id}`; // a plain info card for a PC with nothing to fix: desktop only, never after seating
     State.save(s);
     UI.refresh(true);
   };
 
-  /** A button in Abang's Desk: duration, fix, confrontation option or event choice. */
+  /** A button in the pop-up menu: duration, fix, confrontation option or event choice. */
   UI.performFromEl = function performFromEl(el) {
     const s = UI.s;
     if (s.phase !== 'active' || el.disabled) return;
@@ -8488,7 +8449,7 @@ window.ABCC.GfxEngine = (function () {
     if (r.msg && (!r.ok || act !== 'duration')) UI.toast(r.msg, r.ok ? 'good' : 'bad');
     if (r.ok) {
       UI.Sound.play(act === 'duration' ? 'tap' : 'click');
-      if (act !== 'duration' && s.selected) UI.menuDismissed = `${s.selected.kind}:${s.selected.id}`; // the choice is made: close the menu
+      if (s.selected) UI.menuDismissed = `${s.selected.kind}:${s.selected.id}`; // the choice is made: close the menu (the PC to tap next stays clear)
       State.save(s);
     } else UI.Sound.play('bad');
     UI.refresh(true);
@@ -8498,6 +8459,7 @@ window.ABCC.GfxEngine = (function () {
     const s = UI.s;
     if (!s.pendingCustomerId || s.phase !== 'active') return;
     const r = State.perform(s, 'duration', s.pendingCustomerId, minutes);
+    if (r.ok && s.selected) UI.menuDismissed = `${s.selected.kind}:${s.selected.id}`;
     UI.toast(r.msg, r.ok ? 'good' : 'bad');
     UI.Sound.play('tap');
     UI.refresh(true);
@@ -8611,10 +8573,6 @@ window.ABCC.GfxEngine = (function () {
       UI.renderWorldMenu(true);
       return;
     }
-    const el = e.target.closest('[data-act]');
-    if (el) UI.performFromEl(el);
-  });
-  $('durationButtons').addEventListener('click', (e) => {
     const el = e.target.closest('[data-act]');
     if (el) UI.performFromEl(el);
   });
@@ -8793,10 +8751,9 @@ window.ABCC.GfxEngine = (function () {
   }
 
   /* ---------- panels + HUD refresh (cheap: ~4×/s and after every action) ---------- */
-  UI.deskSig = '';
   UI.refresh = function refresh(force = false) {
-    UI.renderDesk(force);
     UI.renderWorldMenu(force);
+    UI.renderTaskCount();
     UI.renderQueue();
     UI.renderCrises();
     UI.tickDesk();
