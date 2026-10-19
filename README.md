@@ -1,68 +1,229 @@
-# ABANG CC: 2007 — Alpha 0.12
+<div align="center">
 
-A cozy 3D cartoon cyber-café management game set in Malaysia, 2007. Browser only, no install, no external assets.
-You run a tiny kedai siber: seat customers on the right PC for the right time, fix crashes, deal with suspicious customers,
-survive blackouts and the inspector, and hit the daily target — then pick one perk and do it again.
+# 🖥️ ABANG CC: 2007
 
-## Run it
+### Run a cozy cyber café in Malaysia, 2007.
+
+Seat the customers · fix the crashing PCs · catch the cheaters · survive the blackout · hit the daily target.
+
+**Alpha 0.12** &nbsp;·&nbsp; 3D cartoon &nbsp;·&nbsp; Plays in your browser &nbsp;·&nbsp; No install &nbsp;·&nbsp; Works on desktop and phone
+
+<img src="tests/screenshots/01_scene_afternoon.png" alt="Abang's cyber café in the afternoon" width="760">
+
+</div>
+
+---
+
+## ▶️ Play in 10 seconds
+
+1. Open **`dist/ABANG_CC_2007_ALPHA_12.html`** in Chrome, Edge or Firefox. It's a single file, so just double-click it.
+2. Wait for the loading screen (about 2 seconds).
+3. Follow the **How to play** steps below. Day 1 is a gentle tutorial and has no random trouble.
+
+> 💡 Prefer a web server? Run `npx serve .` or `python -m http.server` in this folder and open `index.html`.
+
+---
+
+## 🎯 Your goal
+
+You are **Abang**, the owner of a tiny *kedai siber*. Each day (a "shift") you must earn enough money to reach the **daily target**.
+
+| | |
+|---|---|
+| ✅ **Reach the target** | The day ends with a report. From day 2 you pick **one perk** to upgrade your shop, then the next day starts. |
+| ❌ **Miss the target** | You replay that same day. Everything from earlier days is kept. |
+| 💰 **Target** | RM30 on day 1, then +RM3 a day up to day 10 (RM57), then +RM4 a day, later +RM5. Upgrades are how you keep up. |
+| 🧾 **Rent and bills** | Paid once a month (every 30 days), not every day. |
+
+---
+
+## 🕹️ How to play
+
+### 1. Seat your customers
+
+<table>
+<tr>
+<td width="60"><h2>①</h2></td>
+<td><b>Tap a customer</b>, either in the room or in the queue at the door.</td>
+</tr>
+<tr>
+<td><h2>②</h2></td>
+<td>Choose <b>30 / 60 / 90 minutes</b> (keys <code>1</code> <code>2</code> <code>3</code>). The <b>★</b> marks what they asked for. Any other length earns less, so match the ★ whenever you can.</td>
+</tr>
+<tr>
+<td><h2>③</h2></td>
+<td>Tap a <b>PC that glows green</b>. Abang walks them over and the session starts.</td>
+</tr>
+</table>
+
+> ⏱️ Sessions are short: 30 min = 10 seconds, 60 min = 16 seconds, 90 min = 22 seconds. **Customers lose patience while they wait**, so keep the queue moving.
+
+### 2. Fix broken PCs
+
+Tap a PC showing a problem. A small menu pops up right beside it. Pick an action and Abang walks over and does it.
+
+| Icon | Problem | What it means |
+|:-:|---|---|
+| 💥 | **Software crash** | Restart or repair it |
+| 🥶 | **Frozen screen** | Restart or repair it |
+| 🔥 | **Overheating** | Cool it down *quickly* or it burns out |
+| 💙 | **Blue screen (BSOD)** | Restart or repair it. The customer will leave if you wait too long |
+| 📡 | **Internet lost** | Reset the connection |
+| 🔧 | **Hardware broken** | Needs a proper repair |
+
+💸 Restarting a PC while someone is using it refunds them **25%**, once per incident.
+
+<img src="tests/screenshots/14_pc_menu.png" alt="The action menu next to a PC" width="640">
+
+### 3. Handle trouble
+
+| Icon | Situation | What to do |
+|:-:|---|---|
+| ❓ 👀 | **Suspicious customer** | **Tegur baik-baik** (talk to them gently) is safe. **Tuduh & halau** (accuse and kick out) pays more if they're guilty, but costs you if they're innocent. You never see who's guilty for sure. CCTV gives an imperfect hint. |
+| 🔊 | **Loud video** | Ask them to turn it down |
+| 💢 | **Two customers fighting** | Break it up fast |
+| 🖱️ | **Missing mouse** | Sort it out before they get upset |
+
+### 4. Special events
+
+Events show up as **real things in the room**, not pop-up cards. Tap the person or object, or tap **TENGOK** ("look") on a card under *Situasi Panas* ("hot situations"). The choices then appear on the thing itself.
+
+| Event | What happens |
+|---|---|
+| 🎒 **School group** | Offer a group deal or charge the normal price |
+| 🎞️ **Big downloader** | Extra cash now, but the line lags for 18 seconds |
+| 👩 **Mak looking for her kid** | Help her search or ask her to wait |
+| 🏫 **Truant students** (school hours) | Turn them away, or take a tip and risk an inspection |
+| 🏆 **LAN tournament** | Host it for a fee: every PC fills up and things get rowdy |
+| ⚡ **Blackout** | Every PC dies and the clock stops. Walk to the **fuse box** (RM8) or wait it out |
+| 🥤 **Missing snacks** (needs a snack machine) | Check the stock, or accuse someone and risk being wrong |
+| 🧃 **Spilled drink** | Call a cleaner (RM6) or mop it yourself |
+| 👮 **The inspector** | Show your records and stay professional, or pretend to be busy and he gets suspicious |
+
+<img src="tests/screenshots/13_blackout.png" alt="Blackout event" width="640">
+
+### 5. Pick a perk (from day 2)
+
+After each successful day you're offered **two random perks**. Each one helps, and each one has a **downside**. Choose with care.
+
+| Perk | Benefit | Downside |
+|---|---|---|
+| 🖥️ **Add a PC** | More seats, more sales | Higher electricity bill, more breakdowns |
+| 🥤 **Snack machine** | Extra sales, customers stay longer | Theft and mess |
+| 🛠️ **Spare parts rack** | Repairs 30% cheaper and 25% faster | Daily upkeep |
+| 🛡️ **Content filter** | Fewer shady-website cases | Daily fee, and customers complain about blocked sites |
+| 📡 **New router** | More bandwidth, less lag | Daily subscription |
+| ❄️ **Air-conditioning** | More patient customers, cooler PCs | Daily electricity |
+| 🏃 **Abang Laju** | Abang moves and works faster | Daily energy-drink bill |
+| 🖨️ **Printer corner** | Attracts students, adds printing income | Paper jams and paper costs |
+| 📷 **CCTV** | Hints at who's suspicious | Daily upkeep, and the hint isn't always right |
+| 📣 **Promo poster** (cheap) | More customers | Attracts more RM1 kids who get bored fast |
+
+<img src="tests/screenshots/07_perk_draft.png" alt="Choosing a perk" width="640">
+
+---
+
+## 👥 Meet the customers
+
+| | Customer | What they're like |
+|:-:|---|---|
+| 👓 | **Pakcik Internet** | Patient. Needs help logging in. |
+| 🎮 | **Kaki FPS** | Wants a fast, lag-free PC. |
+| 🔥 | **Kaki Panas Baran** | Short temper, starts fights. Don't give him a broken PC. |
+| 📚 | **Student Assignment** | Just wants to finish the homework. |
+| 🐉 | **Kaki MMORPG** *(from day 4)* | Books 90 minutes and stays. |
+| 🪙 | **Budak RM1** | Cheap and impatient. Books 30 minutes. |
+| 🎯 | **Kaki LAN** | Plays in groups. Loud. |
+| 🌙 | **Lepak Sampai Pagi** *(from day 3, late at night)* | Stays on after the session ends. |
+| 💬 | **Kaki MIRC** *(from day 2)* | Chats on IRC. Sometimes browses suspicious sites. |
+
+---
+
+## ⌨️ Controls
+
+| Action | Desktop | Phone / tablet |
+|---|---|---|
+| Select anything | Click | Tap |
+| Pause | `Space` or `Esc` | Pause button (Ⅱ) at the top |
+| Next customer in the queue | `N` | Tap them in the queue |
+| Pick duration | `1` `2` `3` | Tap 30 / 60 / 90 |
+| Zoom | Mouse wheel or `+` `-` | Pinch or buttons |
+| Pan (when zoomed) | Drag | Drag |
+| Restart the selected PC | `R` | Use the PC's menu |
+
+The camera is fixed isometric and never rotates. Zooming is optional.
+
+**Difficulty:** open Settings (the ⚙ button) and pick **Santai** (easy), **Biasa** (normal) or **Mencabar** (hard).
+
+---
+
+## 💡 Tips for beginners
+
+- 🎯 **Match the ★ duration.** A wrong length is billed at a 38% discount, so it never beats the right one.
+- 🚦 **Keep the queue short.** An angry customer is a lost customer.
+- 🔥 **Fix overheating first.** It's the only fault that can destroy the PC.
+- 🤝 **When in doubt, use "Tegur baik-baik".** Accusing an innocent customer hurts your reputation.
+- 🛒 **Take cheap perks early.** A second PC pays for itself fast, but watch the extra bills.
+- ⏸️ **Pause (`Space`) when it gets hectic.** The game also pauses by itself when you switch tabs.
+
+---
+
+<details>
+<summary><b>🛠️ For developers</b> (running tests, building, project layout)</summary>
+
+### Commands
 
 | What | Command |
 |---|---|
-| **Play (no tools)** | Double-click `index.html` (works from `file://`), or open `dist/ABANG_CC_2007_ALPHA_12.html` — one standalone file. |
-| Serve as a static site | Any static server on this folder, e.g. `npx serve .` or `python -m http.server`. Deploy the folder, or just `dist/…html`. |
-| Build the single-file bundle | `node tools/build.mjs` → `dist/ABANG_CC_2007_ALPHA_12.html` (no dependencies; Node 22+). |
+| Play (no tools) | Double-click `index.html` or `dist/ABANG_CC_2007_ALPHA_12.html` |
+| Build the single-file bundle | `node tools/build.mjs` (no dependencies, Node 22+) |
 | Logic tests (51) | `node --test tests/state.test.mjs` |
-| Browser tests (23) | `node --test tests/browser.test.mjs` — needs Chrome or Edge (set `CHROME_PATH` if unusual). Real mouse/touch events, real WebGL. Screenshots land in `tests/screenshots/`. |
-| Balance simulation | `node tests/sim.mjs 10 10` — three simulated skill levels play the whole campaign; prints income vs target per day. |
+| Browser tests (23) | `node --test tests/browser.test.mjs` (needs Chrome or Edge; set `CHROME_PATH` if installed somewhere unusual). Screenshots go to `tests/screenshots/`. |
+| Balance simulation | `node tests/sim.mjs 10 10` (three simulated skill levels play the whole campaign) |
 
 There are **no npm packages** anywhere. The browser tests drive Chrome through its DevTools protocol using Node's built-in `WebSocket`.
 
-## How to play
-
-* **Tap a customer** (in the room or the queue) → pick **30 / 60 / 90 min** (`1` `2` `3`) → tap a PC that pulses green. The ★ is what they asked for; any other length is billed less.
-* **Tap a PC** with a problem → a menu pops up right beside that PC with what you can do (✕ closes it). Abang walks over and it happens when he arrives. The side panel (Abang's Desk) only describes what you selected.
-  Faults: crash, frozen screen, overheating, BSOD, lost internet, hardware failure. Restarting under a customer refunds 25 % (once per incident).
-* **Suspicious PC** (❓): *Tegur baik-baik* (safe, gentle) or *Tuduh & halau* (bold, bigger payoff — and bigger penalty if they were innocent). Guilt is never shown; CCTV gives an imperfect hint.
-* **Special events are things in the room** — people at the door (gang, mak, download, truancy, LAN group, the officer), a puddle, the fuse box, a suspect at the snack machine. Tap them, or tap **TENGOK** on a card in *Situasi Panas*. That panel only points; the choices pop up on the object itself.
-* From **day 2** you may buy one of two random perks. Each has a downside. Daily target: RM30 on day 1, +RM3 a day through day 10 (RM57), then +RM4 a day, later +RM5 — so you will need upgrades to keep up. Sessions are short: 30 min = 10 s, 60 min = 16 s, 90 min = 22 s. Rent and bills are paid once a month (every 30 days), not daily.
-* Camera: fixed isometric; optional gentle zoom (wheel / pinch / buttons), pan when zoomed. It never rotates.
-* Keys: `Space` pause · `N` next customer · `1 2 3` duration · `R` restart · `+ -` zoom.
-
-## Project layout
+### Project layout
 
 ```
 index.html            page shell (loads the scripts in order)
 css/style.css         all styling
-js/core/config.js     every tunable: CFG, RENTAL, DIRECTOR (difficulty), TYPES (9 customers), PERKS, FAULTS, EVENTS, ROOM
-js/state/*.js         the simulation — pure data, no DOM, deterministic (seeded)
-    core.js economy.js movement.js perks.js customers.js pcs.js incidents.js events.js officer.js actions.js shift.js save.js index.js
+js/core/config.js     every tunable: CFG, RENTAL, DIRECTOR (difficulty), TYPES, PERKS, FAULTS, EVENTS, ROOM
+js/state/*.js         the simulation: pure data, no DOM, deterministic (seeded)
 js/gfx/*.js           the 3D renderer (own WebGL2 engine, no libraries)
-    engine.js (instancing, toon shader, planar sun shadows) lighting.js (time of day) anim.js (animation state machine)
-    props.js (room) characters.js picking.js (ray casting) scene.js (orchestration, PCs, events)
-js/ui/*.js            loader.js (splash screen) audio.js hud.js panels.js labels.js modals.js input.js main.js (+ core.js shared helpers)
+js/ui/*.js            loader, audio, HUD, panels, labels, modals, input, main
 tests/                state.test.mjs  browser.test.mjs  bot.mjs  sim.mjs  load-state.mjs
-tools/                build.mjs  make-wallpaper.mjs (draws the loading-screen art into index.html)  cdp.mjs (Chrome driver)  stage.html (render-only dev page)
+tools/                build.mjs  make-wallpaper.mjs  cdp.mjs  stage.html
 dist/                 the standalone bundle (generated)
 ```
 
-Nine concerns, kept apart: simulation (`state/`), 3D renderer (`gfx/engine+scene`), character controllers (`state/movement.js` locomotion, `gfx/anim.js` + `gfx/characters.js` animation),
-interaction/ray casting (`gfx/picking.js`, `ui/input.js`), UI (`ui/`), audio (`ui/audio.js`), assets (`gfx/props.js` signs/posters are generated textures), save/load (`state/save.js`), tests (`tests/`).
+Concerns are kept apart: simulation (`state/`), renderer (`gfx/engine` + `scene`), character movement (`state/movement.js`) and animation (`gfx/anim.js`, `gfx/characters.js`), picking (`gfx/picking.js`, `ui/input.js`), UI (`ui/`), audio (`ui/audio.js`), assets (`gfx/props.js`), save/load (`state/save.js`), tests (`tests/`).
 
-## Balancing
+### Balancing
 
-Everything lives in `js/core/config.js`. `DIRECTOR` is the single difficulty table (spawn rate, patience drain, fault chances, trouble frequency, special slots, inspection, target curve); `Santai / Biasa / Mencabar` presets scale it (Settings). `node tests/sim.mjs` shows the effect.
+Everything lives in `js/core/config.js`. `DIRECTOR` is the single difficulty table (spawn rate, patience drain, fault chances, trouble frequency, special slots, inspection, target curve). The `Santai / Biasa / Mencabar` presets scale it. `node tests/sim.mjs` shows the effect.
 
-## Known limitations (be honest)
+### Loading screen
 
-* **Art is procedural.** Every model — CRTs, desks, characters, props, posters — is built in code from rounded primitives. It is a stylised placeholder set, not hand-modelled art. There is **no GLB/glTF loader**: no external model files exist, and none are claimed. A real asset pipeline would be a new module.
-* The renderer is a custom WebGL2 engine, not Three.js. Shadows are planar (floor only), not a full shadow map; there is no ambient-occlusion pass (contact blobs stand in).
-* Characters are posed from a small rig, not skeletal animation clips. Animation states: IDLE, WALK, TURN, SIT, PLAY, TYPE, REACT, ANGRY, INSPECT, LEAVE.
-* Picking uses ray tests against bounding shapes (box / spheres), not per-triangle.
-* Sounds are tiny synthesised effects; there is no music.
-* The simulation is fully tested headlessly and in headless Chrome (software GL). It has **not** been run on real phones or GPUs; the 60 FPS / 30 FPS targets are not measured here — quality tiers and an automatic step-down exist for slow devices.
-* No static-scene caching: the whole scene is rebuilt each frame. Measured: ~1.6 ms of JavaScript for ~870 instances (an 8-PC busy shop), so caching would save under a millisecond; the cost that matters is GPU draw time, which instancing already keeps to ~100 draw calls.
-* Balance is simulation-tuned with scripted players, not with human playtesters.
+An inline-SVG illustration (sunset over a shophouse street, the ABANG CC shop, Abang waving) covers the game for about 1.7 s while it boots. Edit `tools/make-wallpaper.mjs`, not the markup in `index.html`. Add `?noloader` to the address to skip it. It respects `prefers-reduced-motion`.
 
-## Loading screen
+### Known limitations
 
-A splash screen with an illustrated wallpaper (sunset over a shophouse street, the ABANG CC shop with glowing CRTs, Abang waving) and a progress bar covers the game for about 1.7 s while it boots, then fades out. The art is inline SVG generated by `node tools/make-wallpaper.mjs` (edit that file, not the markup in `index.html`); `js/ui/loader.js` drives the bar. Skip it with `?noloader` in the address. It respects `prefers-reduced-motion`.
+- **Art is procedural.** Every model is built in code from rounded primitives. It's a stylised placeholder set, and there is no GLB/glTF loader.
+- The renderer is a custom WebGL2 engine, not Three.js. Shadows are planar (floor only) and there is no ambient-occlusion pass.
+- Characters are posed from a small rig, not skeletal animation clips.
+- Picking uses ray tests against bounding shapes, not per-triangle.
+- Sounds are tiny synthesised effects. There is no music.
+- Tested headlessly and in headless Chrome (software GL). It has **not** been run on real phones or GPUs, and the 60 / 30 FPS targets are not measured. Quality tiers and an automatic step-down exist for slow devices.
+- The whole scene is rebuilt each frame (about 1.6 ms of JavaScript for an 8-PC busy shop), so caching would save under a millisecond.
+- Balance is tuned with scripted players, not human playtesters.
+
+</details>
+
+---
+
+<div align="center">
+
+*Made with ☕ and too many late nights at the kedai siber.*
+
+</div>
