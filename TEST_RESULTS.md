@@ -78,3 +78,6 @@ Caveats: the scripted player buys few extra PCs (so its late-day numbers are pes
 ## Not covered by any test
 
 Real devices (60 FPS desktop / 30 FPS mobile targets are unmeasured), audible quality of the sounds, human balance, and visual polish beyond the screenshots in `tests/screenshots/`.
+
+## Main menu page, floating layout, living home (not run by the test runner yet)
+Added browser tests: **Home** (menu is a page; Play / Continue / Restart flow with confirm), **Home extras** (the demo shop animates and never touches the real shop, daily tip, Kredit, menu music), **Terapung** (Settings choice, applies live, remembered, Klasik restores the old layout, phones are not offered it), and updated **A20** (a reload lands on the menu; Sambung Main resumes the paused shift). They were written on a machine without Node, so they have **not been run**. What was checked instead, in headless Chrome driven by script: the whole Play → pause → Menu utama → reload → Continue → Restart (Batal / confirm) flow, the layout switch and its persistence, the demo shop stepping 60 s with the real state unchanged, and screenshots at 1366×768, 874×402, 874×335, 667×375 and 720×900. Run `node --test tests/browser.test.mjs` to confirm.

@@ -8,8 +8,9 @@
    Sized for an iPhone 16 Pro held sideways (874 × 402 CSS px) and kept clear of the notch / home bar.
    ========================================================================== */
 
-html[data-layout="phone"] {
+html:is([data-layout="phone"], [data-layout="float"]) {
   --dk: 8px; /* gap between a dock and the screen edge */
+  --z: 1; /* docks are drawn this much bigger (the PC "float" layout uses 1.3) */
   --sl: max(var(--dk), env(safe-area-inset-left, 0px));
   --sr: max(var(--dk), env(safe-area-inset-right, 0px));
   --st: max(6px, env(safe-area-inset-top, 0px));
@@ -17,64 +18,64 @@ html[data-layout="phone"] {
 }
 
 /* ---- the scene is the page ---- */
-html[data-layout="phone"] #app { display: block; padding: 0; gap: 0; }
-html[data-layout="phone"] .topbar,
-html[data-layout="phone"] .ticker,
-html[data-layout="phone"] .sidebar,
+html:is([data-layout="phone"], [data-layout="float"]) #app { display: block; padding: 0; gap: 0; }
+html:is([data-layout="phone"], [data-layout="float"]) .topbar,
+html:is([data-layout="phone"], [data-layout="float"]) .ticker,
+html:is([data-layout="phone"], [data-layout="float"]) .sidebar { display: none; }
 html[data-layout="phone"] .zoom-ctl { display: none; }
-html[data-layout="phone"] .stage { position: absolute; inset: 0; display: block; }
-html[data-layout="phone"] .viewport { position: absolute; inset: 0; border: 0; border-radius: 0; box-shadow: none; }
-html[data-layout="phone"] .vp-top { display: none; }
+html:is([data-layout="phone"], [data-layout="float"]) .stage { position: absolute; inset: 0; display: block; }
+html:is([data-layout="phone"], [data-layout="float"]) .viewport { position: absolute; inset: 0; border: 0; border-radius: 0; box-shadow: none; }
+html:is([data-layout="phone"], [data-layout="float"]) .vp-top { display: none; }
 
 /* ---- the four corner docks ---- */
-html[data-layout="phone"] .dock { position: absolute; z-index: 4; display: flex; flex-direction: column; gap: 4px; pointer-events: none; max-height: calc(100% - var(--st) - var(--sb)); }
-html[data-layout="phone"] .dock > * { pointer-events: auto; }
-html[data-layout="phone"] .dock-tl { left: var(--sl); top: var(--st); align-items: flex-start; }
-html[data-layout="phone"] .dock-tr { right: var(--sr); top: var(--st); align-items: flex-end; }
-html[data-layout="phone"] .dock-bl { left: var(--sl); bottom: var(--sb); justify-content: flex-end; align-items: flex-start; width: 182px; }
-html[data-layout="phone"] .dock-br { right: var(--sr); bottom: var(--sb); justify-content: flex-end; align-items: flex-end; width: 192px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock { position: absolute; z-index: 4; display: flex; flex-direction: column; gap: 4px; pointer-events: none; zoom: var(--z); max-height: calc((100% - var(--st) - var(--sb)) / var(--z)); }
+html:is([data-layout="phone"], [data-layout="float"]) .dock > * { pointer-events: auto; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock-tl { left: var(--sl); top: var(--st); align-items: flex-start; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock-tr { right: var(--sr); top: var(--st); align-items: flex-end; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock-bl { left: var(--sl); bottom: var(--sb); justify-content: flex-end; align-items: flex-start; width: 182px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock-br { right: var(--sr); bottom: var(--sb); justify-content: flex-end; align-items: flex-end; width: 192px; }
 
 /* top docks: slim pills */
-html[data-layout="phone"] .dock .chip { font-size: 10px; padding: 2px 9px; border-width: 2px; box-shadow: 0 2px 0 var(--ink); letter-spacing: .02em; max-width: 190px; }
-html[data-layout="phone"] .dock .chip-timer { font-size: 12px; }
-html[data-layout="phone"] .dock .hud-pill { flex: none; padding: 2px 9px; gap: 7px; border-width: 2px; border-radius: 11px; box-shadow: 0 2px 0 var(--ink); }
-html[data-layout="phone"] .dock .pill-icon, html[data-layout="phone"] .dock .hud-pill.clock .sky { font-size: 17px; }
-html[data-layout="phone"] .dock .pill-label { font-size: 8px; letter-spacing: .05em; overflow: hidden; text-overflow: ellipsis; max-width: 96px; }
-html[data-layout="phone"] .dock .hud-pill strong { font-size: 15px; line-height: 1.1; }
-html[data-layout="phone"] .dock .hud-pill.cash { min-width: 0; } html[data-layout="phone"] .dock .hud-pill.cash strong { font-size: 18px; }
-html[data-layout="phone"] .dock .hud-pill.clock { min-width: 0; }
-html[data-layout="phone"] .dock .hud-pill.goal { flex: none; width: 184px; padding: 3px 9px 4px; gap: 2px; }
-html[data-layout="phone"] .dock .goal-top { display: none; }
-html[data-layout="phone"] .dock .goal-bar { height: 8px; border-width: 2px; }
-html[data-layout="phone"] .dock .goal-foot { font-size: 10px; white-space: nowrap; } html[data-layout="phone"] .dock .goal-foot strong { font-size: 13px; } html[data-layout="phone"] .dock .goal-foot .rest { font-size: 10px; }
-html[data-layout="phone"] .dock .top-actions { margin: 0; gap: 5px; }
-html[data-layout="phone"] .dock .btn-icon { width: 34px; height: 34px; font-size: 14px; border-width: 2px; border-radius: 10px; box-shadow: 0 2px 0 var(--ink); }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .chip { font-size: 10px; padding: 2px 9px; border-width: 2px; box-shadow: 0 2px 0 var(--ink); letter-spacing: .02em; max-width: 190px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .chip-timer { font-size: 12px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .hud-pill { flex: none; padding: 2px 9px; gap: 7px; border-width: 2px; border-radius: 11px; box-shadow: 0 2px 0 var(--ink); }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .pill-icon, html:is([data-layout="phone"], [data-layout="float"]) .dock .hud-pill.clock .sky { font-size: 17px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .pill-label { font-size: 8px; letter-spacing: .05em; overflow: hidden; text-overflow: ellipsis; max-width: 96px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .hud-pill strong { font-size: 15px; line-height: 1.1; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .hud-pill.cash { min-width: 0; } html:is([data-layout="phone"], [data-layout="float"]) .dock .hud-pill.cash strong { font-size: 18px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .hud-pill.clock { min-width: 0; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .hud-pill.goal { flex: none; width: 184px; padding: 3px 9px 4px; gap: 2px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .goal-top { display: none; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .goal-bar { height: 8px; border-width: 2px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .goal-foot { font-size: 10px; white-space: nowrap; } html:is([data-layout="phone"], [data-layout="float"]) .dock .goal-foot strong { font-size: 13px; } html:is([data-layout="phone"], [data-layout="float"]) .dock .goal-foot .rest { font-size: 10px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .top-actions { margin: 0; gap: 5px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .btn-icon { width: 34px; height: 34px; font-size: 14px; border-width: 2px; border-radius: 10px; box-shadow: 0 2px 0 var(--ink); }
 
 /* bottom docks: compact cards */
-html[data-layout="phone"] .dock .card { flex: none; width: 100%; min-height: 0; padding: 4px 7px 6px; border-width: 2px; border-radius: 12px; box-shadow: 0 2px 0 var(--ink); background: rgba(255, 248, 234, .95); }
-html[data-layout="phone"] .dock .card-title { margin: 0 0 3px; font-size: 9.5px; letter-spacing: .03em; white-space: nowrap; }
-html[data-layout="phone"] .dock .card-title > span:first-child { overflow: hidden; text-overflow: ellipsis; }
-html[data-layout="phone"] .dock .count { min-width: 18px; padding: 0 5px; font-size: 10px; border-width: 2px; }
-html[data-layout="phone"] .dock .card.alerts { background: #ffe9e4; }
-html[data-layout="phone"] .dock .card.alerts.calm { display: none; }
-html[data-layout="phone"] .dock .crisis-list, html[data-layout="phone"] .dock .queue-list { flex-direction: column; gap: 3px; max-height: 98px; padding: 0 2px 3px 0; overflow-x: hidden; overflow-y: auto; scrollbar-width: none; }
-html[data-layout="phone"] .dock .crisis-list { max-height: 64px; }
-html[data-layout="phone"] .dock .crisis { grid-template-columns: 26px 1fr auto; gap: 6px; padding: 2px 6px 2px 4px; min-width: 0; width: 100%; border-width: 2px; border-radius: 10px; box-shadow: 0 2px 0 var(--ink); }
-html[data-layout="phone"] .dock .crisis .ico { width: 26px; height: 26px; font-size: 14px; border-width: 2px; } html[data-layout="phone"] .dock .crisis .ico span { width: 18px; height: 18px; }
-html[data-layout="phone"] .dock .crisis b { font-size: 11px; line-height: 1.15; } html[data-layout="phone"] .dock .crisis small { display: none; } html[data-layout="phone"] .dock .crisis .look { padding: 0 6px; font-size: 9px; border-width: 1.5px; letter-spacing: .03em; }
-html[data-layout="phone"] .dock .queue-item { grid-template-columns: 24px 1fr; gap: 6px; padding: 1px 6px 2px 3px; min-width: 0; width: 100%; border-width: 2px; border-radius: 10px; box-shadow: 0 2px 0 var(--ink); }
-html[data-layout="phone"] .dock .queue-avatar { width: 24px; height: 24px; font-size: 13px; border-width: 2px; }
-html[data-layout="phone"] .dock .queue-name { font-size: 12px; gap: 3px; } html[data-layout="phone"] .dock .want { font-size: 9px; padding: 0 5px; border-width: 1.5px; }
-html[data-layout="phone"] .dock .patience { height: 5px; margin-top: 2px; border-width: 1.5px; }
-html[data-layout="phone"] .dock .queue-list .empty { margin: 0; padding: 2px 0; font-size: 11px; }
-html[data-layout="phone"] .dock .card.queue { flex: none; display: block; }
-html[data-layout="phone"] .dock .card.jobs.idle { display: none; }
-html[data-layout="phone"] .dock .job-list { gap: 3px; }
-html[data-layout="phone"] .dock .meter-row { grid-template-columns: 1fr 1fr; gap: 3px 8px; }
-html[data-layout="phone"] .dock .meter { gap: 1px; }
-html[data-layout="phone"] .dock .meter-head { font-size: 10px; white-space: nowrap; } html[data-layout="phone"] .dock .meter-head span { overflow: hidden; text-overflow: ellipsis; } html[data-layout="phone"] .dock .meter-head b { font-size: 11px; }
-html[data-layout="phone"] .dock .meter-track { height: 6px; border-width: 1.5px; }
-html[data-layout="phone"] .dock .combo { font-size: 10px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .card { flex: none; width: 100%; min-height: 0; padding: 4px 7px 6px; border-width: 2px; border-radius: 12px; box-shadow: 0 2px 0 var(--ink); background: rgba(255, 248, 234, .95); }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .card-title { margin: 0 0 3px; font-size: 9.5px; letter-spacing: .03em; white-space: nowrap; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .card-title > span:first-child { overflow: hidden; text-overflow: ellipsis; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .count { min-width: 18px; padding: 0 5px; font-size: 10px; border-width: 2px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .card.alerts { background: #ffe9e4; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .card.alerts.calm { display: none; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .crisis-list, html:is([data-layout="phone"], [data-layout="float"]) .dock .queue-list { flex-direction: column; gap: 3px; max-height: 98px; padding: 0 2px 3px 0; overflow-x: hidden; overflow-y: auto; scrollbar-width: none; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .crisis-list { max-height: 64px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .crisis { grid-template-columns: 26px 1fr auto; gap: 6px; padding: 2px 6px 2px 4px; min-width: 0; width: 100%; border-width: 2px; border-radius: 10px; box-shadow: 0 2px 0 var(--ink); }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .crisis .ico { width: 26px; height: 26px; font-size: 14px; border-width: 2px; } html:is([data-layout="phone"], [data-layout="float"]) .dock .crisis .ico span { width: 18px; height: 18px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .crisis b { font-size: 11px; line-height: 1.15; } html:is([data-layout="phone"], [data-layout="float"]) .dock .crisis small { display: none; } html:is([data-layout="phone"], [data-layout="float"]) .dock .crisis .look { padding: 0 6px; font-size: 9px; border-width: 1.5px; letter-spacing: .03em; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .queue-item { grid-template-columns: 24px 1fr; gap: 6px; padding: 1px 6px 2px 3px; min-width: 0; width: 100%; border-width: 2px; border-radius: 10px; box-shadow: 0 2px 0 var(--ink); }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .queue-avatar { width: 24px; height: 24px; font-size: 13px; border-width: 2px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .queue-name { font-size: 12px; gap: 3px; } html:is([data-layout="phone"], [data-layout="float"]) .dock .want { font-size: 9px; padding: 0 5px; border-width: 1.5px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .patience { height: 5px; margin-top: 2px; border-width: 1.5px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .queue-list .empty { margin: 0; padding: 2px 0; font-size: 11px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .card.queue { flex: none; display: block; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .card.jobs.idle { display: none; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .job-list { gap: 3px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .meter-row { grid-template-columns: 1fr 1fr; gap: 3px 8px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .meter { gap: 1px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .meter-head { font-size: 10px; white-space: nowrap; } html:is([data-layout="phone"], [data-layout="float"]) .dock .meter-head span { overflow: hidden; text-overflow: ellipsis; } html:is([data-layout="phone"], [data-layout="float"]) .dock .meter-head b { font-size: 11px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .meter-track { height: 6px; border-width: 1.5px; }
+html:is([data-layout="phone"], [data-layout="float"]) .dock .combo { font-size: 10px; }
 
 /* ---- things that float over the scene ---- */
 html[data-layout="phone"] .hint { left: 50%; transform: translateX(-50%); bottom: var(--sb); max-width: calc(100% - 360px); padding: 3px 11px; font-size: 11px; border-width: 2px; }
@@ -84,7 +85,7 @@ html[data-layout="phone"] .toast { font-size: 12px; padding: 4px 11px; border-wi
 html[data-layout="phone"] .crisis-overlay { top: var(--st); }
 html[data-layout="phone"] .world-alert { font-size: 12px; padding: 3px 11px; border-width: 2px; box-shadow: 0 2px 0 var(--ink); }
 html[data-layout="phone"] .world-menu { width: min(268px, calc(100% - 12px)); }
-html[data-layout="phone"] .breakdown { position: fixed; left: 50%; right: auto; top: auto; bottom: var(--sb); width: min(420px, 60vw); transform: translateX(-50%); z-index: 9; }
+html:is([data-layout="phone"], [data-layout="float"]) .breakdown { position: fixed; left: 50%; right: auto; top: auto; bottom: var(--sb); width: min(420px, 60vw); transform: translateX(-50%); z-index: 9; }
 html[data-layout="phone"] .pc-chip .tag { font-size: 10px; } html[data-layout="phone"] .pc-chip .prog { width: 56px; height: 6px; }
 html[data-layout="phone"] .person-tag .bub { font-size: 11px; }
 
@@ -157,3 +158,14 @@ html[data-layout="phone"] .modal-eyebrow { align-self: flex-start; }
   html[data-layout="phone"] .dock .card.vitals .card-title { display: none; }
   html[data-layout="phone"] .dock .hud-pill.clock .pill-label { display: none; }
 }
+
+/* ==========================================================================
+   FLOAT — the same corner-dock layout on a PC (Tetapan → Susun atur → Terapung, or ?layout=float)
+   Shares everything above, but the docks are drawn 1.3× bigger, and the scene's own pieces keep their desktop size.
+   ========================================================================== */
+html[data-layout="float"] { --dk: 14px; --z: 1.3; }
+html[data-layout="float"] .hint { left: 50%; transform: translateX(-50%); bottom: 14px; max-width: calc(100% - 640px); }
+html[data-layout="float"] .crisis-overlay { top: 14px; }
+html[data-layout="float"] .zoom-ctl { top: 50%; bottom: auto; right: 14px; flex-direction: column; transform: translateY(-50%); }
+html[data-layout="float"] .zoom-ctl .zl { display: none; }
+html[data-layout="float"] .zoom-ctl .btn { min-width: 40px; min-height: 40px; }

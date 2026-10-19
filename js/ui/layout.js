@@ -1,12 +1,13 @@
 /* ==========================================================================
-   4b. LAYOUT — one game, two layouts ("desktop" and "phone")
+   4b. LAYOUT — one game, three looks: "desktop" (classic), "float" and "phone"
    --------------------------------------------------------------------------
-   The phone layout is for touch phones held sideways: the 3D scene fills the whole screen and the
-   panels sit in its four corners (cash + clock top-left, target + buttons top-right, waiting queue
-   bottom-left, shop status + tasks bottom-right). Nothing else changes: same game, same save.
-   • Picked once at start: a touch screen whose short side is ≤ 600 px → "phone", anything else → "desktop".
-     Force one with ?layout=phone or ?layout=desktop (handy for testing on a PC).
-   • "phone" moves the existing panel elements into four corner docks (same nodes, so every id and
+   "phone" and "float" share one idea: the 3D scene fills the whole screen and the panels sit in its four corners
+   (cash + clock top-left, target + buttons top-right, waiting queue bottom-left, shop status + tasks bottom-right).
+   "phone" is for touch phones held sideways; "float" is the same thing on a PC with bigger panels (Tetapan →
+   Susun atur → Terapung). "desktop" is the classic top bar + sidebar. Nothing else changes: same game, same save.
+   • Picked at start: a touch screen whose short side is ≤ 600 px → "phone" (always); otherwise the saved Susun atur
+     setting ("float" or the classic "desktop"). Force one with ?layout=phone|float|desktop (handy for testing on a PC).
+   • "phone" / "float" move the existing panel elements into four corner docks (same nodes, so every id and
      listener keeps working); "desktop" puts them straight back where index.html has them.
    • Held upright, a phone shows a "turn your phone" card and the shift is paused. Android Chrome is also
      asked for fullscreen + landscape on the first tap (iPhone Safari cannot lock orientation, so it relies on the card).
@@ -24,19 +25,30 @@
   };
   const homes = new Map(); // element → comment node left where it lived on the desktop layout
 
-  /** Which layout this device should use. */
-  function detect() {
-    const m = /[?&]layout=(phone|desktop)\b/.exec(location.search);
-    if (m) return m[1];
+  /** Is this a touch phone? (Touch screen, short side ≤ 600 px.) */
+  function isPhone() {
     try {
-      const touch = matchMedia('(pointer: coarse)').matches;
-      return touch && Math.min(screen.width, screen.height) <= 600 ? 'phone' : 'desktop';
+      return matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) <= 600;
     } catch (e) {
-      return 'desktop';
+      return false;
     }
   }
+  /** The player's saved Susun atur choice ('classic' | 'float'). Read straight from the settings, as the UI isn't up yet. */
+  function savedPref() {
+    try {
+      return JSON.parse(localStorage.getItem('abangcc2007_settings') || '{}').layout === 'float' ? 'float' : 'classic';
+    } catch (e) {
+      return 'classic';
+    }
+  }
+  /** Which layout to use for a saved preference on this device. */
+  const resolve = (pref) => (isPhone() ? 'phone' : pref === 'float' ? 'float' : 'desktop');
+  function detect() {
+    const m = /[?&]layout=(phone|float|desktop)\b/.exec(location.search);
+    return m ? m[1] : resolve(savedPref());
+  }
 
-  function toPhone() {
+  function toDocks() {
     const vp = $('viewport');
     if (!vp || vp.querySelector('.dock')) return;
     for (const [name, list] of Object.entries(DOCKS)) {
@@ -62,10 +74,12 @@
   function apply(name) {
     if (root.dataset.layout === name) return name;
     root.dataset.layout = name;
-    if (name === 'phone') toPhone();
-    else toDesktop();
+    if (name === 'desktop') toDesktop();
+    else toDocks();
     return name;
   }
+  /** Settings → Susun atur: 'classic' | 'float'. A phone always keeps its own layout. */
+  const set = (pref) => apply(resolve(pref));
 
   const layout = apply(detect());
   if (layout === 'phone') {
@@ -92,5 +106,5 @@
     upright.addEventListener?.('change', pauseIfUpright);
   }
 
-  ns.Layout = { current: () => root.dataset.layout, apply, detect };
+  ns.Layout = { current: () => root.dataset.layout, apply, set, detect, isPhone };
 })((window.ABCC = window.ABCC || {}));

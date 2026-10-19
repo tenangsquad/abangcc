@@ -393,7 +393,12 @@ test('A20: progress survives a browser refresh (Sambung main restores it)', asyn
   const cash = await S('s.cash'), day = await S('s.day');
   await b.goto(INDEX); // refresh
   await sleep(500);
-  assert.equal(await S('s.phase'), 'paused', 'a mid-shift refresh resumes paused, never mid-action');
+  assert.equal(await S('s.phase'), 'menu', 'the game always opens on the main menu page, even with a saved shift');
+  assert.equal(await ev(`document.documentElement.dataset.screen`), 'home');
+  assert.ok(await ev(`!!document.querySelector('[data-modal="continue"]')`), 'Sambung Main is offered');
+  await clickEl('[data-modal="continue"]');
+  await sleep(250);
+  assert.equal(await S('s.phase'), 'paused', 'continuing a mid-shift session resumes paused, never mid-action');
   assert.ok(await ev(`!!document.querySelector('[data-modal="resume"]')`), 'Sambung shift is offered');
   assert.equal(await S('s.cash'), cash);
   assert.equal(await S('s.day'), day);
@@ -409,6 +414,133 @@ test('A20: progress survives a browser refresh (Sambung main restores it)', asyn
   await sleep(250);
   assert.equal(await S('s.cash'), cash);
   assert.equal(await S('s.day'), day);
+  assert.deepEqual(b.consoleErrors, []);
+});
+
+test('Home: the game opens on a main menu page (not a pop-up); Mula Main for a new player, Sambung Main + Main Semula once there is a session', async () => {
+  await open();
+  assert.equal(await ev(`document.documentElement.dataset.screen`), 'home');
+  assert.equal(await ev(`document.getElementById('modalRoot').classList.contains('open')`), false, 'it is a page, not a dialog');
+  assert.equal(await ev(`getComputedStyle(document.querySelector('.topbar')).display`), 'none', 'the game HUD is out of the way');
+  assert.deepEqual(await ev(`[...document.querySelectorAll('#homeCard .tile b')].map((e) => e.textContent)`), ['Mula Main', 'Cara Main', 'Koleksi', 'Tetapan'], 'a new player sees Play, Guide, Collection, Settings');
+  assert.equal(await ev(`document.querySelectorAll('#homeCard .tile svg path, #homeCard .tile svg rect, #homeCard .tile svg circle').length > 8`), true, 'every tile has its icon');
+  assert.equal(await ev(`[...document.querySelectorAll('#homeCard .tile')].every((t) => t.querySelector('.tile-ico svg') && t.querySelector('.tile-ico').nextElementSibling.tagName === 'B')`), true, 'the icon sits on top of the label');
+  await shot('22_home_new');
+  // Cara Main opens over the page and Siap brings the page back
+  await clickEl('[data-modal="help"]');
+  assert.equal(await ev(`document.getElementById('modalRoot').classList.contains('open')`), true);
+  await clickEl('[data-modal="back"]');
+  assert.equal(await ev(`document.getElementById('modalRoot').classList.contains('open')`), false);
+  assert.equal(await ev(`document.documentElement.dataset.screen`), 'home');
+  // play → intro → skip → open the shop → pause → Menu utama
+  await clickUntil('[data-modal="newgame"]', `!!document.querySelector('[data-modal="introskip"]')`);
+  assert.equal(await ev(`document.documentElement.dataset.screen`), 'game', 'the page is gone once the game starts');
+  await clickUntil('[data-modal="introskip"]', `!!document.querySelector('[data-modal="start"]')`);
+  await clickUntil('[data-modal="start"]', `ABCC.debug.state().phase === 'active'`);
+  await ev(`ABCC.debug.ui().togglePause(); 1`);
+  await sleep(250);
+  await clickEl('[data-modal="mainmenu"]');
+  await sleep(250);
+  assert.equal(await ev(`document.documentElement.dataset.screen`), 'home');
+  assert.deepEqual(await ev(`[...document.querySelectorAll('#homeCard .tile b')].map((e) => e.textContent)`), ['Sambung Main', 'Main Semula', 'Cara Main', 'Koleksi', 'Tetapan'], 'with a session: Continue and Restart appear');
+  await shot('23_home_session');
+  // Main Semula asks first; Batal changes nothing
+  await clickEl('[data-modal="restart"]');
+  assert.match(await ev(`document.querySelector('.modal-card').textContent`), /Mula dari\s+Hari 1\?/);
+  await clickEl('[data-modal="back"]');
+  assert.equal(await S('s.phase'), 'menu');
+  assert.equal(await ev(`!!document.querySelector('[data-modal="continue"]')`), true, 'the session is still there');
+  // Sambung Main picks the shift up where it was paused
+  await clickEl('[data-modal="continue"]');
+  await sleep(250);
+  assert.equal(await S('s.phase'), 'paused');
+  await clickEl('[data-modal="mainmenu"]');
+  await sleep(250);
+  // Main Semula → Ya → a brand new run (intro again, Day 1, RM35)
+  await clickEl('[data-modal="restart"]');
+  await clickEl('[data-modal="newgame"]');
+  await sleep(250);
+  assert.equal(await S('s.phase'), 'onboarding');
+  assert.equal(await S('s.day'), 1);
+  assert.equal(await S('s.cash'), 3500);
+  assert.deepEqual(b.consoleErrors, []);
+});
+
+test('Home extras: a living café behind the menu, a daily tip, the Kredit page and music', async () => {
+  await open();
+  await ev(`localStorage.setItem('abangcc2007_settings', JSON.stringify({ quality: 'high', qualityChosen: true, sound: true, music: true, noLoader: true })); 1`);
+  await b.goto(INDEX);
+  await sleep(500);
+  assert.equal(await ev(`document.documentElement.dataset.screen`), 'home');
+  // the demo shop runs the real rules: customers arrive, sit down and play, and the player's own shop is untouched
+  const seen = await ev(`(() => {
+    const real = ABCC.debug.state(), cash = real.cash, seen = new Set();
+    let busy = 0;
+    for (let i = 0; i < 1200; i++) { const d = ABCC.UI.homeScene.step(real, 0.05); d.customers.forEach((c) => seen.add(c.status)); busy = Math.max(busy, d.pcs.filter((p) => p.status === 'busy').length); }
+    return { seen: [...seen], busy, realCustomers: real.customers.length, realCash: real.cash === cash, phase: real.phase };
+  })()`);
+  assert.ok(seen.seen.includes('playing') && seen.seen.includes('walkToPc'), `customers walk in and play (${seen.seen})`);
+  assert.ok(seen.busy >= 1, 'monitors are in use');
+  assert.equal(seen.realCustomers, 0, 'the real shop is untouched');
+  assert.equal(seen.realCash, true);
+  assert.equal(seen.phase, 'menu');
+  await shot('24_home_alive');
+  // the tip: one a day, and a tap shows the next
+  const tip1 = await ev(`document.getElementById('homeTip').textContent`);
+  assert.match(tip1, /^💡 /);
+  await clickEl('#homeTip');
+  assert.notEqual(await ev(`document.getElementById('homeTip').textContent`), tip1, 'tapping the tip shows the next one');
+  // music plays on the menu page once the player has tapped (browsers insist on a tap first)
+  await sleep(700);
+  assert.equal(await ev(`ABCC.debug.ui().Sound.musicPlaying()`), true, 'the menu has music');
+  await clickEl('[data-modal="credits"]');
+  assert.match(await ev(`document.querySelector('.modal-card').textContent`), /KREDIT[\s\S]*Alpha 0\.12[\s\S]*Fredoka/);
+  await shot('25_credits');
+  await clickEl('[data-modal="back"]');
+  assert.equal(await ev(`document.documentElement.dataset.screen`), 'home');
+  // starting the shop stops the menu music until the shift begins, and the page is gone
+  await clickUntil('[data-modal="newgame"]', `!!document.querySelector('[data-modal="introskip"]')`);
+  await sleep(500);
+  assert.equal(await ev(`ABCC.debug.ui().Sound.musicPlaying()`), false, 'silent during the intro cards');
+  assert.deepEqual(b.consoleErrors, []);
+});
+
+test('Terapung: the floating layout is a Settings choice on a PC, applies at once, is remembered, and Klasik brings the old layout back', async () => {
+  await open(1366, 768);
+  await pageReady(2, { cash: 9000 });
+  await ev(`T.wait('student', 60, 0); T.wait('fps', 60, 1); ABCC.debug.advance(0.5); 1`);
+  assert.equal(await ev(`ABCC.Layout.current()`), 'desktop');
+  await ev(`ABCC.debug.openSettings(); 1`);
+  await clickEl('[data-setting="layout"][data-value="float"]');
+  assert.equal(await ev(`ABCC.Layout.current()`), 'float');
+  assert.equal(await ev(`document.querySelectorAll('.dock').length`), 4, 'the panels moved into the corners');
+  await clickEl('[data-modal="back"]');
+  await ev(`ABCC.debug.ui().togglePause(); 1`); // Settings paused the shift; carry on
+  await sleep(300);
+  const m = await ev(`(() => {
+    const vp = document.getElementById('viewport').getBoundingClientRect();
+    const dock = (k) => document.querySelector('.dock-' + k).getBoundingClientRect();
+    return { vpW: vp.width, vpH: vp.height, winW: innerWidth, winH: innerHeight, tl: dock('tl'), br: dock('br'), docH: document.documentElement.scrollHeight };
+  })()`);
+  assert.ok(m.vpW >= m.winW - 1 && m.vpH >= m.winH - 1, 'the scene fills the whole window');
+  assert.ok(m.tl.width > 150 && m.br.width > 200, `the docks are drawn bigger than on a phone (${Math.round(m.tl.width)} / ${Math.round(m.br.width)} px)`);
+  assert.ok(m.docH <= m.winH + 1, 'no page scroll');
+  await shot('26_float_layout');
+  // remembered after a reload
+  await ev(`ABCC.State.save = () => true; 1`);
+  await b.goto(INDEX);
+  await sleep(500);
+  assert.equal(await ev(`ABCC.Layout.current()`), 'float', 'the choice is remembered');
+  await ev(`ABCC.debug.openSettings(); 1`);
+  await clickEl('[data-setting="layout"][data-value="classic"]');
+  assert.equal(await ev(`ABCC.Layout.current()`), 'desktop');
+  assert.equal(await ev(`document.querySelectorAll('.dock').length`), 0);
+  assert.equal(await ev(`document.querySelector('.sidebar').children.length`), 4, 'the sidebar is back');
+  // a phone keeps its own layout and is not offered the choice
+  await open(874, 402, { mobile: true, dpr: 2 });
+  await ev(`ABCC.debug.openSettings(); 1`);
+  assert.equal(await ev(`!!document.querySelector('[data-setting="layout"]')`), false);
+  assert.equal(await ev(`ABCC.Layout.current()`), 'phone');
   assert.deepEqual(b.consoleErrors, []);
 });
 
