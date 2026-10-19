@@ -50,7 +50,7 @@
 
     // customers
     if (e.status === 'leaving') return { state: 'LEAVE', angry: (e.patience ?? 1) <= 0 };
-    if (moving) return { state: 'WALK' };
+    if (moving) return { state: 'WALK', gait: e.status === 'walkToPc' ? e.gait || 'walk' : 'walk' };
     if (act === 'argue') return { state: 'ANGRY' };
     if (sit > 0.05 && sit < 0.92 && e.status === 'playing') return { state: 'SIT' };
     if (sit >= 0.92 || (sit > 0.2 && e.status === 'playing')) {
@@ -67,7 +67,7 @@
     return ctx.turning ? { state: 'TURN' } : { state: 'IDLE' };
   }
 
-  const base = { fwdL: 0, fwdR: 0, outL: 0.1, outR: 0.1, bendL: 0.18, bendR: 0.18, inL: 0, inR: 0, lean: 0, headYaw: 0, headNod: 0, mood: 'happy', hop: 0, legs: 'stand' };
+  const base = { fwdL: 0, fwdR: 0, outL: 0.1, outR: 0.1, bendL: 0.18, bendR: 0.18, inL: 0, inR: 0, lean: 0, headYaw: 0, headNod: 0, mood: 'happy', hop: 0, legs: 'stand', legAmp: 1, kneeAmp: 1, mouth: 0 };
 
   /**
    * Target pose for a state. Angles are radians (see drawPerson for how they map onto the rig).
@@ -80,6 +80,15 @@
       case 'WALK': {
         const sw = Math.sin(c.phase) * 0.72 * c.mi;
         Object.assign(p, { fwdL: -sw, fwdR: sw, bendL: 0.18 + 0.4 * c.mi, bendR: 0.18 + 0.4 * c.mi, lean: 0.1 * c.mi, legs: 'walk', headNod: 0.05 });
+        if (st.gait === 'run') {
+          // sprint: long leg swing, high knees, elbows tucked and pumping, leaning into it
+          const pump = Math.sin(c.phase) * 1.0 * c.mi;
+          Object.assign(p, { fwdL: -pump, fwdR: pump, outL: 0.06, outR: 0.06, bendL: 1.45 * c.mi + 0.18, bendR: 1.45 * c.mi + 0.18, lean: 0.3 * c.mi, headNod: 0.08, hop: Math.abs(Math.sin(c.phase)) * 0.045 * c.mi, legAmp: 1.45, kneeAmp: 1.5, mood: 'focus' });
+        } else if (st.gait === 'joy') {
+          // running and bounding with both arms thrown up, mouth open, a little hop every stride
+          const b = Math.sin(c.phase);
+          Object.assign(p, { fwdL: 2.7 + b * 0.35 * c.mi, fwdR: 2.7 - b * 0.35 * c.mi, outL: 0.45 + Math.abs(Math.sin(c.phase / 2)) * 0.25, outR: 0.45 + Math.abs(Math.sin(c.phase / 2)) * 0.25, bendL: 0.25, bendR: 0.25, lean: -0.04, headNod: -0.06 + b * 0.05, hop: Math.abs(Math.sin(c.phase / 2)) * 0.3 * c.mi, legAmp: 1.1, kneeAmp: 1.9, mouth: 1, mood: 'cheer' });
+        }
         break;
       }
       case 'LEAVE': {

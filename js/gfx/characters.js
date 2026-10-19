@@ -25,7 +25,7 @@
 
     function poseOf(key) {
       let p = R.poses.get(key);
-      if (!p) R.poses.set(key, (p = { fwdL: 0, fwdR: 0, outL: 0.12, outR: 0.12, bendL: 0.18, bendR: 0.18, inL: 0, inR: 0, lean: 0, look: 0, nod: 0, brow: 0, smile: 0.6, open: 0, eye: 1, seen: 0, face: null, hop: 0, yaw: 0, state: 'IDLE' }));
+      if (!p) R.poses.set(key, (p = { fwdL: 0, fwdR: 0, outL: 0.12, outR: 0.12, bendL: 0.18, bendR: 0.18, inL: 0, inR: 0, lean: 0, look: 0, nod: 0, brow: 0, smile: 0.6, open: 0, eye: 1, seen: 0, face: null, hop: 0, yaw: 0, legAmp: 1, kneeAmp: 1, state: 'IDLE' }));
       return p;
     }
 
@@ -304,7 +304,9 @@
       const rate = mode.state === 'REACT' || mode.state === 'ANGRY' ? 14 : 11;
       for (const key2 of ['fwdL', 'fwdR', 'outL', 'outR', 'bendL', 'bendR', 'inL', 'inR', 'lean']) P[key2] = damp(P[key2], tgt[key2], rate, dt);
       P.yaw = damp(P.yaw, tgt.headYaw, 9, dt);
-      P.hop = damp(P.hop, tgt.hop, 14, dt);
+      P.hop = damp(P.hop, tgt.hop, tgt.hop > 0.1 ? 30 : 14, dt); // joyful bounds need a snappy hop or they flatten out
+      P.legAmp = damp(P.legAmp, tgt.legAmp, 10, dt);
+      P.kneeAmp = damp(P.kneeAmp, tgt.kneeAmp, 10, dt);
 
       // head targets
       let lookYaw = 0;
@@ -315,7 +317,7 @@
       const [browT, smileT, eyeT] = Anim.MOODS[tgt.mood] || Anim.MOODS.neutral;
       P.brow = damp(P.brow, browT, 9, dt);
       P.smile = damp(P.smile, smileT, 9, dt);
-      P.open = damp(P.open, tgt.mood === 'panic' ? 1 : 0, 10, dt);
+      P.open = damp(P.open, tgt.mood === 'panic' || tgt.mouth ? 1 : 0, 10, dt);
       P.eye = damp(P.eye, eyeT, 6, dt);
 
       // placement
@@ -328,15 +330,15 @@
       eng.cast(true);
       st.push();
       st.translate(e.x, 0, e.y);
-      shadow(e.x, e.y, 0.5 * k, 0.4 * k, 0.36);
+      shadow(e.x, e.y, 0.5 * k * (1 - P.hop * 0.8), 0.4 * k * (1 - P.hop * 0.8), 0.36 * (1 - P.hop)); // the shadow shrinks while airborne
       st.rotateY(ang);
       st.scale(k);
 
       // legs
       for (const side of [-1, 1]) {
         const ph = phase + (side > 0 ? 0 : Math.PI);
-        let f = Math.sin(ph) * 0.7 * mi;
-        let knee = Math.max(0, -Math.sin(ph + 0.9)) * 0.9 * mi;
+        let f = Math.sin(ph) * 0.7 * mi * P.legAmp;
+        let knee = Math.max(0, -Math.sin(ph + 0.9)) * 0.9 * mi * P.kneeAmp;
         if (tgt.legs === 'turn') {
           const step = Math.sin(t * 11 + (side > 0 ? 0 : Math.PI));
           f = step * 0.32;

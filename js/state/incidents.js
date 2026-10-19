@@ -109,6 +109,7 @@
       c.issue = null;
       if (stayers.includes(c.id)) {
         c.status = 'walkToPc';
+        c.gait = 'walk'; // back to the seat after a fight: no skipping
         c.destination = ROOM.seatFor(p);
       }
       p.issue = null;

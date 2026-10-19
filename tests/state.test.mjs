@@ -1029,3 +1029,27 @@ test('Clearing a day through the real shift flow records progress and reports ne
   assert.deepEqual(plain(s.lastReport.unlocked), ['phones']);
   assert.equal(ns.Meta.get().bestDay, 3);
 });
+
+test('Customers walk, run or run-with-joy to their PC, and the faster gaits get there sooner', () => {
+  const { ns } = fresh();
+  const counts = { walk: 0, run: 0, joy: 0 };
+  for (let id = 1; id <= 300; id++) counts[ns.gaitFor(id, 'student')]++;
+  assert.ok(counts.walk > 0 && counts.run > 0 && counts.joy > 0, `all three gaits occur: ${JSON.stringify(counts)}`);
+  assert.equal(ns.gaitFor(7, 'rm1'), ns.gaitFor(7, 'rm1'), 'deterministic per customer');
+
+  const travel = (gait) => {
+    const s = calmShift(ns);
+    const c = addWaiting(ns, s, 'student', 60);
+    ns.State.select(s, { kind: 'customer', id: c.id });
+    ns.State.perform(s, 'duration', c.id, 60);
+    assert.ok(ns.State.select(s, { kind: 'pc', id: 1 }).ok);
+    assert.ok(['walk', 'run', 'joy'].includes(c.gait), 'a gait is assigned when they head to the PC');
+    c.gait = gait;
+    let t = 0;
+    while (c.status === 'walkToPc' && t < 30) { ns.State.update(s, 0.05); t += 0.05; }
+    assert.equal(c.status, 'playing');
+    return t;
+  };
+  const [w, j, r] = [travel('walk'), travel('joy'), travel('run')];
+  assert.ok(r < j && j < w, `run ${r.toFixed(1)}s < joy ${j.toFixed(1)}s < walk ${w.toFixed(1)}s`);
+});
