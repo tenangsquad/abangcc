@@ -3,7 +3,7 @@
    --------------------------------------------------------------------------
    Drawn as inline SVG so they look the same on every phone and PC (emoji and ▶ / ? glyphs do not: each system
    draws them differently). Same look as the rest of the game: fat ink outline, flat bright fill.
-   UI.icon('play') → an <svg> string.   Names: play · resume · restart · guide · collection · settings · home
+   UI.icon('play') → an <svg> string.   Names: play · resume · restart · guide · collection · settings · home · coffee
    ========================================================================== */
 (function (ns) {
   'use strict';
@@ -40,6 +40,10 @@
     // house (back to the main menu)
     home: icon('<path d="M24 5 L43 22 L37 22 L37 41 L11 41 L11 22 L5 22 Z"/>', `<path d="M24 5 L43 22 L37 22 L37 41 L11 41 L11 22 L5 22 Z" fill="${C.yellow}"/><path d="M24 5 L43 22 L5 22 Z" fill="${C.coral}"/>`,
       `<rect x="20" y="29" width="8" height="12" rx="2" fill="${C.sky}" stroke="${INK}" stroke-width="2.4"/>`),
+    // coffee cup with steam (Belanja Kopi)
+    coffee: icon('<path d="M8 20 H34 V32 A9 9 0 0 1 25 41 H17 A9 9 0 0 1 8 32 Z"/><path d="M34 23 H38 A5 5 0 0 1 38 33 H33"/><rect x="5" y="40" width="34" height="3" rx="1.5"/>',
+      `<path d="M8 20 H34 V32 A9 9 0 0 1 25 41 H17 A9 9 0 0 1 8 32 Z" fill="${C.paper}"/><path d="M34 23 H38 A5 5 0 0 1 38 33 H33" fill="none" stroke="${INK}" stroke-width="3.5" stroke-linecap="round"/><path d="M9 21 H33 V25 H9 Z" fill="#8a5a3c"/>`,
+      `<path d="M15 14 C12 11 18 9 15 5 M22 14 C19 11 25 9 22 5 M29 14 C26 11 32 9 29 5" fill="none" stroke="${C.coral}" stroke-width="2.6" stroke-linecap="round"/>`),
   };
 
   /** UI.icon('guide', 44) → '<svg …>…</svg>'. The optional third argument swaps the icon's coral for another colour (for use on a coral button). */

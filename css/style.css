@@ -259,7 +259,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
 .btn:disabled { opacity: .5; filter: grayscale(.4); }
 .btn.mint { background: var(--mint); } .btn.coral { background: var(--coral); color: var(--white); text-shadow: 0 2px 0 rgba(42, 33, 80, .6); }
-.btn.sky { background: var(--sky); } .btn.paper { background: var(--paper); } .btn.violet { background: var(--violet); color: var(--white); text-shadow: 0 2px 0 rgba(42, 33, 80, .6); }
+.btn.yellow { background: var(--yellow); } .btn.sky { background: var(--sky); } .btn.paper { background: var(--paper); } .btn.violet { background: var(--violet); color: var(--white); text-shadow: 0 2px 0 rgba(42, 33, 80, .6); }
 .btn.big { min-height: 54px; padding: 10px 24px; font-size: 19px; border-radius: 17px; }
 .btn.small { min-height: 36px; padding: 4px 12px; font-size: 14px; }
 .btn small { display: block; font: 700 11px var(--font-body); opacity: .75; }

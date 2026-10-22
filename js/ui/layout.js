@@ -9,8 +9,7 @@
      setting ("float" or the classic "desktop"). Force one with ?layout=phone|float|desktop (handy for testing on a PC).
    • "phone" / "float" move the existing panel elements into four corner docks (same nodes, so every id and
      listener keeps working); "desktop" puts them straight back where index.html has them.
-   • Held upright, a phone shows a "turn your phone" card and the shift is paused. Android Chrome is also
-     asked for fullscreen + landscape on the first tap (iPhone Safari cannot lock orientation, so it relies on the card).
+   • Held upright, touch devices show a "turn your phone" card and pause the shift — see js/ui/orient.js.
    ========================================================================== */
 (function (ns) {
   'use strict';
@@ -81,30 +80,7 @@
   /** Settings → Susun atur: 'classic' | 'float'. A phone always keeps its own layout. */
   const set = (pref) => apply(resolve(pref));
 
-  const layout = apply(detect());
-  if (layout === 'phone') {
-    // Android Chrome: fullscreen + landscape lock, which needs a user gesture. Everything else just ignores this.
-    const lock = () => {
-      document.removeEventListener('pointerup', lock);
-      try {
-        const el = root;
-        const full = !document.fullscreenElement && el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : null;
-        Promise.resolve(full).then(() => screen.orientation?.lock?.('landscape')).catch(() => {});
-      } catch (e) {
-        /* not supported — the rotate card covers it */
-      }
-    };
-    document.addEventListener('pointerup', lock);
-
-    // Held upright: the card covers the screen, so also pause the shift until the phone is turned.
-    const upright = matchMedia('(orientation: portrait)');
-    const pauseIfUpright = () => {
-      const UI = ns.UI;
-      if (!upright.matches || !UI?.s || UI.s.phase !== 'active') return;
-      UI.togglePause();
-    };
-    upright.addEventListener?.('change', pauseIfUpright);
-  }
+  apply(detect());
 
   ns.Layout = { current: () => root.dataset.layout, apply, set, detect, isPhone };
 })((window.ABCC = window.ABCC || {}));

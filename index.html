@@ -9,6 +9,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#2a1b66">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>ABANG CC: 2007 — Cyber Café Chaos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -514,13 +517,15 @@
     <p class="home-foot">Alpha 0.12 · progress disimpan automatik dalam browser ini · <button type="button" class="link" data-modal="credits">Kredit</button></p>
   </div>
 </section>
-<div class="rotate-hint" id="rotateHint" role="alert"><div><span class="rh-phone" aria-hidden="true">📱</span><b>Putar telefon ke landskap</b><small>Turn your phone sideways to play</small></div></div>
+<div class="rotate-hint" id="rotateHint" role="alert"><div><span class="rh-phone" aria-hidden="true">📱</span><b>Sila main dalam landskap</b><small>Please play in landscape — turn your phone sideways</small><ol class="rh-steps" id="rhSteps" hidden></ol></div></div>
+<div class="toolbar-tip" id="toolbarTip" role="status" hidden><span class="tt-text" id="ttText"></span><button type="button" class="tt-x" id="ttClose" aria-label="Tutup / Close">✕</button></div>
 <div id="modalRoot" class="modal-root"></div>
 <button type="button" id="perfHud" class="perf-hud" hidden title="Ketik untuk salin laporan prestasi"></button>
 
 <!-- scripts: classic (non-module) so the game also opens straight from file:// — order matters -->
 <script src="js/ui/loader.js"></script>
 <script src="js/ui/layout.js"></script>
+<script src="js/ui/orient.js"></script>
 <script src="js/core/config.js"></script>
 <script src="js/state/core.js"></script>
 <script src="js/state/economy.js"></script>

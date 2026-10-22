@@ -56,6 +56,10 @@
   const tile = (cmd, ico, label, sub, css = '', size = 44) =>
     `<button type="button" class="tile ${css}" data-modal="${cmd}"><span class="tile-ico">${UI.icon(ico, size)}</span><b>${label}</b>${sub ? `<small>${sub}</small>` : ''}</button>`;
 
+  /** "Buy me a coffee" — a plain link (opens the TNG Digital payment page in a new tab), styled like the other tiles. */
+  const COFFEE_URL = 'https://payment.tngdigital.com.my/sc/bDLoeTIL3c';
+  const coffeeTile = `<a class="tile coffee" href="${COFFEE_URL}" target="_blank" rel="noopener noreferrer"><span class="tile-ico">${UI.icon('coffee', 44)}</span><b>Belanja Kopi</b><small>Sokong kami</small></a>`;
+
   UI.renderHome = function renderHome() {
     const s = UI.s;
     const session = UI.hasSession(s);
@@ -64,12 +68,14 @@
       ? tile('continue', 'resume', 'Sambung Main', `Hari ${s.day} · ${fmtMoney(s.cash)}${where[s.resumeTo] ? ` · ${where[s.resumeTo]}` : ''}`, 'hero', 60)
       : tile('newgame', 'play', 'Mula Main', `Hari 1 · modal ${fmtMoney(ns.CFG.START_CASH)} · 3 PC`, 'hero', 60);
     const row = [
-      session ? tile('restart', 'restart', 'Main Semula', 'Dari Hari 1', 'coral') : '',
       tile('help', 'guide', 'Cara Main', 'Panduan', 'sky'),
       tile('collection', 'collection', 'Koleksi', `${ns.Meta.hats().filter((h) => h.unlocked).length}/${ns.Meta.hats().length} topi`, 'violet'),
       tile('settings', 'settings', 'Tetapan', 'Bunyi · grafik', ''),
+      coffeeTile,
     ].filter(Boolean);
-    card.innerHTML = `${hero}<div class="tile-row" style="--n:${row.length}">${row.join('')}</div>`;
+    // with a session the big button shares its row with Main Semula (70 / 30); the four small buttons sit below, evenly
+    const top = session ? `<div class="tile-top">${hero}${tile('restart', 'restart', 'Main Semula', 'Dari Hari 1', 'coral')}</div>` : hero;
+    card.innerHTML = `${top}<div class="tile-row" style="--n:${row.length}">${row.join('')}</div>`;
     showTip();
     chips.innerHTML = meta.bestDay ? `<span>🏆 Hari terbaik ${safe(meta.bestDay)}</span>` : '';
     document.documentElement.dataset.screen = 'home';

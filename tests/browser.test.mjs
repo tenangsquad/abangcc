@@ -422,7 +422,7 @@ test('Home: the game opens on a main menu page (not a pop-up); Mula Main for a n
   assert.equal(await ev(`document.documentElement.dataset.screen`), 'home');
   assert.equal(await ev(`document.getElementById('modalRoot').classList.contains('open')`), false, 'it is a page, not a dialog');
   assert.equal(await ev(`getComputedStyle(document.querySelector('.topbar')).display`), 'none', 'the game HUD is out of the way');
-  assert.deepEqual(await ev(`[...document.querySelectorAll('#homeCard .tile b')].map((e) => e.textContent)`), ['Mula Main', 'Cara Main', 'Koleksi', 'Tetapan'], 'a new player sees Play, Guide, Collection, Settings');
+  assert.deepEqual(await ev(`[...document.querySelectorAll('#homeCard .tile b')].map((e) => e.textContent)`), ['Mula Main', 'Cara Main', 'Koleksi', 'Tetapan', 'Belanja Kopi'], 'a new player sees Play, Guide, Collection, Settings, Buy me a coffee');
   assert.equal(await ev(`document.querySelectorAll('#homeCard .tile svg path, #homeCard .tile svg rect, #homeCard .tile svg circle').length > 8`), true, 'every tile has its icon');
   assert.equal(await ev(`[...document.querySelectorAll('#homeCard .tile')].every((t) => t.querySelector('.tile-ico svg') && t.querySelector('.tile-ico').nextElementSibling.tagName === 'B')`), true, 'the icon sits on top of the label');
   await shot('22_home_new');
@@ -442,7 +442,7 @@ test('Home: the game opens on a main menu page (not a pop-up); Mula Main for a n
   await clickEl('[data-modal="mainmenu"]');
   await sleep(250);
   assert.equal(await ev(`document.documentElement.dataset.screen`), 'home');
-  assert.deepEqual(await ev(`[...document.querySelectorAll('#homeCard .tile b')].map((e) => e.textContent)`), ['Sambung Main', 'Main Semula', 'Cara Main', 'Koleksi', 'Tetapan'], 'with a session: Continue and Restart appear');
+  assert.deepEqual(await ev(`[...document.querySelectorAll('#homeCard .tile b')].map((e) => e.textContent)`), ['Sambung Main', 'Main Semula', 'Cara Main', 'Koleksi', 'Tetapan', 'Belanja Kopi'], 'with a session: Continue and Restart appear');
   await shot('23_home_session');
   // Main Semula asks first; Batal changes nothing
   await clickEl('[data-modal="restart"]');
@@ -617,10 +617,23 @@ test('A22b: held upright, a phone shows the "turn your phone" card and the shift
   await sleep(400);
   assert.equal(await S('s.phase'), 'paused', 'the shift is paused while the phone is upright');
   assert.notEqual(await ev(`getComputedStyle(document.getElementById('rotateHint')).display`), 'none', 'the card is shown');
+  assert.match(await ev(`document.getElementById('rotateHint').textContent`), /landskap/i, 'the card asks for landscape');
+  assert.ok((await ev(`document.querySelectorAll('#rhSteps li').length`)) >= 2, 'the card lists steps to hide the browser toolbar');
   await shot('10_phone_portrait');
   await b.viewport(874, 402, { dpr: 2, mobile: true });
   await sleep(300);
   assert.equal(await ev(`getComputedStyle(document.getElementById('rotateHint')).display`), 'none', 'the card goes away when turned back');
+});
+
+test('A22c: a tablet held upright gets the card too, and the toolbar tip only shows sideways and can be closed', async () => {
+  await open(820, 1180, { mobile: true, dpr: 2 }); // iPad-ish: bigger than a phone, still touch
+  assert.notEqual(await ev(`getComputedStyle(document.getElementById('rotateHint')).display`), 'none', 'portrait tablet sees the card');
+  assert.equal(await ev(`document.getElementById('toolbarTip').hidden`), true, 'no toolbar tip behind the card');
+  await b.viewport(1180, 820, { dpr: 2, mobile: true });
+  await sleep(300);
+  assert.equal(await ev(`getComputedStyle(document.getElementById('rotateHint')).display`), 'none');
+  await ev(`document.getElementById('ttClose').click(); 1`);
+  assert.equal(await ev(`document.getElementById('toolbarTip').hidden`), true, 'closing the tip hides it');
 });
 
 test('Layouts: desktop is the default on a PC, and switching to phone and back moves every panel without losing one', async () => {

@@ -45,7 +45,12 @@ html[data-screen="home"] #game3D { left: 35%; width: 65%; cursor: default; }
 .tile-ico { display: grid; place-content: center; }
 .tile-ico svg { display: block; filter: drop-shadow(0 2px 0 rgba(42, 33, 80, .22)); transition: transform .15s var(--ease-pop); }
 .tile:hover .tile-ico svg { transform: scale(1.1) rotate(-4deg); }
+.tile.coffee { background: #ffe9a8; }
+a.tile, a.btn { text-decoration: none; }
 .tile.sky { background: #d9f2ff; } .tile.violet { background: #e6dfff; } .tile.coral { background: #ffe2e2; }
+.tile-top { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); gap: 10px; }
+.tile-top .tile.coral { box-shadow: 0 6px 0 var(--ink); border-radius: 22px; }
+.tile-top .tile.coral:hover { box-shadow: 0 9px 0 var(--ink); } .tile-top .tile.coral:active { box-shadow: 0 1px 0 var(--ink); }
 .tile-row { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: 10px; }
 
 .tile.hero { padding: 16px 10px 14px; gap: 5px; border-radius: 22px; background: linear-gradient(160deg, #54ecbd, var(--mint)); box-shadow: 0 6px 0 var(--ink); font-size: 27px; }
@@ -79,7 +84,8 @@ html[data-layout="phone"] .tile small { font-size: 9.5px; }
 html[data-layout="phone"] .tile-ico svg { width: 30px; height: 30px; }
 html[data-layout="phone"] .tile.hero { padding: 7px 6px 7px; border-radius: 16px; box-shadow: 0 4px 0 var(--ink); font-size: 18px; }
 html[data-layout="phone"] .tile.hero .tile-ico svg { width: 40px; height: 40px; } html[data-layout="phone"] .tile.hero small { font-size: 11px; }
-html[data-layout="phone"] .tile-row { gap: 6px; }
+html[data-layout="phone"] .tile-row, html[data-layout="phone"] .tile-top { gap: 6px; }
+html[data-layout="phone"] .tile-top .tile.coral { box-shadow: 0 4px 0 var(--ink); border-radius: 16px; }
 html[data-layout="phone"] .home-foot { font-size: 10px; }
 html[data-layout="phone"][data-screen="home"] #game3D { left: 40%; width: 60%; }
 
