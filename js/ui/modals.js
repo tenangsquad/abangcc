@@ -134,6 +134,7 @@
         <button class="btn big mint" data-modal="resume">${UI.icon('play', 22)} Sambung shift</button>
         <button class="btn big sky" data-modal="help">${UI.icon('guide', 22)} Cara main</button>
         <button class="btn big paper" data-modal="settings">${UI.icon('settings', 22)} Tetapan</button>
+        <a class="btn big yellow" href="https://payment.tngdigital.com.my/sc/bDLoeTIL3c" target="_blank" rel="noopener noreferrer">${UI.icon('coffee', 22)} Belanja Kopi</a>
         <button class="btn big paper" data-modal="mainmenu">${UI.icon('home', 22)} Menu utama</button>
       </div>
       <p class="small">Progress disimpan automatik.</p>`);
