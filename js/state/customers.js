@@ -27,6 +27,7 @@
       if (t.lateOnly) w *= 1.5; // the night crowd really does turn up at night
       if (t.id === 'student') w *= 1 + S.mod(s, 'studentSpawn');
       if (t.id === 'rm1') w *= 1 + S.mod(s, 'kidSpawn');
+      if (t.trait === 'linger') w *= S.tierOf(s).lepak; // Port Lepak: the night crowd moves in
       return w;
     });
   }
@@ -40,7 +41,7 @@
   function makeCustomer(s, typeId, extra = {}) {
     const type = byId(TYPES, typeId) || TYPES[0];
     const minutes = extra.requestedMinutes || requestedMinutes(s, type);
-    const patience = type.patience + (S.hasPerk(s, 'aircond') ? 6 : 0);
+    const patience = type.patience + S.coolPatience(s);
     return {
       id: ++s.customerSequence,
       type: type.id,
@@ -213,6 +214,8 @@
     c.gait = ns.gaitFor(c.id, c.type);
     c.destination = ROOM.seatFor(pc);
     s.shiftStats.served++;
+    noteForRecap(s, c, price, sessionMinutes);
+    if (exact) maybeTip(s, c, pc);
     s.pendingCustomerId = s.pendingCustomerId === c.id ? null : s.pendingCustomerId;
     S.log(s, `PC ${pc.id} disewa ${sessionMinutes} minit (+${fmtMoney(price)}).`);
     S.emit('rental', { pcId: pc.id, amount: price });
@@ -221,6 +224,24 @@
     s.player.errand = { x: spot.x, y: spot.y, hold: 0.9 };
     // what the right answer would have paid, minus what was actually billed
     return { price, lost: exact ? 0 : Math.max(0, S.priceFor(c.requestedMinutes, pc, c.game) - price) };
+  }
+
+  /** Facts for the end-of-day recap: who was served, the biggest sale, and who was nearly lost. */
+  function noteForRecap(s, c, price, minutes) {
+    const st = s.shiftStats;
+    st.servedByType[c.type] = (st.servedByType[c.type] || 0) + 1;
+    if (!st.bestSale || price > st.bestSale.price) st.bestSale = { price, type: c.type, minutes };
+    const left = c.patienceMax > 0 ? clamp(c.patience / c.patienceMax, 0, 1) : 1;
+    if (left < 0.2 && (!st.closeCall || left < st.closeCall.left)) st.closeCall = { type: c.type, left };
+  }
+
+  /** Higher shop tiers sometimes get "duit kopi" from a customer who booked exactly the length they wanted. */
+  function maybeTip(s, c, pc) {
+    const tier = S.tierOf(s);
+    if (!tier.tipSen || !S.chance(s, tier.tip)) return;
+    S.record(s, 'tip', tier.tipSen, 'Duit kopi');
+    s.shiftStats.tips += tier.tipSen;
+    S.emit('tip', { pcId: pc.id, amount: tier.tipSen });
   }
 
   /** Send a customer home, optionally refunding the unused part of their session. */
@@ -298,6 +319,7 @@
             releaseCustomer(s, c, `${c.name} balik sebab PC ${current.id} rosak!`, 0.5);
             S.bump(s, 'rep', -3);
             s.shiftStats.walkouts++;
+            S.noteWalkout(s, c, 'fault');
           }
         }
       }
@@ -315,6 +337,7 @@
           S.bump(s, 'rep', -2);
           s.shiftStats.walkouts++;
           s.shiftStats.queueWalkouts++;
+          S.noteWalkout(s, c, 'queue');
           s.shiftStats.walkoutLost += S.priceFor(c.requestedMinutes, { tier: 1 }, c.game);
           S.emit('walkout', { customerId: c.id });
         }

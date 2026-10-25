@@ -95,6 +95,9 @@
           consider(1, 'customer', c.id, hitPerson(ray, c.x, c.y, scale, fat));
         }
       }
+      // ---- the assistant (tap them to ask what they can do, or to switch auto on and off)
+      const asst = s.assistant;
+      if (asst && !asst.mc) consider(1, 'assistant', 1, hitPerson(ray, asst.x, asst.y, 0.9 * ROOM.charScale, fat));
       // ---- PCs: desk + monitor + tower + chair as one box
       for (const p of s.pcs) {
         const e = opts.touch ? 0.2 : 0.06;
@@ -107,7 +110,7 @@
       const limit = opts.fallbackPx ?? (opts.touch ? 34 : 14);
       let near = null, nearD = limit;
       for (const a of R.anchors.people) {
-        const target = a.kind === 'customer' && (a.status === 'waiting' || a.status === 'arriving') ? { kind: 'customer', id: a.id } : a.eventId != null ? { kind: 'event', id: a.eventId } : null;
+        const target = a.kind === 'assistant' ? { kind: 'assistant', id: 1 } : a.kind === 'customer' && (a.status === 'waiting' || a.status === 'arriving') ? { kind: 'customer', id: a.id } : a.eventId != null ? { kind: 'event', id: a.eventId } : null;
         if (!target) continue;
         const d = Math.hypot(a.bx - px, a.by - py);
         if (d < nearD) { nearD = d; near = target; }

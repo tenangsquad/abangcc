@@ -18,7 +18,7 @@
     { id: 'crown', name: 'Mahkota Raja CC', emoji: '👑', day: 10, desc: 'Lepas Hari 10.' },
   ];
 
-  const blank = () => ({ bestDay: 0, runs: 0, daysCleared: 0, bestStars: 0, hat: 'cap' });
+  const blank = () => ({ bestDay: 0, runs: 0, daysCleared: 0, bestStars: 0, bestTier: 0, hat: 'cap' });
   let data = null;
 
   function load() {
@@ -56,6 +56,14 @@
       d.bestStars = Math.max(d.bestStars, stars || 0);
       save();
       return HATS.filter((h) => d.bestDay >= h.day && !before.includes(h.id));
+    },
+    /** The shop reached tier `index` (0 = Kedai Biasa): remember the best one ever. */
+    recordTier(index) {
+      const d = load();
+      if (index > (d.bestTier || 0)) {
+        d.bestTier = index;
+        save();
+      }
     },
     recordRun() {
       load().runs++;

@@ -40,6 +40,7 @@
     modalRoot.querySelector('[data-modal="back"]')?.focus({ preventScroll: true }); // the safe answer is the default one
   }
   const CONFIRMS = {
+    hire: () => ({ eye: 'UPAH PEMBANTU', title: `Upah <em>${CFG.ASSISTANT.name}</em>?`, text: `Bayaran sekali ${fmtMoney(CFG.ASSISTANT.hireFee)}, kemudian gaji <b>${fmtMoney(CFG.ASSISTANT.wage)} sebulan</b> dibayar bersama sewa. <b>Tak boleh dipecat, tak boleh tarik balik.</b> Dia lap air tumpah dan tukar fius, tapi kadang-kadang MC juga. 🤒`, yes: 'hireconfirm', yesLabel: 'Ya, upah dia', icon: 'play' }),
     restart: () => ({ eye: 'MAIN SEMULA', title: 'Mula dari <em>Hari 1</em>?', text: `Progress sekarang (Hari ${UI.s.day}, ${fmtMoney(UI.s.cash)}) akan dipadam. Topi dalam Koleksi dan rekod hari terbaik <b>kekal</b>.`, yes: 'newgame', yesLabel: 'Ya, mula semula' }),
     wipe: () => ({ eye: 'PADAM SAVE', title: 'Padam <em>semua</em> progress?', text: 'Semua progress akan dipadam dan kau mula dari awal. Topi dalam Koleksi kekal.', yes: 'confirmwipe', yesLabel: 'Ya, padam', icon: 'restart' }),
   };
@@ -59,14 +60,29 @@
     if (!s.perkDraft?.length) return '<div class="notice">Tiada perk draft baru hari ini.</div>';
     const cards = s.perkDraft.map((id) => {
       const p = State.perkDef(id);
-      const locked = s.cash < p.price || s.perkChoiceMade;
-      const label = s.perkChoiceMade ? '✓ Pilihan selesai' : s.cash < p.price ? `${fmtMoney(p.price)} diperlukan` : `${fmtMoney(p.price)} · Pilih`;
+      const price = State.perkPrice(s, id);
+      const old = State.replacedBy(s, p);
+      const locked = s.cash < price || s.perkChoiceMade;
+      const label = s.perkChoiceMade ? '✓ Pilihan selesai' : s.cash < price ? `${fmtMoney(price)} diperlukan` : `${fmtMoney(price)} · ${old ? 'Naik taraf' : 'Pilih'}`;
       const own = State.perkCount(s, id);
       return `<div class="perk"><div class="perk-icon">${safe(p.icon)}</div><strong>${safe(p.name)}${p.repeatMax > 1 ? ` <em class="own">${own}/${p.repeatMax}</em>` : ''}</strong>
-        <small class="up">👍 ${safe(p.desc)}</small><small class="down">👎 ${safe(p.downside)}</small>${p.upkeep ? `<small class="upkeep">🧾 ${fmtMoney(p.upkeep)}/hari</small>` : ''}
+        <small class="up">👍 ${safe(p.desc)}</small><small class="down">👎 ${safe(p.downside)}</small>${p.upkeep ? `<small class="upkeep">🧾 ${fmtMoney(p.upkeep)}/hari</small>` : ''}${old ? `<small class="tradein">♻️ Tukar ${safe(old.name)}: ${fmtMoney(p.price - price)} dipotong</small>` : ''}
         <button type="button" class="btn ${locked ? '' : 'mint'}" data-modal="perk" data-id="${p.id}" ${locked ? 'disabled' : ''}>${label}</button></div>`;
     }).join('');
     return `<div class="notice">Pilih <b>1 daripada 2 perk</b>. Yang tak dipilih akan kembali selepas beberapa hari.</div><div class="store-grid">${cards}</div>`;
+  }
+
+  /** The hire card (from the unlock day), a teaser before it, and a status line once hired. */
+  function assistantPrepHTML() {
+    const s = UI.s;
+    const A = CFG.ASSISTANT;
+    if (s.assistant) {
+      const mc = s.assistant.mc;
+      return `<div class="notice asst ${mc ? 'sick' : ''}">${mc ? `🤒 <b>${safe(A.name)}</b> MC hari ini: ${safe(mc.reason)}. Abang kena buat semua sendiri.` : `🎀 <b>${safe(A.name)}</b> bertugas hari ini: dia uruskan air tumpah dan fius. Tap dia dalam bilik untuk tanya apa dia boleh buat.`}</div>`;
+    }
+    if (s.day < A.unlockDay) return s.day >= A.unlockDay - 7 ? `<div class="notice">🔒 <b>Pembantu</b> boleh diupah mulai <b>Hari ${A.unlockDay}</b>: dia tolong lap air tumpah dan tukar fius.</div>` : '';
+    const poor = s.cash < A.hireFee;
+    return `<div class="asst-card"><div class="asst-ico" aria-hidden="true">🎀</div><div class="asst-txt"><strong>Upah pembantu: ${safe(A.name)}</strong><small class="up">👍 Lap air tumpah dan tukar fius sendiri, Abang tak terganggu.</small><small class="down">👎 Gaji ${fmtMoney(A.wage)} sebulan (bersama sewa), tak boleh dipecat, kadang-kadang MC.</small></div><button type="button" class="btn ${poor ? '' : 'mint'}" data-modal="hire" ${poor ? 'disabled' : ''}>${poor ? `${fmtMoney(A.hireFee)} diperlukan` : `${fmtMoney(A.hireFee)} · Upah`}</button></div>`;
   }
 
   function renderPrep() {
@@ -78,9 +94,11 @@
       <span class="modal-eyebrow">HARI ${s.day} · PERSEDIAAN</span>
       <h1>${safe(CFG.PREP_MESSAGE[(s.day - 1) % CFG.PREP_MESSAGE.length])}<em>!</em></h1>
       <p class="modal-lead">Sasaran jualan hari ini: <b>${fmtMoney(goal)}</b>. Capai target untuk mara ke hari seterusnya.</p>
-      <div class="badges stats">${stat('💰', fmtMoney(s.cash))}${stat('🎯 Target', fmtMoney(goal))}${stat('🖥️', s.pcs.length + ' PC')}${stat('⭐ Rep', Math.round(s.rep))}${stat('🤝 Prof', Math.round(s.professionalism))}${stat('🏠 Sewa &amp; bil', billsIn === 1 ? 'hari ini' : billsIn + ' hari lagi')}</div>
+      <div class="badges stats">${stat('💰', fmtMoney(s.cash))}${stat('🎯 Target', fmtMoney(goal))}${stat('🖥️', s.pcs.length + ' PC')}${stat(`${State.tierOf(s).emoji} ${State.tierOf(s).short}`, Math.round(s.rep))}${stat('🤝 Prof', Math.round(s.professionalism))}${stat('🏠 Sewa &amp; bil', billsIn === 1 ? 'hari ini' : billsIn + ' hari lagi')}</div>
       <h2>Perk hari ini</h2>
       ${perkHTML()}
+      ${assistantPrepHTML()}
+      ${billsIn <= 3 ? `<div class="notice">🏠 Sewa &amp; bil sebulan (<b>${fmtMoney(State.monthlyBills(s).total)}</b>) dibayar hujung <b>Hari ${s.day + billsIn - 1}</b>. Simpan cukup duit: kalau cash jadi negatif, kau tak boleh beli perk atau bayar repair sampai pulih.</div>` : ''}
       ${canLoan ? `<div class="notice">Cash makin kurang? Boleh minta pinjaman keluarga ${fmtMoney(CFG.LOAN.amount)} (sekali sahaja).</div>` : ''}
       <div class="modal-actions">
         <button class="btn big mint" data-modal="start">▶ Buka kedai</button>
@@ -100,6 +118,8 @@
     const unlocked = (r.unlocked || []).map((id) => ns.Meta.HATS.find((h) => h.id === id)).filter(Boolean);
     const unlockNote = unlocked.length ? `<div class="notice unlock">🔓 <b>Topi baru dibuka:</b> ${unlocked.map((h) => `${safe(h.emoji)} ${safe(h.name)}`).join(', ')}. Pakai di <b>🎩 Koleksi</b> (menu utama).</div>` : '';
     const whyAll = unlockNote + why + (hl ? more : '');
+    const tier = ns.TIERS.find((t) => t.id === r.tier) || ns.TIERS[0];
+    const recap = r.recap?.length ? `<div class="recap"><h2>📸 Sorotan hari</h2><ul>${r.recap.map((x, i) => `<li style="--i:${i}"><span class="rc-ico" aria-hidden="true">${safe(x.icon)}</span><div><b>${safe(x.title)}</b><small>${safe(x.text)}</small></div></li>`).join('')}</ul></div>` : '';
     showModal(`
       <span class="modal-eyebrow">LAPORAN HARI ${s.day}</span>
       <h1>${r.goalMet ? 'Target capai' : 'Shift gagal'} <em>${r.goalMet ? '🎉' : '😵'}</em></h1>
@@ -118,7 +138,8 @@
         <span>Untung / rugi bersih</span><span class="${r.net < 0 ? 'bad' : 'good'}">${r.net < 0 ? '− ' : '+ '}${fmtMoney(Math.abs(r.net))}</span>
         <span>Cash kedai</span><span>${fmtMoney(r.endingCash)}</span>
       </div>
-      <div class="badges stats">${stat('👥', r.served + ' pelanggan')}${stat('💢', r.incidents + ' insiden')}${stat('🔧', r.repairs + ' repair')}${stat('⚡ Combo', 'x' + (r.combo || 0))}${stat('🏆 Clutch', r.heroSaved || 0)}${stat('👮', r.inspections + ' pemeriksaan')}</div>
+      <div class="badges stats">${stat('👥', r.served + ' pelanggan')}${stat('💢', r.incidents + ' insiden')}${stat('🔧', r.repairs + ' repair')}${stat('⚡ Combo', 'x' + (r.combo || 0))}${stat('🏆 Clutch', r.heroSaved || 0)}${stat('👮', r.inspections + ' pemeriksaan')}${stat(tier.emoji, tier.name)}</div>
+      ${recap}
       <div class="modal-actions">
         ${r.goalMet ? '<button class="btn big mint" data-modal="next">→ Hari seterusnya</button>' : '<button class="btn big coral" data-modal="retryday">↻ Cuba hari ini lagi</button>'}
         <button class="btn big paper" data-modal="share">📋 Salin result</button>
@@ -137,7 +158,8 @@
         <a class="btn big yellow" href="https://payment.tngdigital.com.my/sc/bDLoeTIL3c" target="_blank" rel="noopener noreferrer">${UI.icon('coffee', 22)} Belanja Kopi</a>
         <button class="btn big paper" data-modal="mainmenu">${UI.icon('home', 22)} Menu utama</button>
       </div>
-      <p class="small">Progress disimpan automatik.</p>`);
+      <p class="small"><span data-saved>Progress disimpan automatik.</span></p>`);
+    UI.refreshSaved();
   }
 
   const INTRO = [
@@ -174,14 +196,37 @@
         <p>🔧 <b>PC bermasalah</b> (hang, beku, panas, BSOD, internet putus, rosak)? Tap PC → pilih cara baiki pada menu di sebelah PC. Restart masa ada pelanggan = refund 25% (sekali setiap kejadian).</p>
         <p>❓ <b>PC suspicious</b>: tap PC → <b>Tegur baik-baik</b> (selamat) atau <b>Tuduh &amp; halau</b> (berani). Dia mungkin tak bersalah — salah tuduh kos reputasi, professionalism dan refund.</p>
         <p>🎲 <b>Kejadian khas</b> (rombongan, ponteng, blackout, air tumpah, snack hilang…) muncul sebagai orang/benda dalam bilik. Tap yang berdenyut, atau kad di <b>Situasi Panas</b> (TENGOK), lalu pilih pada menu di atas benda itu.</p>
+        <p>🎀 <b>Pembantu</b> (diupah mulai Hari ${CFG.ASSISTANT.unlockDay} di skrin persediaan): dia lap air tumpah dan tukar fius sendiri. Tap dia dalam bilik untuk <b>Auto on/off</b> atau tanya <b>Apa boleh buat?</b>, atau tap air tumpah / kotak fius dan pilih <b>Suruh ${CFG.ASSISTANT.name}</b>.</p>
         <p>🖱️ Zoom kamera: roda tetikus / cubit / butang Zoom. ⌨️ <kbd>Space</kbd> pause · <kbd>N</kbd> pelanggan seterusnya · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> tempoh · <kbd>R</kbd> restart PC yang dipilih.</p>
       </div>
       <div class="modal-actions"><button class="btn big mint" data-modal="back">Faham, jom main!</button></div>`);
   }
 
+  /** "Apa boleh buat?": what the assistant does, what they do not, how to direct them, what they cost. */
+  function renderAssistantInfo() {
+    overlay = 'assistant';
+    const s = UI.s;
+    const A = CFG.ASSISTANT;
+    const a = s.assistant;
+    const status = !a ? 'Belum diupah.' : a.mc ? `🤒 MC hari ini: ${safe(a.mc.reason)}` : safe(State.assistantStatus(s));
+    showModal(`
+      <span class="modal-eyebrow">PEMBANTU</span>
+      <h1>${safe(A.name)}, <em>pembantu kedai</em></h1>
+      <p class="modal-lead">${a ? status : `Boleh diupah mulai Hari ${A.unlockDay}.`}</p>
+      <div class="modal-hero">
+        <p>✅ <b>Lap air tumpah</b>: percuma, Abang tak jadi perlahan. ${safe(A.name)} lebih perlahan sikit dari Abang.</p>
+        <p>✅ <b>Tukar fius lepas blackout</b>: fius baru RM8 masih perlu dibayar. Kalau blackout nak habis, dia tak pergi.</p>
+        <p>❌ <b>Belum boleh</b>: baiki PC, layan pelanggan, uruskan pegawai atau kejadian lain. Itu kerja Abang.</p>
+        <p>🎮 <b>Auto</b> (biasa): dia ambil kerja sendiri bila dia free, blackout dahulu. <b>Auto OFF</b>: dia tunggu arahan. Tap air tumpah atau kotak fius dan pilih <b>Suruh ${safe(A.name)}</b>. Kalau Abang dah buat kerja itu, dia tak ganggu.</p>
+        <p>💰 Upah sekali ${fmtMoney(A.hireFee)}, gaji ${fmtMoney(A.wage)} sebulan dengan sewa. Tak boleh dipecat. 😅</p>
+        <p>🤒 Dia MC lebih kurang <b>sehari setiap 10 hari</b> (kadang-kadang dua), tak pernah dua hari berturut-turut. Gaji tetap dibayar.</p>
+      </div>
+      <div class="modal-actions">${a ? `<button class="btn big sky" data-modal="asstauto">🤖 Auto: ${a.auto ? 'ON' : 'OFF'} (tukar)</button>` : ''}<button class="btn big mint" data-modal="back">Faham!</button></div>`);
+  }
+
   /** Who made it and what it runs on. Edit this block to change the credits. */
   const CREDITS = {
-    version: 'Alpha 0.12',
+    version: 'Alpha 0.13',
     team: 'Tenang Squad',
     lines: [
       ['🎮', 'Game', 'Cyber café 2007 dalam 3D, untuk browser. Tanpa install.'],
@@ -215,7 +260,7 @@
       <span class="modal-eyebrow">KOLEKSI</span>
       <h1>Topi <em>Abang</em></h1>
       <p class="modal-lead">Lepaskan hari-hari tertentu untuk buka topi baru. Ia kekal walaupun kau mula run baru, dan hanya hiasan.</p>
-      <div class="badges stats">${stat('🏆 Hari terbaik', m.bestDay || '–')}${stat('✅ Hari dilepasi', m.daysCleared)}${stat('🔁 Run', m.runs)}${stat('⭐ Bintang terbaik', m.bestStars || '–')}</div>
+      <div class="badges stats">${stat('🏆 Hari terbaik', m.bestDay || '–')}${stat('✅ Lepas', m.daysCleared)}${stat('🔁 Run', m.runs)}${stat('⭐ Bintang', m.bestStars || '–')}${stat('🏅 Taraf', ns.TIERS[m.bestTier || 0].short)}</div>
       <div class="store-grid">${cards}</div>
       <div class="modal-actions"><button class="btn big mint" data-modal="back">Siap</button></div>`);
   }
@@ -229,6 +274,7 @@
       <h1>Ubah <em>suai</em></h1>
       <div class="switch-row"><span>🔊 Bunyi</span>${seg('sound', [[true, 'ON'], [false, 'OFF']], UI.settings.sound)}</div>
       <div class="switch-row"><span>🎵 Muzik</span>${seg('music', [[true, 'ON'], [false, 'OFF']], UI.settings.music !== false)}</div>
+      <div class="switch-row"><span>🌆 Suasana kedai</span>${seg('ambience', [[true, 'ON'], [false, 'OFF']], UI.settings.ambience !== false)}</div>
       <div class="switch-row"><span>🎨 Kualiti grafik</span>${seg('quality', [['high', 'Tinggi'], ['medium', 'Sederhana'], ['low', 'Rendah']], UI.settings.quality)}</div>
       <div class="switch-row"><span>🎚️ Kesukaran</span>${seg('preset', Object.entries(DIRECTOR.presets).map(([k, v]) => [k, v.label]), s.preset || 'biasa')}</div>
       ${ns.Layout.isPhone() ? '' : `<div class="switch-row"><span>🧩 Susun atur</span>${seg('layout', [['classic', 'Klasik'], ['float', 'Terapung']], UI.settings.layout === 'float' ? 'float' : 'classic')}</div>`}
@@ -236,10 +282,12 @@
       <div class="switch-row"><span>📈 Tunjuk FPS</span>${seg('showFps', [[true, 'ON'], [false, 'OFF']], !!UI.settings.showFps)}</div>
       <div class="switch-row"><span>🐢 Kurangkan animasi</span>${seg('reduceMotion', [[true, 'ON'], [false, 'OFF']], UI.settings.reduceMotion)}</div>
       <p class="small">Kualiti Rendah mematikan outline &amp; bayang matahari dan menurunkan resolusi — sesuai untuk telefon lama. Kesukaran berkuat kuasa untuk hari seterusnya.</p>
+      <p class="small"><span data-saved>Progress disimpan automatik dalam browser ini.</span></p>
       <div class="modal-actions">
         <button class="btn big mint" data-modal="back">Siap</button>
         <button class="btn coral" data-modal="wipe">Padam save</button>
       </div>`);
+    UI.refreshSaved();
   }
 
   /** Show whichever modal matches the game phase (unless help / settings is on top). */
@@ -269,7 +317,7 @@
       State.save(UI.s);
     }
     overlay = kind;
-    kind === 'help' ? renderHelp() : kind === 'collection' ? renderCollection() : kind === 'credits' ? renderCredits() : renderSettings();
+    kind === 'help' ? renderHelp() : kind === 'collection' ? renderCollection() : kind === 'credits' ? renderCredits() : kind === 'assistant' ? renderAssistantInfo() : renderSettings();
   };
 
   UI.resync = function resync() {
@@ -346,6 +394,19 @@
           renderPrep();
         }
         return;
+      case 'hire': return renderConfirm(CONFIRMS.hire());
+      case 'hireconfirm': {
+        const r = State.hireAssistant(s);
+        UI.toast(r.msg, r.ok ? 'good' : 'bad');
+        if (r.ok) State.save(s);
+        return UI.resync();
+      }
+      case 'asstauto': {
+        const r = State.assistantAuto(s);
+        UI.toast(r.msg, r.ok ? 'good' : 'bad');
+        State.save(s);
+        return renderAssistantInfo();
+      }
       case 'help': return UI.openOverlay('help');
       case 'settings': return UI.openOverlay('settings');
       case 'collection': return UI.openOverlay('collection');
@@ -386,7 +447,7 @@
         return UI.resync();
       case 'share': {
         const r = s.lastReport;
-        const text = `Aku sampai Hari ${s.day} dalam ABANG CC: 2007 — target ${fmtMoney(r?.goal || s.dayGoal)} | jualan bersih ${fmtMoney(r?.income || 0)} | ${r?.stars || 1}⭐ | ${r?.incidents || 0} insiden. Kau boleh survive peak hour tak? #AbangCC2007`;
+        const text = `Aku sampai Hari ${s.day} dalam ABANG CC: 2007 (${State.tierOf(s).name}) — target ${fmtMoney(r?.goal || s.dayGoal)} | jualan bersih ${fmtMoney(r?.income || 0)} | ${r?.stars || 1}⭐ | ${r?.incidents || 0} insiden. Kau boleh survive peak hour tak? #AbangCC2007`;
         if (navigator.clipboard && location.protocol !== 'file:') navigator.clipboard.writeText(text).then(() => UI.toast('Result disalin!', 'good')).catch(() => fallbackCopy(text));
         else fallbackCopy(text);
       }

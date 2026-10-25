@@ -104,8 +104,9 @@ export async function launch({ port = 9333 + Math.floor(Math.random() * 400), ex
     consoleErrors,
     clearErrors: () => (consoleErrors.length = 0),
     async viewport(width, height, { dpr = 1, mobile = false } = {}) {
-      await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: dpr, mobile });
-      if (mobile) await send('Emulation.setTouchEmulationEnabled', { enabled: true });
+      await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: dpr, mobile, screenWidth: width, screenHeight: height });
+      // touch emulation must follow `mobile` both ways, or a phone test leaves every later desktop test thinking it is on a phone
+      await send('Emulation.setTouchEmulationEnabled', { enabled: mobile });
     },
     async goto(url) {
       const loaded = new Promise((res) => {

@@ -149,7 +149,7 @@
 
   const SEPARATION = 0.58; // personal space radius (world units)
   /** Who has right of way when two walkers meet: the officer and Abang first, then lower ids. */
-  const rank = (e, s) => (e === s.player ? 3 : e.status === 'officer' ? 4 : 0);
+  const rank = (e, s) => (e === s.player ? 3 : e === s.assistant ? 2 : e.status === 'officer' ? 4 : 0);
   const goalFade = (e) => {
     // fade the push out near the final goal, so nobody can be blocked from arriving
     if (!e.destination) return 1;
@@ -170,6 +170,7 @@
       bodies.push(c);
     }
     bodies.push(s.player);
+    if (s.assistant && !s.assistant.mc) bodies.push(s.assistant);
     for (let i = 0; i < bodies.length; i++) {
       for (let j = i + 1; j < bodies.length; j++) {
         const a = bodies[i], b = bodies[j];

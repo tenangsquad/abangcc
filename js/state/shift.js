@@ -4,11 +4,13 @@
 (function (ns) {
   'use strict';
 
-  const { CFG, ROOM, DIRECTOR, byId, clamp, fmtMoney } = ns;
+  const { CFG, ROOM, DIRECTOR, TIERS, byId, clamp, clock, fmtMoney } = ns;
   const S = ns.S;
   const State = (ns.State = ns.State || {});
 
-  const newStats = () => ({ served: 0, complaints: 0, repairs: 0, incidents: 0, inspections: 0, walkouts: 0, queueWalkouts: 0, walkoutLost: 0, wrongDuration: 0, wrongLost: 0, falseAccusations: 0, pcDownSec: 0, idleWhileWaiting: 0, blackoutSec: 0 });
+  const newStats = () => ({ served: 0, complaints: 0, repairs: 0, incidents: 0, inspections: 0, walkouts: 0, queueWalkouts: 0, walkoutLost: 0, wrongDuration: 0, wrongLost: 0, falseAccusations: 0, pcDownSec: 0, idleWhileWaiting: 0, blackoutSec: 0, assistantJobs: 0,
+    // for the end-of-day recap
+    hourly: Array(12).fill(0), pcFaults: {}, walkByType: {}, servedByType: {}, bestSale: null, closeCall: null, tips: 0, generatorRuns: 0, tierMoves: [] });
 
   function create(seed) {
     return {
@@ -19,6 +21,8 @@
       elapsed: 0,
       cash: CFG.START_CASH,
       rep: 55,
+      repTier: 'biasa',
+      assistant: null, // the hired helper (see js/state/assistant.js), null until hired
       professionalism: 75,
       compliance: 75,
       risk: 20,
@@ -157,6 +161,7 @@
       if (p.status !== 'job') p.status = p.fault ? 'fault' : 'free';
     }
     s.player = { x: ROOM.home.x, y: ROOM.home.y };
+    State.resetAssistantForShift(s);
     S.log(s, `Hari ${s.day} bermula. Target hasil hari ini: ${fmtMoney(s.dayGoal)}.`);
     s.dayCheckpoint = '';
     s.dayCheckpoint = snapshotDay(s);
@@ -198,6 +203,44 @@
       : { kind: 'fail', icon: '📉', text: 'Kedai kurang ramai hari ini.', tip: 'Tiada kesilapan besar. Poster Promosi atau lebih banyak PC menarik dan melayan lebih ramai pelanggan.' };
   }
 
+  /**
+   * "Sorotan hari": a handful of fun facts about the shift that just ended, most interesting first (at most 5).
+   * Pure read of s.shiftStats, so it can be rebuilt for any report.
+   */
+  function buildRecap(s) {
+    const st = s.shiftStats;
+    const who = (id) => byId(ns.TYPES, id) || { name: 'Pelanggan', emoji: '🙂' };
+    const top = (counts) => Object.entries(counts || {}).sort((a, b) => b[1] - a[1])[0];
+    const items = [];
+
+    for (const m of st.tierMoves || []) {
+      const t = byId(TIERS, m.id);
+      items.push(m.up ? { icon: t.emoji, title: `Naik taraf: ${t.name}`, text: t.perks } : { icon: '📉', title: `Taraf turun: ${t.name}`, text: 'Reputasi jatuh. Layan pelanggan dengan baik untuk naik semula.' });
+    }
+    if (st.generatorRuns > 0) items.push({ icon: '🔌', title: 'Generator selamatkan hari', text: `Hidup ${st.generatorRuns}× — blackout cuma ${CFG.GENERATOR.outage} saat setiap kali.` });
+    else if (st.blackoutSec > 3) items.push({ icon: '⚡', title: 'Gelap-gelita', text: `${Math.round(st.blackoutSec)} saat tanpa elektrik. Generator boleh elak ini.` });
+
+    const total = (st.hourly || []).reduce((a, v) => a + v, 0);
+    if (total > 0) {
+      const best = st.hourly.indexOf(Math.max(...st.hourly));
+      items.push({ icon: '🕐', title: 'Waktu paling untung', text: `${clock(CFG.DAY_START_MINUTES + best * 60)} – ${clock(CFG.DAY_START_MINUTES + (best + 1) * 60)}: ${fmtMoney(st.hourly[best])} masuk dalam sejam itu.` });
+    }
+    if (st.closeCall) items.push({ icon: '😅', title: 'Hampir terlepas!', text: `${who(st.closeCall.type).name} dilayan bila kesabaran tinggal ${Math.max(1, Math.round(st.closeCall.left * 100))}%.` });
+    const angry = top(st.walkByType);
+    if (angry) items.push({ icon: '😤', title: `${who(angry[0]).name} paling cepat marah`, text: `${angry[1]} orang keluar dengan muka masam.` });
+    const [worstPc, worstN] = top(st.pcFaults) || [];
+    if (worstN >= 2) items.push({ icon: '🔧', title: `PC ${worstPc} paling manja`, text: `Rosak ${worstN} kali hari ini.` });
+    if (st.bestSale) items.push({ icon: '💰', title: 'Sewa terbesar', text: `${fmtMoney(st.bestSale.price)} daripada ${who(st.bestSale.type).name} (${st.bestSale.minutes} minit).` });
+    if (st.tips > 0) items.push({ icon: '☕', title: 'Duit kopi', text: `${fmtMoney(st.tips)} daripada pelanggan yang puas hati.` });
+    const asst = s.assistant;
+    if (asst?.mc) items.push({ icon: '🤒', title: `${CFG.ASSISTANT.name} MC`, text: `${asst.mc.reason}. Abang buat semua sendiri hari ini.` });
+    else if (asst && st.assistantJobs > 0) items.push({ icon: '🎀', title: `${CFG.ASSISTANT.name} berguna`, text: `${st.assistantJobs} kerja siap tanpa Abang angkat tangan.` });
+    if (s.bestCombo >= 3) items.push({ icon: '⚡', title: 'Combo terbaik', text: `x${s.bestCombo} berturut-turut.` });
+    const loyal = top(st.servedByType);
+    if (loyal && loyal[1] >= 2) items.push({ icon: '🤝', title: `${who(loyal[0]).name} paling ramai`, text: `${loyal[1]} kali duduk PC hari ini.` });
+    return items.slice(0, 5);
+  }
+
   function endShift(s) {
     if (s.phase !== 'active') return;
     for (const c of s.customers.filter((c) => c.pcId && c.status !== 'gone')) State.releaseCustomer(s, c, null, 0);
@@ -233,6 +276,7 @@
       S.record(s, 'rent', -bills.rent, 'Sewa tapak (bulanan)');
       S.record(s, 'electric', -bills.electric, 'Bil elektrik (bulanan)');
       S.record(s, 'internet', -bills.internet, 'Bil internet (bulanan)');
+      if (bills.assistant) S.record(s, 'wage', -bills.assistant, 'Gaji pembantu (bulanan)');
       S.log(s, `🧾 Hujung bulan: sewa & bil ${fmtMoney(bills.total)} dibayar.`);
     }
     const upkeep = S.perkUpkeep(s);
@@ -241,7 +285,7 @@
     const expense = paid.expenses; // belanja: everything actually spent this shift
 
     // risk drifts with how the shop was run
-    S.bump(s, 'risk', s.violationLog.length * 4 - (s.violationLog.length === 0 && s.compliance >= 70 ? 3 : 0) - (s.professionalism >= 70 ? 2 : 0));
+    S.bump(s, 'risk', s.violationLog.length * 4 - (s.violationLog.length === 0 && s.compliance >= 70 ? 3 : 0) - (s.professionalism >= 70 ? 2 : 0) + S.tierOf(s).riskDrift); // Port Lepak draws the officer's eye
 
     const after = S.breakdown(s);
     const report = {
@@ -271,6 +315,8 @@
       compliance: s.compliance,
       violations: s.violationLog.length,
       specialEvents: s.specialHandled || 0,
+      tier: s.repTier,
+      recap: buildRecap(s),
       // 1–3 stars: 1 = goal missed, 2 = goal met, 3 = goal beaten by 40% with a healthy reputation.
       stars: !goalMet ? 1 : income >= goal * 1.4 && s.rep >= 55 ? 3 : 2,
     };
@@ -303,6 +349,7 @@
     s.selected = { kind: 'pc', id: 1 };
     s.dayGoal = S.goalFor(s, s.day);
     State.draftPerks(s);
+    State.rollSickLeave(s);
     S.log(s, `Hari ${s.day}: ${CFG.PREP_MESSAGE[(s.day - 1) % CFG.PREP_MESSAGE.length] || 'KEDAI BUKA LAGI'}`);
   }
 
@@ -341,6 +388,7 @@
     }
     if (s.cleanupSlow > 0) s.cleanupSlow = Math.max(0, s.cleanupSlow - dt);
     if (s.peakRush > 0) s.peakRush -= dt;
+    S.updateTier(s);
 
     // Rush hour windows
     const peakIndex = (s.peakWindows || []).findIndex((w) => s.elapsed >= w.start && s.elapsed < w.end);
@@ -387,6 +435,7 @@
     State.updatePcs(s, dt);
     State.expireIssues(s, dt);
     State.updateEvents(s, dt);
+    State.updateAssistant(s, dt);
     State.runScriptedBeat(s);
     State.runSpecialDirector(s);
 
@@ -414,5 +463,5 @@
 
   const peakLabel = (s) => (s.peakWindows?.[s.peakIndex] || {}).label || 'RUSH';
 
-  Object.assign(State, { create, startShift, endShift, proceed, retryDay, update, peakLabel, snapshotDay });
+  Object.assign(State, { create, startShift, endShift, proceed, retryDay, update, peakLabel, snapshotDay, buildRecap });
 })(window.ABCC);

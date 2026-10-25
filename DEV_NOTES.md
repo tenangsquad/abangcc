@@ -1,4 +1,4 @@
-# ALPHA_12 — development notes (working file)
+# ALPHA_12 / ALPHA_13 — development notes (working file; Alpha 0.13 changes are listed in CHANGELOG.md)
 
 Goal: bring ABANG_CC_2007_ALPHA_11 into line with `../Requirements.md`. Gap list: `../Requirements_Alignment_ALPHA_11.md` (B1–B10 = bugs, then per-phase tables).
 User decision: **update the game** (ALPHA_12, ALPHA_11 untouched), scope **"all of it"**.
@@ -18,6 +18,12 @@ User decision: **update the game** (ALPHA_12, ALPHA_11 untouched), scope **"all 
 - PC fault kinds: glitch, freeze, overheat, bsod, noconn, hardware. One refund per incident (`faultId`).
 - Director = one table `DIRECTOR` + `director(s)`; difficulty preset (santai/biasa/mencabar) stored in save.
 - Perks: data-driven `mods`, weighted draft, ≥1 affordable offer (fallback cheap perk "Poster Promosi"), upkeep per day.
+- Perk lines: `line` + `rank` on a PERKS entry make a chain (cooling: fan → portable → aircond). `eligiblePerks` offers only the next rank, `applyPerk` removes the unit it replaces and `S.perkPrice` takes `CFG.UPGRADE_CREDIT` of its price off. Use `S.coolLevel(s)` instead of `hasPerk('aircond')`.
+- Assistant: `js/state/assistant.js`, state in `s.assistant` (null until hired). Hire on prep from `CFG.ASSISTANT.unlockDay`; one-off fee + monthly wage in `S.monthlyBills`; sick days planned once per `mcBlock` days (`rollSickLeave`, called from `State.proceed`). Jobs: spill (`mop`) and blackout (`fuse`) through `resolveEvent(..., { by: 'assistant' })`. Drawn as `kind: 'player'` with `e.assistant` (look `idol`, gear `assistant`) in characters.js; picked/labelled as kind `'assistant'`.
+- Reputation tiers: `TIERS` + `tierIndexFor` in config.js (3-point hold), `s.repTier` moved by `S.updateTier` every tick; effects are read through `S.tierOf(s)` (patience drain, spawn, tips, lepak weight, risk drift).
+- End-of-day recap: counters in `s.shiftStats` (hourly, pcFaults, walkByType, servedByType, bestSale, closeCall, tips, generatorRuns, tierMoves) → `State.buildRecap` → `report.recap`.
+- Audio ambience: `UI.Sound.ambience(state)` (js/ui/audio.js) is steered from `UI.refresh`; own switch `settings.ambience`.
+- Last saved: `State.saveInfo()` → `UI.savedLabel()`; any element with `data-saved` is kept fresh by `UI.refreshSaved`.
 - Save: versioned envelope + checksum + backup slot + v11 migration (a version bump never wipes progress, fixes B8).
 
 ## Milestones / status

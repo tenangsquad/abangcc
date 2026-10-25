@@ -74,7 +74,8 @@
     s.worldEvents = s.worldEvents || [];
     s.activeIssues = s.activeIssues || [];
     s.once = s.once || {};
-    s.shiftStats = Object.assign({ served: 0, complaints: 0, repairs: 0, incidents: 0, inspections: 0, walkouts: 0, queueWalkouts: 0, walkoutLost: 0, wrongDuration: 0, wrongLost: 0, falseAccusations: 0, pcDownSec: 0, idleWhileWaiting: 0, blackoutSec: 0 }, s.shiftStats);
+    s.shiftStats = Object.assign(State.create(old.seed).shiftStats, s.shiftStats); // fill in any counters an older save lacks
+    if (!ns.TIERS.some((t) => t.id === old.repTier)) s.repTier = ns.TIERS[ns.tierIndexFor(s.rep, 0)].id; // saves from before tiers start at the tier they have earned
     if (s.phase === 'active') s.phase = 'paused';
     return s;
   }
@@ -99,6 +100,8 @@
   }
 
   let lastGood = null;
+  let savedAt = 0; // when the last good write happened (ms since 1970), 0 = nothing saved yet
+  let saveFailed = false; // true while the browser refuses to store the save (private mode, quota)
 
   /** Latest good save: main slot → backup slot → legacy v11 slot. */
   function getSaved() {
@@ -117,7 +120,11 @@
     const raw = JSON.stringify({ v: CFG.VERSION, t: Date.now(), sum: checksum(json), s: json });
     if (lastGood) store.set(CFG.SAVE_BAK, lastGood);
     const okWrite = store.set(CFG.SAVE, raw);
-    if (okWrite) lastGood = raw;
+    if (okWrite) {
+      lastGood = raw;
+      savedAt = Date.now();
+    }
+    saveFailed = !okWrite;
     return okWrite;
   }
 
@@ -125,7 +132,22 @@
     store.del(CFG.SAVE);
     store.del(CFG.SAVE_BAK);
     lastGood = null;
+    savedAt = 0;
+    saveFailed = false;
   }
 
-  Object.assign(State, { getSaved, save, resetSave, migrate, checksum });
+  /** When the save on this device was last written: { at, failed }. `at` is 0 when nothing is stored. Reads the stored envelope on a fresh page load. */
+  function saveInfo() {
+    if (!savedAt) {
+      try {
+        const env = JSON.parse(store.get(CFG.SAVE) || 'null');
+        if (env && Number.isFinite(env.t)) savedAt = env.t;
+      } catch {
+        /* a corrupt envelope has no time to show */
+      }
+    }
+    return { at: savedAt, failed: saveFailed };
+  }
+
+  Object.assign(State, { getSaved, save, resetSave, saveInfo, migrate, checksum });
 })(window.ABCC);

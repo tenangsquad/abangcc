@@ -33,6 +33,7 @@
     const s = UI.s;
     if (s.phase !== 'active' || el.disabled) return;
     const act = el.dataset.act, id = Number(el.dataset.id), choice = el.dataset.choice;
+    if (act === 'asstinfo') return UI.openOverlay('assistant'); // "Apa boleh buat?" is a page, not an action
     const r = State.perform(s, act, id, choice);
     if (r.msg && (!r.ok || act !== 'duration')) UI.toast(r.msg, r.ok ? 'good' : 'bad');
     if (r.ok) {

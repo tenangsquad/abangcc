@@ -33,7 +33,7 @@
   }
 
   /* ---------- settings (kept separate from the game save) ---------- */
-  UI.settings = { sound: true, music: true, quality: defaultQuality(), reduceMotion: false, hints: true, qualityChosen: false };
+  UI.settings = { sound: true, music: true, ambience: true, quality: defaultQuality(), reduceMotion: false, hints: true, qualityChosen: false };
   try {
     Object.assign(UI.settings, JSON.parse(localStorage.getItem(CFG.SETTINGS) || '{}'));
   } catch {
@@ -51,6 +51,30 @@
     UI.$('soundBtn').textContent = UI.settings.sound ? '♫' : '♪';
     UI.$('soundBtn').classList.toggle('muted', !UI.settings.sound);
     UI.gfx?.setQuality(UI.settings.quality);
+  };
+
+  /**
+   * "Disimpan 3 minit lalu": when the save on this device was last written (State.saveInfo). Every element with a data-saved
+   * attribute shows it and is kept fresh by UI.refresh; before anything is saved it keeps its own default text.
+   */
+  UI.savedLabel = () => {
+    const { at, failed } = ns.State.saveInfo();
+    if (failed) return '⚠️ Tak dapat simpan: storan browser disekat';
+    if (!at) return null;
+    const secs = Math.max(0, (Date.now() - at) / 1000);
+    if (secs < 20) return '💾 Disimpan baru sahaja';
+    if (secs < 90) return '💾 Disimpan seminit lalu';
+    if (secs < 3600) return `💾 Disimpan ${Math.round(secs / 60)} minit lalu`;
+    const d = new Date(at);
+    const time = `${UI.pad2(d.getHours())}:${UI.pad2(d.getMinutes())}`;
+    return new Date().toDateString() === d.toDateString() ? `💾 Disimpan pukul ${time}` : `💾 Disimpan ${d.getDate()}/${d.getMonth() + 1} pukul ${time}`;
+  };
+  UI.refreshSaved = () => {
+    const text = UI.savedLabel();
+    for (const el of document.querySelectorAll('[data-saved]')) {
+      if (text) UI.setText(el, text);
+      el.classList.toggle('save-failed', text?.startsWith('⚠️') || false);
+    }
   };
 
   /* ---------- transient feedback ---------- */
