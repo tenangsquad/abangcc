@@ -80,7 +80,7 @@
           break;
         case 'event': {
           const type = fx.type;
-          UI.Sound.play(type === 'blackout' ? 'powerdown' : type === 'spill' ? 'splash' : type === 'raid' ? 'siren' : 'alert');
+          UI.Sound.play(type === 'blackout' ? (s.perks.includes('generator') ? 'alert' : 'powerdown') : type === 'spill' ? 'splash' : type === 'raid' ? 'siren' : 'alert');
           UI.toast(`${EVENTS[type].emoji} ${EVENTS[type].title}!`, 'normal');
           break;
         }
@@ -90,6 +90,36 @@
         case 'powerBack':
           UI.Sound.play('powerup');
           break;
+        case 'assistantHired':
+          UI.Sound.play('perk');
+          UI.toast(`🎀 ${CFG.ASSISTANT.name} mula kerja!`, 'good');
+          break;
+        case 'assistantDone': {
+          const a = s.assistant;
+          if (a) UI.popupAt(a.x, 2.3, a.y, fx.ok ? '🎀 Siap!' : '😅', 'gold');
+          UI.toast(fx.msg, fx.ok ? 'good' : 'bad');
+          UI.Sound.play(fx.ok ? 'good' : 'bad');
+          break;
+        }
+        case 'assistantMc':
+          UI.toast(`🤒 ${CFG.ASSISTANT.name} MC hari ini: ${fx.reason}`, 'bad');
+          UI.Sound.play('warn');
+          break;
+        case 'generator':
+          UI.Sound.play('generator');
+          UI.toast('🔌 Generator hidup sendiri! Sewaan terus jalan.', 'good');
+          break;
+        case 'tip':
+          if (pc) UI.popupAt(pc.x, 2.6, pc.y - 0.2, '☕ +' + fmtMoney(fx.amount), 'gold');
+          UI.Sound.play('coin');
+          break;
+        case 'tier': {
+          const t = ns.TIERS.find((x) => x.id === fx.id);
+          UI.toast(`${t.emoji} ${fx.up ? 'Naik taraf' : 'Taraf turun'}: ${t.name}`, fx.up ? 'good' : 'bad');
+          if (fx.up) UI.confetti();
+          UI.Sound.play(fx.up ? 'tier' : 'bad');
+          break;
+        }
         case 'officer':
           UI.Sound.play('siren');
           break;
@@ -131,6 +161,7 @@
     UI.renderCrises();
     UI.tickDesk();
     UI.refreshHud();
+    UI.refreshSaved();
     const s = UI.s;
     // today's target reached: one fanfare per shift
     if (s.phase === 'active') {
@@ -142,6 +173,14 @@
     } else if (s.phase !== 'paused') UI.goalHit = false;
     // music follows the shift: bright by day, moody at night, busier in peak hour; plays on the main menu page; silent in other dialogs and on pause
     UI.Sound.music(s.phase === 'active' ? { night: ns.dayPart(CFG.DAY_START_MINUTES + s.elapsed * CFG.GAME_MINUTE_RATE).id === 'night', peak: !!s.peakActive } : s.phase === 'menu' ? { night: false, peak: false } : null); // the main menu has the daytime tune too
+    // the café itself: PC hum, fans, the street outside — only while a shift is running
+    UI.Sound.ambience(s.phase === 'active' ? {
+      busy: s.pcs.filter((p) => p.status === 'busy').length,
+      cool: State.coolLevel(s),
+      part: ns.dayPart(CFG.DAY_START_MINUTES + s.elapsed * CFG.GAME_MINUTE_RATE).id,
+      power: s.powerOutage <= 0,
+      generator: s.powerOutage > 0 && s.perks.includes('generator'),
+    } : null);
     const h = UI.hint();
     const bubble = $('hintBubble');
     bubble.hidden = !h;
@@ -312,6 +351,7 @@
       const a = UI.gfx.anchors();
       if (kind === 'pc') { const p = a.pcs.find((q) => q.id === id); return p && { x: p.mx, y: p.my }; }
       if (kind === 'customer') { const p = a.people.find((q) => q.kind === 'customer' && q.id === id); return p && { x: p.bx, y: p.by }; }
+      if (kind === 'assistant') { const p = a.people.find((q) => q.kind === 'assistant'); return p && { x: p.bx, y: p.by }; }
       if (kind === 'event') {
         const ev = State.eventById(UI.s, id);
         const person = ev && a.people.find((q) => ev.npcIds.includes(q.id));

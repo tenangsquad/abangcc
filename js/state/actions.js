@@ -40,9 +40,12 @@
   /** Everything the pop-up menu can offer for a selection. */
   function options(s, target) {
     if (!target) return [];
+    if (target.kind === 'assistant') return State.assistantMenuOptions(s);
     if (target.kind === 'event') {
       const ev = State.eventById(s, target.id);
-      return ev ? State.eventOptions(s, ev) : [];
+      if (!ev) return [];
+      const extra = State.assistantEventOption(s, ev); // "Suruh Pembantu" on a spill or the fuse box
+      return extra ? [...State.eventOptions(s, ev), extra] : State.eventOptions(s, ev);
     }
     if (target.kind !== 'pc') return [];
     const p = byId(s.pcs, target.id);
@@ -88,6 +91,11 @@
       s.selected = { kind: 'event', id: ev.id };
       return S.ok(EVENTS[ev.type].title);
     }
+    if (ent.kind === 'assistant') {
+      if (!State.assistantPresent(s)) return S.fail('Pembantu tak ada di kedai.');
+      s.selected = { kind: 'assistant', id: 1 };
+      return S.ok('Pembantu dipilih.');
+    }
     if (ent.kind === 'pc') {
       const p = byId(s.pcs, ent.id);
       if (!p) return S.fail('PC tak tersedia.');
@@ -129,6 +137,7 @@
     if (s.phase !== 'active') return S.fail('Buka shift dulu.');
     const ev = State.eventById(s, evId);
     if (!ev) return S.fail('Kejadian dah selesai.');
+    if (State.assistantOnEvent(s, evId)) return S.fail('Pembantu dah uruskan itu.');
     const ch = EVENTS[ev.type].choices.find((c) => c.id === choiceId);
     if (!ch) return S.fail('Pilihan tak sah.');
     if (ch.cost && s.cash < ch.cost) return S.fail('Duit tak cukup.');
@@ -142,6 +151,8 @@
     if (act === 'duration') return State.chooseRental(s, id, Number(choice));
     if (act === 'autoseat') return State.quickSeat(s, id);
     if (act === 'event') return beginEventAction(s, id, choice);
+    if (act === 'asstgo') return State.assistantGo(s, id);
+    if (act === 'asstauto') return State.assistantAuto(s);
     if (act === 'extend' || act === 'sendoff') return State.lingerChoice(s, id, act);
     return beginAction(s, act, id);
   }

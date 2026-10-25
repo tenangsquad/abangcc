@@ -75,7 +75,14 @@ async function rect(sel) {
   return r;
 }
 async function clickEl(sel) {
-  const r = await rect(sel);
+  let r = await rect(sel);
+  for (let i = 0; i < 12; i++) { // a pop-up may still be sliding in: wait until the target holds still, or the click lands where it used to be
+    await sleep(70);
+    const next = await rect(sel);
+    const still = Math.abs(next.x - r.x) < 0.5 && Math.abs(next.y - r.y) < 0.5;
+    r = next;
+    if (still) break;
+  }
   await b.click(r.x, r.y);
   await sleep(160);
   return r;
@@ -491,10 +498,10 @@ test('Home extras: a living café behind the menu, a daily tip, the Kredit page 
   await clickEl('#homeTip');
   assert.notEqual(await ev(`document.getElementById('homeTip').textContent`), tip1, 'tapping the tip shows the next one');
   // music plays on the menu page once the player has tapped (browsers insist on a tap first)
-  await sleep(700);
+  for (let i = 0; i < 20 && !(await ev(`ABCC.debug.ui().Sound.musicPlaying()`)); i++) await sleep(250); // the page refreshes the music a few times a second; a busy software-rendered page can be slow
   assert.equal(await ev(`ABCC.debug.ui().Sound.musicPlaying()`), true, 'the menu has music');
   await clickEl('[data-modal="credits"]');
-  assert.match(await ev(`document.querySelector('.modal-card').textContent`), /KREDIT[\s\S]*Alpha 0\.12[\s\S]*Fredoka/);
+  assert.match(await ev(`document.querySelector('.modal-card').textContent`), /KREDIT[\s\S]*Alpha 0\.13[\s\S]*Fredoka/);
   await shot('25_credits');
   await clickEl('[data-modal="back"]');
   assert.equal(await ev(`document.documentElement.dataset.screen`), 'home');
@@ -511,7 +518,7 @@ test('Terapung: the floating layout is a Settings choice on a PC, applies at onc
   await ev(`T.wait('student', 60, 0); T.wait('fps', 60, 1); ABCC.debug.advance(0.5); 1`);
   assert.equal(await ev(`ABCC.Layout.current()`), 'desktop');
   await ev(`ABCC.debug.openSettings(); 1`);
-  await clickEl('[data-setting="layout"][data-value="float"]');
+  await clickUntil('[data-setting="layout"][data-value="float"]', `ABCC.Layout.current() === 'float'`);
   assert.equal(await ev(`ABCC.Layout.current()`), 'float');
   assert.equal(await ev(`document.querySelectorAll('.dock').length`), 4, 'the panels moved into the corners');
   await clickEl('[data-modal="back"]');
@@ -519,7 +526,7 @@ test('Terapung: the floating layout is a Settings choice on a PC, applies at onc
   await sleep(300);
   const m = await ev(`(() => {
     const vp = document.getElementById('viewport').getBoundingClientRect();
-    const dock = (k) => document.querySelector('.dock-' + k).getBoundingClientRect();
+    const dock = (k) => ({ width: document.querySelector('.dock-' + k).getBoundingClientRect().width }); // plain numbers: a DOMRect comes back from the debugger as {}
     return { vpW: vp.width, vpH: vp.height, winW: innerWidth, winH: innerHeight, tl: dock('tl'), br: dock('br'), docH: document.documentElement.scrollHeight };
   })()`);
   assert.ok(m.vpW >= m.winW - 1 && m.vpH >= m.winH - 1, 'the scene fills the whole window');
@@ -532,7 +539,7 @@ test('Terapung: the floating layout is a Settings choice on a PC, applies at onc
   await sleep(500);
   assert.equal(await ev(`ABCC.Layout.current()`), 'float', 'the choice is remembered');
   await ev(`ABCC.debug.openSettings(); 1`);
-  await clickEl('[data-setting="layout"][data-value="classic"]');
+  await clickUntil('[data-setting="layout"][data-value="classic"]', `ABCC.Layout.current() === 'desktop'`);
   assert.equal(await ev(`ABCC.Layout.current()`), 'desktop');
   assert.equal(await ev(`document.querySelectorAll('.dock').length`), 0);
   assert.equal(await ev(`document.querySelector('.sidebar').children.length`), 4, 'the sidebar is back');
@@ -656,10 +663,15 @@ test('Layouts: desktop is the default on a PC, and switching to phone and back m
 test('Phase 3: the day moves from bright afternoon to golden hour to night (lighting + sky + lamps)', async () => {
   await open();
   await pageReady();
+  const read = () => ev(`(() => { const L = ABCC.debug.gfx().light(); const vp = document.getElementById('viewport').style; return { night: L.night, lamps: L.lamps, neon: L.neon, sun: L.sun, shadowAlpha: L.shadow[3], sky: vp.getPropertyValue('--sky-a') }; })()`);
   const sample = async (min) => {
     await ev(`ABCC.debug.setTime(${min * 60}); 1`);
-    await sleep(350);
-    return ev(`(() => { const L = ABCC.debug.gfx().light(); const vp = document.getElementById('viewport').style; return { night: L.night, lamps: L.lamps, neon: L.neon, sun: L.sun, shadowAlpha: L.shadow[3], sky: vp.getPropertyValue('--sky-a') }; })()`);
+    // the light is recalculated each time a frame is drawn, and a software-rendered frame can take a while: wait until it reports the hour we asked for
+    for (let i = 0; i < 40; i++) {
+      await sleep(150);
+      if (Math.abs((await ev(`ABCC.debug.gfx().light().hour`)) - min) < 0.01) break;
+    }
+    return read();
   };
   const noon = await sample(13), gold = await sample(17.6), night = await sample(22.5);
   assert.ok(noon.night < 0.05 && noon.lamps < 0.05, 'afternoon: bright, lamps off');
@@ -713,12 +725,18 @@ test('Auto-duduk: a double tap on a customer seats them for the ★ length on th
   await ev(`ABCC.debug.ui().settings.hints = false; 1`);
   // 1) double tap (two quick clicks on the same customer in the room)
   const a = await ev(`T.wait('student', 90, 0)`);
-  await sleep(500);
-  const p = await ev(`ABCC.debug.pagePoint('customer', ${a})`);
-  await b.click(p.x, p.y);
-  await sleep(90);
-  await b.click(p.x, p.y);
-  await sleep(250);
+  let p = null;
+  for (let i = 0; i < 30 && !p; i++) { // wait until a frame has put the customer on screen
+    await sleep(150);
+    p = await ev(`ABCC.debug.pagePoint('customer', ${a})`);
+  }
+  assert.ok(p, 'the waiting customer is on screen');
+  for (let i = 0; i < 4 && (await S(`State.byId(s.customers, ${a}).pcId`)) == null; i++) { // one slow frame between the two taps can outlast the game's 400 ms double-tap window: try again
+    await b.click(p.x, p.y);
+    await sleep(90);
+    await b.click(p.x, p.y);
+    await sleep(450);
+  }
   assert.equal(await S(`State.byId(s.customers, ${a}).pcId`), 1, 'seated on PC 1 without choosing anything');
   assert.equal(await S(`State.byId(s.customers, ${a}).duration`), 90, 'for the length they asked for');
   assert.equal(await S('State.breakdown(s).rental'), 300);
@@ -793,6 +811,67 @@ test('Shift report headline and Koleksi: the report names a tip; hats unlock, sh
   assert.equal(await ev(`ABCC.Meta.equipped()`), 'phones', 'the chosen hat is remembered');
 });
 
+test('Tiers, recap and last saved are on screen: the HUD names the tier, the report has Sorotan hari, the menu says when it saved', async () => {
+  await open();
+  await pageReady(3);
+  assert.match(await ev(`document.getElementById('hudRepLabel').textContent`), /Kedai Biasa/);
+  await ev(`ABCC.debug.set((s) => { s.rep = 78; }); ABCC.debug.advance(0.3); 1`);
+  assert.match(await ev(`document.getElementById('hudRepLabel').textContent`), /Kedai Popular/, 'the HUD follows the reputation tier');
+  await ev(`ABCC.S.record(ABCC.debug.state(), 'rental', 99900, 'test'); ABCC.debug.advance(130); 1`);
+  await sleep(600);
+  const report = await ev(`document.querySelector('.modal-card').innerText`);
+  assert.match(report, /Sorotan hari/);
+  assert.match(report, /Naik taraf: Kedai Popular/, 'the tier change is a highlight of the day');
+  await shot('21_report_recap');
+  await ev(`(() => { const s = ABCC.debug.state(); s.phase = 'menu'; ABCC.State.save(s); ABCC.UI.resync(); return 1; })()`);
+  await sleep(700);
+  assert.match(await ev(`document.querySelector('.home-foot').innerText`), /Disimpan baru sahaja/, 'the menu says the progress was just saved');
+  assert.deepEqual(b.consoleErrors, []);
+});
+
+test('Assistant: hired from the prep screen on day 15, stands in the shop, can be tapped and asked, and mops a spill by herself', async () => {
+  await open();
+  await ev(PAGE_HELPERS);
+  await ev(`(() => { const s = ABCC.debug.state(); s.phase = 'prep'; s.day = 14; s.cash = 30000; s.perkDraft = []; s.perkChoiceMade = true; ABCC.UI.syncModal(true); return 1; })()`);
+  await sleep(400);
+  assert.match(await ev(`document.querySelector('.modal-card').innerText`), /boleh diupah mulai Hari 15/, 'a teaser before the unlock day');
+  await ev(`(() => { const s = ABCC.debug.state(); s.day = 15; ABCC.UI.syncModal(true); return 1; })()`);
+  await sleep(400);
+  assert.match(await ev(`document.querySelector('.modal-card').innerText`), /Upah pembantu: Rina/, 'the hire card shows on day 15');
+  await clickEl('[data-modal="hire"]');
+  assert.match(await ev(`document.querySelector('.modal-card').innerText`), /Tak boleh dipecat/, 'the player is warned it is final');
+  await clickEl('[data-modal="hireconfirm"]');
+  await sleep(400);
+  assert.equal(await S('!!s.assistant'), true, 'hired');
+  assert.equal(await S('s.cash'), 25000, 'RM50 hire fee');
+  assert.match(await ev(`document.querySelector('.modal-card').innerText`), /Rina.*bertugas/s, 'the prep screen now says she is on duty');
+
+  // into the shift: she stands in her corner and can be tapped
+  await ev(`(() => { const d = ABCC.debug; d.start(); const s = d.state(); s.beatPlan = []; s.specialAt = []; s.eventCooldown = 1e9; s.spawnCooldown = 1e9; s.inspectionScheduled = 1e9; s.assistant.mc = null; return s.phase; })()`);
+  await sleep(700);
+  await clickWorld('assistant', 1);
+  await sleep(300);
+  assert.equal(await sel().then((x) => x.kind), 'assistant', 'a tap on her selects her');
+  const menu = await ev(`document.getElementById('worldMenu').innerText`);
+  assert.match(menu, /Auto: ON/);
+  assert.match(menu, /Apa boleh buat/);
+  await clickEl('#worldMenu [data-act="asstinfo"]');
+  await sleep(300);
+  assert.match(await ev(`document.querySelector('.modal-card').innerText`), /Lap air tumpah[\s\S]*Tukar fius[\s\S]*sehari setiap 10 hari/, '"Apa boleh buat?" lists what she does and the MC rule');
+  await shot('22_assistant_info');
+  await clickEl('[data-modal="back"]');
+  await ev(`ABCC.debug.ui().togglePause(); 1`);
+
+  // a spill: she goes by herself and Abang is left alone
+  await ev(`ABCC.debug.startEvent('spill'); 1`);
+  for (let i = 0; i < 12 && (await S('s.shiftStats.assistantJobs')) < 1; i++) await ev(`ABCC.debug.advance(2); 1`); // step the simulation: a software-rendered page runs slower than real time
+  assert.equal(await S('s.shiftStats.assistantJobs'), 1, 'she mopped it herself');
+  assert.equal(await S('s.worldEvents.length'), 0, 'the puddle is gone');
+  assert.equal(await S('s.cleanupSlow'), 0, 'Abang was not slowed');
+  assert.equal(await S('s.taskSequence'), 0, 'Abang never had to take a job');
+  assert.deepEqual(b.consoleErrors, []);
+});
+
 test('Music: it only plays during a shift, follows the Muzik setting and the ♫ button, and stops on pause', async () => {
   await open();
   await ev(`localStorage.setItem('abangcc2007_settings', JSON.stringify({ quality: 'high', qualityChosen: true, sound: true, music: true, noLoader: true })); 1`);
@@ -813,6 +892,31 @@ test('Music: it only plays during a shift, follows the Muzik setting and the ♫
   await ev(`document.getElementById('soundBtn').click(); ABCC.debug.ui().refresh(true); 1`);
   await ev(`ABCC.debug.ui().togglePause(); ABCC.debug.ui().refresh(true); 1`);
   assert.equal(await ev(`ABCC.debug.ui().Sound.musicPlaying()`), false, 'silent while paused');
+  assert.deepEqual(b.consoleErrors, []);
+});
+
+test('Ambience: the café hums during a shift, follows the Suasana setting and the ♫ button, and goes quiet on pause', async () => {
+  await open();
+  await ev(`localStorage.setItem('abangcc2007_settings', JSON.stringify({ quality: 'high', qualityChosen: true, sound: true, music: false, ambience: true, noLoader: true })); 1`);
+  await b.goto(INDEX);
+  await sleep(500);
+  assert.equal(await ev(`ABCC.debug.ui().Sound.ambiencePlaying()`), false, 'silent on the main menu');
+  await pageReady(4, { perks: ['fan', 'generator'] });
+  await b.click(300, 300);
+  await sleep(300);
+  await ev(`ABCC.debug.ui().refresh(true); 1`);
+  await sleep(500);
+  assert.equal(await ev(`ABCC.debug.ui().Sound.ambiencePlaying()`), true, 'ambience plays in an active shift');
+  await ev(`ABCC.debug.startEvent('blackout'); ABCC.debug.ui().refresh(true); 1`); // generator chug + the PCs fall silent
+  await ev(`ABCC.debug.ui().settings.ambience = false; ABCC.debug.ui().refresh(true); 1`);
+  assert.equal(await ev(`ABCC.debug.ui().Sound.ambiencePlaying()`), false, 'Suasana OFF stops it');
+  await ev(`ABCC.debug.ui().settings.ambience = true; ABCC.debug.ui().refresh(true); 1`);
+  assert.equal(await ev(`ABCC.debug.ui().Sound.ambiencePlaying()`), true);
+  await ev(`document.getElementById('soundBtn').click(); ABCC.debug.ui().refresh(true); 1`);
+  assert.equal(await ev(`ABCC.debug.ui().Sound.ambiencePlaying()`), false, 'the ♫ button mutes it too');
+  await ev(`document.getElementById('soundBtn').click(); ABCC.debug.ui().refresh(true); 1`);
+  await ev(`ABCC.debug.ui().togglePause(); ABCC.debug.ui().refresh(true); 1`);
+  assert.equal(await ev(`ABCC.debug.ui().Sound.ambiencePlaying()`), false, 'silent while paused');
   assert.deepEqual(b.consoleErrors, []);
 });
 
@@ -878,8 +982,8 @@ test('Phase 17: graceful fallback when WebGL is unavailable — a clickable boar
 });
 
 test('the standalone bundle (dist/) boots and plays the same as the folder build', async () => {
-  const bundle = pathToFileURL(path.join(root, 'dist', 'ABANG_CC_2007_ALPHA_12.html')).href;
-  if (!fs.existsSync(path.join(root, 'dist', 'ABANG_CC_2007_ALPHA_12.html'))) return; // run `node tools/build.mjs` first
+  const bundle = pathToFileURL(path.join(root, 'dist', 'ABANG_CC_2007_ALPHA_13.html')).href;
+  if (!fs.existsSync(path.join(root, 'dist', 'ABANG_CC_2007_ALPHA_13.html'))) return; // run `node tools/build.mjs` first
   await open(1366, 768, { url: bundle });
   assert.deepEqual(b.consoleErrors, []);
   assert.equal(await ev('!!ABCC.debug.gfx()'), true);
@@ -896,7 +1000,8 @@ test('Loading screen: the wallpaper shows for at least ~3 s with a moving progre
   // (in software-rendered Chrome the load event itself can take 2 s, so check at once and poll for the end)
   assert.equal(await ev(`!!document.querySelector('#loader svg.ld-art')`), true, 'the wallpaper is drawn');
   assert.match(await ev(`document.querySelector('#loader .ld-title').textContent`), /ABANG\s*CC/);
-  assert.equal(await ev(`document.querySelector('#loader .ld-year').textContent.trim()`), '2007');
+  assert.equal(await ev(`document.querySelector('#loader .ld-year b').textContent.trim()`), '2007');
+  assert.equal(await ev(`document.querySelector('#loader .ld-year .ld-neon').getAttribute('aria-label')`), 'by Tenang Squad', 'the neon credit sits next to the year');
   assert.equal(await ev(`!!document.getElementById('ldFill')`), true, 'a progress bar is shown');
   await shot('15_loading_screen');
   for (let i = 0; i < 40 && (await ev(`!!document.getElementById('loader')`)); i++) await sleep(200);

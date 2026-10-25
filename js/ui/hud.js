@@ -76,6 +76,9 @@
       $('hud' + k + 'Bar').style.width = clamp(v, 0, 100) + '%';
     };
     vit('Rep', s.rep);
+    const tier = State.tierOf(s);
+    setText($('hudRepLabel'), `${tier.emoji} ${tier.name}`);
+    $('hudRepMeter').title = `Reputasi: pelanggan datang lebih ramai bila tinggi. ${tier.name}: ${tier.perks}`;
     vit('Pro', s.professionalism);
     vit('Compliance', s.compliance);
     setText($('hudRisk'), String(Math.round(s.risk)));

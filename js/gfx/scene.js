@@ -520,6 +520,8 @@
         chars.drawPerson(s, c, c.type === 'officer' ? 'officer' : 'customer', dt);
       }
       chars.drawPerson(s, { ...s.player, id: 'abang' }, 'player', dt);
+      const asst = s.assistant;
+      if (asst && !asst.mc) chars.drawPerson(s, { ...asst, id: 'assistant', assistant: true, workKind: asst.task?.kind === 'spill' ? 'mop' : 'fix' }, 'player', dt);
       drawParticles(dt);
 
       R.stats = { ...eng.stats(), buildMs: performance.now() - tBuild };

@@ -137,6 +137,12 @@
     const s = UI.s;
     const tasks = State.taskList(s);
     const key = tasks.map((t, i) => `${t.id}:${i}:${t === s.activeTask ? (t.remaining === null ? 'w' : 'k') : 'q'}`).join('|');
+    const asst = $('asstLine');
+    if (asst) {
+      const text = s.assistant && s.phase === 'active' ? `🎀 ${CFG.ASSISTANT.name}: ${State.assistantStatus(s)}` : '';
+      asst.hidden = !text;
+      setText(asst, text);
+    }
     $('jobsPanel').classList.toggle('idle', !tasks.length);
     setText($('taskCount'), `${tasks.length}/${CFG.MAX_COMMANDS}`);
     $('taskCount').classList.toggle('full', tasks.length >= CFG.MAX_COMMANDS);
@@ -202,6 +208,12 @@
         opts = State.durationOptions(s, c.id).map((d) => ({ act: 'duration', choice: d.minutes, label: `${d.minutes} MIN${d.wanted ? ' ★' : ''}`, sub: `${fmtMoney(d.price)} · tekan ${d.minutes / 30}`, css: `${d.chosen ? 'mint' : 'paper'} ${d.wanted ? 'wanted' : ''}` }));
         opts.push({ act: 'autoseat', label: '⚡ Auto-duduk', sub: `★ ${c.requestedMinutes} min + PC terdekat · tekan A · atau tap dua kali`, css: 'sky', disabled: !State.idlePCs(s).length || s.powerOutage > 0 });
       }
+    } else if (s.phase === 'active' && sel?.kind === 'assistant' && State.assistantPresent(s)) {
+      opts = State.options(s, sel);
+      title = `🎀 ${CFG.ASSISTANT.name} · Pembantu`;
+      hint = State.assistantStatus(s);
+      infoSig = hint;
+      info = '<p class="wm-info">Tap air tumpah atau kotak fius untuk suruh dia. Jangan lupa: gaji dia dibayar sebulan sekali.</p>';
     } else if (s.phase === 'active' && (sel?.kind === 'pc' || sel?.kind === 'event')) {
       opts = State.options(s, sel);
       if (sel.kind === 'pc') {

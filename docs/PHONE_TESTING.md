@@ -6,7 +6,7 @@ in about 15 minutes, and what to send back.
 
 ## 1. Get the game onto the phone
 
-**Easiest: one file.** Copy `dist/ABANG_CC_2007_ALPHA_12.html` to the phone (cloud drive, USB, email to yourself) and open it
+**Easiest: one file.** Copy `dist/ABANG_CC_2007_ALPHA_13.html` to the phone (cloud drive, USB, email to yourself) and open it
 in Chrome (Android) or Safari (iPhone). Note that some phones refuse to open local HTML files. If so, use option B.
 
 **Option B: over Wi‑Fi from your PC** (phone and PC on the same network):

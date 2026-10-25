@@ -1,11 +1,11 @@
-# Test results — ALPHA_12
+# Test results — ALPHA_13
 
-Run on 2026-10-18 on Windows 11, Node 25.6, Chrome (headless, software WebGL via SwiftShader). Nothing here was run on a physical phone, a real GPU, or with a human playing.
+Run on 2026-10-25 on Windows 11, Node 25.6, Chrome (headless, software WebGL via SwiftShader). Nothing here was run on a physical phone, a real GPU, or with a human playing.
 
 | Suite | Command | Result |
 |---|---|---|
-| Game logic | `node --test tests/state.test.mjs` | **59 / 59 pass** |
-| In the browser | `node --test tests/browser.test.mjs` | **29 / 29 pass** (real mouse + touch events, real WebGL) — includes the PC action menu, the customer pop-up, auto-seat, Abang's job list, the Koleksi, music and a CPU-throttled phone run |
+| Game logic | `node --test tests/state.test.mjs` | **78 / 78 pass** |
+| In the browser | `node --test tests/browser.test.mjs` | **37 / 37 pass** (real mouse + touch events, real WebGL) — includes the PC action menu, the customer pop-up, auto-seat, Abang's job list, the Koleksi, music and a CPU-throttled phone run |
 | Sound effects | one-off script (not committed) | 19 effects + the typing ambience play with no errors; no console errors during 6 s of live play with a blackout and a spill |
 | Balance | `node tests/sim.mjs 10 10` | see below |
 

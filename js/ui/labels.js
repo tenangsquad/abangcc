@@ -87,7 +87,7 @@
 
     const seenPeople = new Set();
     for (const a of anchors.people) {
-      const c = a.kind === 'player' ? null : byId(s.customers, a.id);
+      const c = a.kind === 'player' || a.kind === 'assistant' ? null : byId(s.customers, a.id);
       if (a.kind === 'customer' && !c) continue;
       if (c && (c.status === 'event' || (c.status === 'officer' && a.eventId == null && (s.worldEvents || []).some((e) => e.type === 'raid')))) continue; // the event tag labels them
       seenPeople.add(a.id);
@@ -98,6 +98,9 @@
       if (a.kind === 'player') {
         emoji = s.player.working ? '🔧' : '😎';
         text = 'ABANG';
+      } else if (a.kind === 'assistant') {
+        emoji = s.assistant?.working ? '🧽' : '🎀';
+        text = ns.CFG.ASSISTANT.name.toUpperCase();
       } else if (a.kind === 'officer') {
         emoji = '👮';
         text = 'PEGAWAI';
@@ -143,12 +146,12 @@
     const menu = $('worldMenu');
     if (!anchors || menu.hidden || !UI.menuTarget) return;
     const t = UI.menuTarget;
-    const a = t.kind === 'pc' ? anchors.pcs.find((p) => p.id === t.id) : t.kind === 'customer' ? anchors.people.find((p) => p.kind === 'customer' && p.id === t.id) : anchors.events.find((e) => e.id === t.id);
+    const a = t.kind === 'pc' ? anchors.pcs.find((p) => p.id === t.id) : t.kind === 'customer' || t.kind === 'assistant' ? anchors.people.find((p) => p.kind === t.kind && (t.kind === 'assistant' || p.id === t.id)) : anchors.events.find((e) => e.id === t.id);
     if (!a || a.x == null) return;
     const vpW = $('viewport').clientWidth, vpH = $('viewport').clientHeight, w = menu.offsetWidth, h = menu.offsetHeight;
     const pad = 6, isPc = t.kind === 'pc';
     // what must stay uncovered: the PC / person / object itself (with its label and problem bubble)
-    const keep = isPc ? { x: a.x - 78, y: a.y - 54, w: 156, h: 150 } : t.kind === 'customer' ? { x: a.x - 44, y: a.y - 52, w: 88, h: Math.max(120, (a.by - a.y) * 2 + 60) } : { x: a.x - 60, y: a.y - 20, w: 120, h: 110 };
+    const keep = isPc ? { x: a.x - 78, y: a.y - 54, w: 156, h: 150 } : t.kind === 'customer' || t.kind === 'assistant' ? { x: a.x - 44, y: a.y - 52, w: 88, h: Math.max(120, (a.by - a.y) * 2 + 60) } : { x: a.x - 60, y: a.y - 20, w: 120, h: 110 };
     const hits = (r) => r.x < keep.x + keep.w && r.x + r.w > keep.x && r.y < keep.y + keep.h && r.y + r.h > keep.y;
     const inside = (r) => r.x >= pad && r.y >= pad && r.x + r.w <= vpW - pad && r.y + r.h <= vpH - pad;
     const spots = [

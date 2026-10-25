@@ -15,6 +15,7 @@ export const STATE_FILES = [
   'js/state/pcs.js',
   'js/state/incidents.js',
   'js/state/events.js',
+  'js/state/assistant.js',
   'js/state/officer.js',
   'js/state/actions.js',
   'js/state/meta.js',

@@ -58,6 +58,15 @@
     } else if (def.kind === 'power') {
       s.powerOutage = 20;
       s.powerFlicker = 2;
+      if (S.hasPerk(s, 'generator')) {
+        // the generator coughs into life by itself: a short blip instead of a long dark spell, for the price of some diesel
+        const fuel = Math.min(CFG.GENERATOR.fuel, Math.max(0, s.cash));
+        if (fuel) S.record(s, 'fuel', -fuel, 'Minyak generator');
+        s.powerOutage = CFG.GENERATOR.outage;
+        s.shiftStats.generatorRuns++;
+        S.log(s, `🔌 Generator hidup sendiri! Elektrik pulih dalam ${CFG.GENERATOR.outage} saat.`);
+        S.emit('generator');
+      }
       ev.spot = { ...ROOM.fuse.spot };
       ev.focus = { x: ROOM.fuse.x + 0.3, y: ROOM.fuse.z };
     } else if (def.kind === 'machine') {
@@ -130,7 +139,7 @@
   };
 
   /** Apply the outcome of a choice and clear the event from the room. */
-  function resolveEvent(s, evId, choiceId) {
+  function resolveEvent(s, evId, choiceId, opts = {}) {
     const ev = eventById(s, evId);
     if (!ev) return S.fail('Kejadian dah selesai.');
     const def = EVENTS[ev.type];
@@ -214,7 +223,7 @@
           S.record(s, 'emergency', -choice.cost, 'Fius elektrik');
           s.powerOutage = Math.min(s.powerOutage, 3);
           S.bump(s, 'professionalism', 2);
-          msg = '⚡ Fius diganti. Kuasa akan pulih dalam 3 saat.';
+          msg = opts.by === 'assistant' ? `⚡ ${CFG.ASSISTANT.name} tukar fius. Kuasa pulih dalam 3 saat.` : '⚡ Fius diganti. Kuasa akan pulih dalam 3 saat.';
         } else {
           S.bump(s, 'rep', -2);
           msg = '🕯️ Tunggu bekalan pulih. Pelanggan mula tidak sabar.';
@@ -256,8 +265,11 @@
           S.bump(s, 'rep', 2);
           msg = '🧹 Cleaner sampai, lantai bersih sebelum sesi seterusnya.';
         } else if (pick === 'mop') {
-          s.cleanupSlow = 10;
-          msg = '🧽 Abang lap sendiri. Semua kerja jadi perlahan sebentar.';
+          if (opts.by === 'assistant') msg = `🧽 ${CFG.ASSISTANT.name} siap lap lantai. Abang tak terganggu.`;
+          else {
+            s.cleanupSlow = 10;
+            msg = '🧽 Abang lap sendiri. Semua kerja jadi perlahan sebentar.';
+          }
         } else {
           // left alone: the liquid reaches the machine next to it
           const pc = byId(s.pcs, ev.data.pcId);
@@ -347,6 +359,7 @@
     const choices = ['blackout', 'spill', 'nomouse'];
     if (s.day >= 3) choices.push('lan');
     if (S.hasPerk(s, 'snack')) choices.push('snacktheft', 'snacktheft');
+    for (let i = 0; i < S.mod(s, 'spillBias'); i++) choices.push('spill', 'spill'); // the portable aircond drips
     if (s.day >= 4) choices.push('blackout');
     const fresh = choices.filter((v) => !s.specialSeen.includes(v));
     return fresh.length ? S.choice(s, fresh) : S.choice(s, choices);

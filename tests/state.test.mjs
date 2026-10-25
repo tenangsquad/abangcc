@@ -3,6 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadGame, newShift, run, makeStorage } from './load-state.mjs';
+import { PERK_PRIORITY } from './bot.mjs';
 
 const fresh = (opts) => {
   const { ns } = loadGame(opts);
@@ -57,16 +58,16 @@ test('A2: day 1 starts with RM35, exactly three working PCs, no perks, no auto-a
   assert.equal(ns.CFG.SHIFT, 120, 'a day is two real minutes');
 });
 
-test('7.6: targets climb +RM3 a day for the first 10 days, then +RM4, later +RM5 — whatever the shop looks like', () => {
+test('7.6: targets climb +RM2 a day for the first 20 days, then +RM1 (RM88 on day 40) — whatever the shop looks like', () => {
   const { ns, State } = fresh();
   const s = State.create(1);
   const days = [1, 2, 3, 4, 5, 10, 11, 12, 20, 21, 22, 30];
-  assert.deepEqual(plain(days.map((d) => State.calcRevenueGoal(s, d) / 100)), [30, 33, 36, 39, 42, 57, 61, 65, 97, 102, 107, 147]);
+  assert.deepEqual(plain(days.map((d) => State.calcRevenueGoal(s, d) / 100)), [30, 32, 34, 36, 38, 48, 50, 52, 68, 69, 70, 78]);
   // PC count and difficulty preset do not change the numbers
   while (s.pcs.length < 6) ns.State.addPc(s);
   for (const preset of ['santai', 'biasa', 'mencabar']) {
     s.preset = preset;
-    assert.deepEqual(plain([1, 2, 3, 10].map((d) => State.calcRevenueGoal(s, d) / 100)), [30, 33, 36, 57], preset);
+    assert.deepEqual(plain([1, 2, 3, 10].map((d) => State.calcRevenueGoal(s, d) / 100)), [30, 32, 34, 48], preset);
   }
 });
 
@@ -1052,4 +1053,356 @@ test('Customers walk, run or run-with-joy to their PC, and the faster gaits get 
   };
   const [w, j, r] = [travel('walk'), travel('joy'), travel('run')];
   assert.ok(r < j && j < w, `run ${r.toFixed(1)}s < joy ${j.toFixed(1)}s < walk ${w.toFixed(1)}s`);
+});
+
+/* ------------------------------------------------- cooling line, generator, tiers, recap, last saved */
+test('Cooling line: Kipas → Aircond Mudah Alih → Aircond Kedai, each the next step only, each trades in the last one', () => {
+  const { ns, State, S } = fresh();
+  const s = State.create(77);
+  s.day = 6; s.phase = 'prep'; s.cash = 50000;
+  const offered = () => State.eligiblePerks(s).map((p) => p.id).filter((id) => ['fan', 'portable', 'aircond'].includes(id));
+  assert.deepEqual(plain(offered()), ['fan'], 'only the fan to begin with');
+
+  s.perkDraft = ['fan']; s.perkChoiceMade = false;
+  assert.ok(State.buyPerk(s, 'fan').ok);
+  assert.equal(State.coolLevel(s), 1);
+  assert.deepEqual(plain(offered()), ['portable'], 'fan owned: the portable unit is the next step');
+
+  s.perkDraft = ['portable']; s.perkChoiceMade = false; s.perkCooldowns = {};
+  const before = s.cash;
+  assert.equal(State.perkPrice(s, 'portable'), ns.byId(ns.PERKS, 'portable').price - 1250, 'half the fan price is traded in');
+  assert.ok(State.buyPerk(s, 'portable').ok);
+  assert.equal(before - s.cash, 6500 - 1250);
+  assert.equal(State.hasPerk(s, 'fan'), false, 'the fan is replaced, not kept');
+  assert.equal(State.coolLevel(s), 2);
+  assert.deepEqual(plain(offered()), ['aircond']);
+
+  s.perkDraft = ['aircond']; s.perkChoiceMade = false; s.perkCooldowns = {};
+  assert.equal(State.perkPrice(s, 'aircond'), 11000 - 3250);
+  assert.ok(State.buyPerk(s, 'aircond').ok);
+  assert.equal(State.coolLevel(s), 3);
+  assert.equal(State.hasPerk(s, 'portable'), false);
+  assert.deepEqual(plain(offered()), [], 'the line is finished');
+  assert.equal(S.perkUpkeep(s), 300, 'only the top unit is paid for');
+});
+
+test('Cooling line: better units make overheating rarer and customers more patient', () => {
+  const { ns, S } = fresh();
+  const s = newShift(ns, { seed: 9, day: 2 });
+  const heat = (perks) => { s.perks = perks; return [S.overheatMult(s), S.coolPatience(s), S.patienceDrain(s)]; };
+  const none = heat([]), fan = heat(['fan']), portable = heat(['portable']), full = heat(['aircond']);
+  assert.ok(none[0] > fan[0] && fan[0] > portable[0] && portable[0] > full[0], 'overheat chance falls with every step');
+  assert.ok(none[1] < fan[1] && fan[1] < portable[1] && portable[1] < full[1], 'new customers arrive with more patience');
+  assert.ok(none[2] > fan[2] && fan[2] > portable[2] && portable[2] > full[2], 'waiting customers lose patience more slowly');
+});
+
+test('Generator: a blackout is a 5-second blip, costs RM3 of diesel and keeps the day running', () => {
+  const { ns, State, S } = fresh();
+  const dark = (withGen) => {
+    const s = calmShift(ns, { seed: 21, day: 4 });
+    if (withGen) s.perks.push('generator');
+    s.cash = 5000;
+    assert.ok(State.startEvent(s, 'blackout'));
+    return s;
+  };
+  const plainDay = dark(false);
+  assert.equal(plainDay.powerOutage, 20);
+  const s = dark(true);
+  assert.equal(s.powerOutage, ns.CFG.GENERATOR.outage);
+  assert.equal(s.cash, 5000 - ns.CFG.GENERATOR.fuel, 'diesel is booked as belanja');
+  assert.equal(s.shiftStats.generatorRuns, 1);
+  assert.equal(S.breakdown(s).expenses, ns.CFG.GENERATOR.fuel);
+  run(ns, s, 6);
+  assert.equal(s.powerOutage, 0, 'power is back after five seconds');
+  assert.equal((s.worldEvents || []).some((e) => e.type === 'blackout'), false, 'nothing left to fix at the fuse box');
+});
+
+test('Reputation tiers: Biasa → Best → Popular → Port Lepak, with a 3-point cushion before a tier is lost', () => {
+  const { ns, S } = fresh();
+  const s = calmShift(ns, { seed: 5 });
+  const go = (rep) => { s.rep = rep; S.updateTier(s); return s.repTier; };
+  assert.equal(go(55), 'biasa');
+  assert.equal(go(60), 'best');
+  assert.equal(go(75), 'popular');
+  assert.equal(go(90), 'lepak');
+  assert.equal(go(88), 'lepak', 'two points under is still Port Lepak');
+  assert.equal(go(86), 'popular', 'more than three under and it is gone');
+  assert.equal(go(40), 'biasa');
+  assert.deepEqual(plain(ns.TIERS.map((t) => t.name)), ['Kedai Biasa', 'Kedai Best', 'Kedai Popular', 'Port Lepak']);
+  assert.ok(s.shiftStats.tierMoves.length >= 5, 'each change is remembered for the recap');
+});
+
+test('Reputation tiers: higher tiers make people more patient, bring regulars and duit kopi — and Port Lepak draws the officer', () => {
+  const { ns, State, S } = fresh();
+  const drain = (rep) => { const s = calmShift(ns, { seed: 5 }); s.rep = rep; S.updateTier(s); return { drain: S.patienceDrain(s), tier: S.tierOf(s) }; };
+  const [a, b, c, d] = [drain(55), drain(65), drain(80), drain(95)];
+  assert.ok(a.drain > b.drain && b.drain > c.drain && c.drain > d.drain, 'every tier lowers the patience drain');
+  assert.equal(a.tier.tipSen, 0);
+  assert.ok(c.tier.tipSen > 0 && d.tier.tipSen > c.tier.tipSen);
+  assert.ok(d.tier.riskDrift > 0 && c.tier.riskDrift === 0, 'only Port Lepak raises inspection risk each night');
+
+  // duit kopi: over many customers a Port Lepak shop earns some, a plain shop none
+  const tips = (rep) => {
+    const s = calmShift(ns, { seed: 13 });
+    s.rep = rep; S.updateTier(s);
+    for (let i = 0; i < 40; i++) {
+      for (const p of s.pcs) { p.status = 'free'; p.customerId = null; p.fault = null; p.issue = null; }
+      const cust = addWaiting(ns, s, 'student', 60);
+      State.select(s, { kind: 'customer', id: cust.id });
+      State.perform(s, 'duration', cust.id, 60);
+      State.select(s, { kind: 'pc', id: 1 });
+      s.customers = [];
+    }
+    return s.shiftStats.tips;
+  };
+  assert.equal(tips(55), 0);
+  assert.ok(tips(95) > 0, 'Port Lepak customers tip');
+});
+
+test('End-of-day recap: a report carries up to five highlights built from what really happened', () => {
+  const { ns, State, S } = fresh();
+  const s = calmShift(ns, { seed: 41, day: 3 });
+  s.perks.push('generator');
+  s.cash = 9000;
+  seat(ns, s, { type: 'rm1', requested: 30, minutes: 30, pcId: 1 });
+  assert.ok(s.shiftStats.bestSale && s.shiftStats.bestSale.type === 'rm1');
+  State.startEvent(s, 'blackout');
+  State.breakPc(s, s.pcs[1], null, { kind: 'bsod' });
+  State.breakPc(s, s.pcs[1], null, { kind: 'glitch' });
+  s.rep = 62; S.updateTier(s);
+  run(ns, s, ns.CFG.SHIFT + 5);
+  const r = s.lastReport;
+  assert.ok(Array.isArray(r.recap) && r.recap.length > 0 && r.recap.length <= 5);
+  const titles = r.recap.map((x) => x.title).join('|');
+  assert.match(titles, /Naik taraf: Kedai Best/, 'tier changes show up');
+  assert.match(titles, /Generator/, 'the generator is mentioned');
+  assert.ok(r.recap.every((x) => x.icon && x.title && x.text), 'every highlight is complete');
+  assert.equal(r.tier, 'best');
+});
+
+test('Last saved: the save remembers when it was written and survives a reload; a blocked store is reported', () => {
+  const storage = makeStorage();
+  const { State } = fresh({ storage });
+  assert.equal(State.saveInfo().at, 0, 'nothing saved yet');
+  const s = State.create(3);
+  const t0 = Date.now();
+  assert.ok(State.save(s));
+  const info = State.saveInfo();
+  assert.ok(info.at >= t0 && info.at <= Date.now() && !info.failed);
+
+  // a second page load reads the time back from the stored envelope
+  const again = loadGame({ storage });
+  assert.ok(Math.abs(again.ns.State.saveInfo().at - info.at) < 5);
+
+  // storage that refuses writes
+  const blocked = loadGame({ storage: { getItem: () => null, setItem: () => { throw new Error('quota'); }, removeItem: () => {} } });
+  assert.equal(blocked.ns.State.save(blocked.ns.State.create(1)), false);
+  assert.equal(blocked.ns.State.saveInfo().failed, true);
+});
+
+test('Old saves load: tiers are worked out from reputation and new recap counters are filled in', () => {
+  const { State } = fresh();
+  const old = plain(State.create(8));
+  old.rep = 78; delete old.repTier;
+  old.shiftStats = { served: 3 }; // as saved before the recap existed
+  const s = State.migrate(old);
+  assert.equal(s.repTier, 'popular');
+  assert.equal(s.shiftStats.served, 3);
+  assert.equal(s.shiftStats.hourly.length, 12);
+  assert.deepEqual(plain(s.shiftStats.pcFaults), {});
+});
+
+test('Balance bot: every perk is in its shopping list (a missing one would sort to the front and skew every simulation)', () => {
+  const { ns } = fresh();
+  const missing = ns.PERKS.map((p) => p.id).filter((id) => !PERK_PRIORITY.includes(id));
+  assert.deepEqual(plain(missing), [], 'add new perks to PERK_PRIORITY in tests/bot.mjs');
+});
+
+/* ------------------------------------------------------------------ the assistant */
+/** A calm day-15+ shift with the assistant already hired. */
+function asstShift(ns, opts = {}) {
+  const s = calmShift(ns, { seed: 77, day: 16, ...opts });
+  s.assistant = { since: 15, x: ns.ROOM.assistantHome.x, y: ns.ROOM.assistantHome.y, facing: 0, auto: true, mc: null, mcBlock: -1, mcDays: [], task: null, working: false, idle: 0, jobs: 0 };
+  s.cash = 5000;
+  return s;
+}
+
+test('Assistant: unlocks on day 15, costs a one-off fee, can be hired only once, only from the prep screen', () => {
+  const { ns, State, S } = fresh();
+  const s = State.create(3);
+  s.phase = 'prep'; s.cash = 20000;
+  s.day = 14;
+  assert.equal(State.canHireAssistant(s), false, 'locked before day 15');
+  assert.equal(State.hireAssistant(s).ok, false);
+  s.day = 15;
+  assert.equal(State.canHireAssistant(s), true);
+  s.cash = 1000;
+  assert.equal(State.hireAssistant(s).ok, false, 'too poor');
+  s.cash = 20000;
+  s.phase = 'active';
+  assert.equal(State.hireAssistant(s).ok, false, 'only before a shift');
+  s.phase = 'prep';
+  assert.ok(State.hireAssistant(s).ok);
+  assert.equal(s.cash, 20000 - ns.CFG.ASSISTANT.hireFee);
+  assert.equal(S.breakdown(s).expenses, ns.CFG.ASSISTANT.hireFee, 'the hire fee is belanja');
+  assert.equal(State.hireAssistant(s).ok, false, 'no second helper — and no way to let them go');
+  assert.equal(State.canHireAssistant(s), false);
+});
+
+test('Assistant: the wage is a monthly bill paid with the rent, whether or not they were sick', () => {
+  const { ns, State, S } = fresh();
+  const s = calmShift(ns, { seed: 9, day: 30 });
+  s.cash = 100000;
+  const without = State.monthlyBills(s);
+  assert.equal(without.assistant, 0);
+  s.assistant = asstShift(ns).assistant;
+  s.assistant.mc = { reason: 'demam' };
+  const bills = State.monthlyBills(s);
+  assert.equal(bills.assistant, ns.CFG.ASSISTANT.wage);
+  assert.equal(bills.total, without.total + ns.CFG.ASSISTANT.wage);
+  s.dayGoal = 1;
+  S.record(s, 'rental', 99999, 'test');
+  run(ns, s, ns.CFG.SHIFT + 5);
+  const wage = s.shiftLedger.find((e) => e.kind === 'wage');
+  assert.ok(wage && wage.amount === -ns.CFG.ASSISTANT.wage && wage.cat === 'bill', 'wage booked as a bill on day 30');
+  assert.equal(s.lastReport.bills.assistant, ns.CFG.ASSISTANT.wage);
+});
+
+test('Assistant: mops a spill by themselves, for free, without slowing Abang down', () => {
+  const { ns, State, S } = fresh();
+  const s = asstShift(ns);
+  const cash = s.cash;
+  assert.ok(State.startEvent(s, 'spill'));
+  const ev = s.worldEvents[0];
+  run(ns, s, 0.2);
+  assert.ok(s.assistant.task, 'they took the job on their own');
+  assert.equal(s.assistant.task.kind, 'spill');
+  assert.equal(State.taskList(s).length, 0, 'Abang was not involved');
+  run(ns, s, 14, 0.05, () => {});
+  assert.equal(State.eventById(s, ev.id), undefined, 'the puddle is gone');
+  assert.equal(s.cash, cash, 'free');
+  assert.equal(s.cleanupSlow, 0, 'Abang is not slowed');
+  assert.equal(s.shiftStats.assistantJobs, 1);
+  assert.equal(s.assistant.task, null);
+});
+
+test('Assistant: replaces the fuse after a blackout (the fuse itself costs RM8), but not when broke or when it is nearly over', () => {
+  const { ns, State, S } = fresh();
+  const s = asstShift(ns);
+  assert.ok(State.startEvent(s, 'blackout'));
+  run(ns, s, 25);
+  assert.equal(s.powerOutage, 0, 'power came back well before the 20 seconds ran out');
+  assert.equal(s.shiftStats.assistantJobs, 1);
+  assert.equal(S.breakdown(s).expenses, 800, 'RM8 for the fuse');
+
+  const broke = asstShift(ns);
+  broke.cash = 300;
+  State.startEvent(broke, 'blackout');
+  run(ns, broke, 3);
+  assert.equal(broke.assistant.task, null, 'cannot buy a fuse with RM3');
+
+  const gen = asstShift(ns);
+  gen.perks.push('generator');
+  State.startEvent(gen, 'blackout');
+  run(ns, gen, 0.5);
+  assert.equal(gen.assistant.task, null, 'with a generator the blackout is over before they could get there');
+});
+
+test('Assistant: auto can be switched off, and then they only go when sent; Abang and the assistant never take the same job', () => {
+  const { ns, State } = fresh();
+  const s = asstShift(ns);
+  State.assistantAuto(s);
+  assert.equal(s.assistant.auto, false);
+  State.startEvent(s, 'spill');
+  const ev = s.worldEvents[0];
+  run(ns, s, 3);
+  assert.equal(s.assistant.task, null, 'auto is off: they wait for orders');
+  const opt = State.options(s, { kind: 'event', id: ev.id }).find((o) => o.act === 'asstgo');
+  assert.ok(opt && !opt.disabled, 'the spill menu offers Suruh Pembantu');
+  assert.ok(State.perform(s, 'asstgo', ev.id).ok);
+  assert.ok(s.assistant.task);
+  assert.equal(State.perform(s, 'event', ev.id, 'mop').ok, false, 'Abang is told the helper has it');
+  assert.equal(State.perform(s, 'asstgo', ev.id).ok, false, 'already busy');
+
+  // the other way round: Abang first, the assistant leaves it alone
+  const t = asstShift(ns);
+  State.startEvent(t, 'spill');
+  const ev2 = t.worldEvents[0];
+  t.assistant.auto = false;
+  assert.ok(State.perform(t, 'event', ev2.id, 'mop').ok);
+  const again = State.options(t, { kind: 'event', id: ev2.id }).find((o) => o.act === 'asstgo');
+  assert.equal(again.disabled, true, 'no point sending the helper to what Abang is already doing');
+});
+
+test('Assistant: the pop-up on a spill only mentions the assistant once one is hired; tapping them shows Auto and "Apa boleh buat?"', () => {
+  const { ns, State } = fresh();
+  const s = calmShift(ns, { seed: 4, day: 16 });
+  State.startEvent(s, 'spill');
+  const id = s.worldEvents[0].id;
+  assert.equal(State.options(s, { kind: 'event', id }).some((o) => o.act === 'asstgo'), false, 'no assistant, no button');
+  s.assistant = asstShift(ns).assistant;
+  assert.equal(State.options(s, { kind: 'event', id }).some((o) => o.act === 'asstgo'), true);
+  assert.ok(State.select(s, { kind: 'assistant', id: 1 }).ok);
+  assert.deepEqual(plain(State.options(s, { kind: 'assistant', id: 1 }).map((o) => o.act)), ['asstauto', 'asstinfo']);
+  s.assistant.mc = { reason: 'demam' };
+  assert.equal(State.select(s, { kind: 'assistant', id: 1 }).ok, false, 'cannot tap someone who is not in');
+  const opt = State.options(s, { kind: 'event', id }).find((o) => o.act === 'asstgo');
+  assert.equal(opt.disabled, true);
+  assert.match(opt.sub, /MC/);
+});
+
+test('Assistant: sick leave — one day in every block of 10 (sometimes two), never two days running, never before the day after hiring', () => {
+  const { ns, State } = fresh();
+  const s = State.create(2024);
+  s.day = 15; s.phase = 'prep'; s.cash = 99999;
+  State.hireAssistant(s);
+  const sick = [];
+  const reasons = new Set();
+  for (let day = 16; day <= 135; day++) {
+    s.day = day;
+    State.rollSickLeave(s);
+    if (s.assistant.mc) { sick.push(day); reasons.add(s.assistant.mc.reason); }
+  }
+  for (let block = 1; block <= 12; block++) {
+    const inBlock = sick.filter((d) => d > block * 10 && d <= block * 10 + 10);
+    assert.ok(inBlock.length >= 1 && inBlock.length <= 2, `block ${block} (days ${block * 10 + 1}-${block * 10 + 10}) has ${inBlock.length} sick day(s)`);
+  }
+  assert.ok(sick.every((d, i) => i === 0 || d - sick[i - 1] > 1), 'never two days running');
+  assert.ok(sick.every((d) => d > 15), 'not on the day they were hired');
+  assert.ok(sick.length >= 12 && sick.length <= 24, `over 12 blocks that is ${sick.length} days off, a light sprinkle`);
+  assert.ok(reasons.size > 2, 'the excuses vary');
+});
+
+test('Assistant: on MC they are not in the shop and do nothing; a retried day repeats the same MC; the report mentions it', () => {
+  const { ns, State, S } = fresh();
+  const s = asstShift(ns);
+  s.assistant.mc = { reason: 'demam panas 🤒' };
+  State.resetAssistantForShift(s);
+  State.startEvent(s, 'spill');
+  run(ns, s, 20);
+  assert.equal(s.shiftStats.assistantJobs, 0, 'nobody mopped');
+  assert.equal(s.assistant.task, null);
+  assert.equal(State.assistantPresent(s), false);
+  run(ns, s, ns.CFG.SHIFT);
+  const titles = (s.lastReport.recap || []).map((r) => r.title + r.text).join('|');
+  assert.match(titles, /MC/, 'the recap says they were out');
+
+  // the snapshot taken when the day started keeps the plan, so a retry sees the same day
+  const t = calmShift(ns, { seed: 12, day: 16 });
+  t.assistant = asstShift(ns).assistant;
+  t.assistant.mc = { reason: 'sakit gigi 🦷' };
+  const snap = JSON.parse(State.snapshotDay(t));
+  assert.equal(snap.assistant.mc.reason, 'sakit gigi 🦷');
+});
+
+test('Assistant: saves and old saves — the helper survives a reload, and a save from before them has none', () => {
+  const { ns, State } = fresh();
+  const s = asstShift(ns);
+  s.assistant.mcDays = [18]; s.assistant.mcBlock = 1; s.assistant.auto = false;
+  const back = State.migrate(plain(s));
+  assert.equal(back.assistant.auto, false);
+  assert.deepEqual(plain(back.assistant.mcDays), [18]);
+  const old = plain(State.create(5));
+  delete old.assistant;
+  assert.equal(State.migrate(old).assistant, null);
 });

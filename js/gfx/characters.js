@@ -31,6 +31,8 @@
 
     /** Colours, hair and headgear for a person. */
     function lookFor(e, kind) {
+      // the assistant: a sweet, idol-ish look (sleek long hair with straight bangs, a ribbon and a star clip, a pink apron)
+      if (e.assistant) return { skin: SKINS[0], hair: '#15121c', style: 'idol', pants: '#b9a4ff', shirt: '#f4ecff', scale: 0.9, gear: 'assistant', shoe: '#ff9ac8', female: true };
       if (kind === 'player') return { skin: SKINS[1], hair: '#17151f', style: 'cap', pants: '#3b4b6b', shirt: '#2fc4b2', scale: 0.98, gear: 'abang', shoe: '#ffffff' };
       if (kind === 'officer') return { skin: SKINS[2], hair: '#15151c', style: 'officer', pants: '#27325c', shirt: '#4f86ee', scale: 0.96, gear: 'officer', shoe: '#17151f' };
       const type = TYPES.find((t) => t.id === e.type) || TYPES[0];
@@ -59,6 +61,13 @@
         case 'abang':
           ball(0, 0.34, 0.2, 0.26, 0.33, 0.14, '#fff3d1');
           ball(0.14, 0.52, 0.31, 0.07, 0.045, 0.02, '#ffcf3d', 0, 0, true);
+          break;
+        case 'assistant': // pink apron with a heart, a little gold badge
+          ball(0, 0.34, 0.2, 0.26, 0.33, 0.14, '#ffc9e3');
+          ball(-0.045, 0.47, 0.3, 0.05, 0.045, 0.02, '#ff4d8d', 0, 0.3, true);
+          ball(0.045, 0.47, 0.3, 0.05, 0.045, 0.02, '#ff4d8d', 0, 0.3, true);
+          ball(0, 0.43, 0.3, 0.05, 0.05, 0.02, '#ff4d8d', 0, 0.3, true);
+          ball(0.17, 0.56, 0.3, 0.05, 0.035, 0.02, '#ffd23f', 0, 0.5, true);
           break;
         case 'officer':
           ball(-0.13, 0.52, 0.26, 0.05, 0.05, 0.03, '#ffd23f', 0, 0.4, true);
@@ -103,6 +112,18 @@
         case 'long':
           ball(0, 0.15, -0.07, 0.44, 0.35, 0.42, look.hair);
           ball(0, -0.17, -0.24, 0.4, 0.55, 0.26, look.hair);
+          break;
+        case 'idol': // long glossy hair, straight bangs, face-framing locks, a pink ribbon and a star clip
+          ball(0, 0.15, -0.07, 0.45, 0.36, 0.43, look.hair);
+          ball(0, -0.2, -0.24, 0.42, 0.58, 0.27, look.hair);
+          blk(0, 0.2, 0.17, 0.66, 0.14, 0.22, look.hair, 0.06);
+          for (const side of [-1, 1]) ball(side * 0.41, -0.16, 0.08, 0.075, 0.3, 0.11, look.hair);
+          ball(0.2, 0.3, 0.22, 0.05, 0.05, 0.03, '#ffffff', 0, 0.5, true); // shine on the hair
+          ball(0.33, 0.3, 0.1, 0.12, 0.09, 0.06, '#ff7ac6');
+          ball(0.5, 0.3, 0.1, 0.12, 0.09, 0.06, '#ff7ac6');
+          ball(0.415, 0.3, 0.12, 0.05, 0.05, 0.05, '#ff4d8d');
+          ball(-0.3, 0.3, 0.2, 0.07, 0.07, 0.03, '#ffe14d', 0, 0.8, true);
+          ball(-0.38, 0.22, 0.17, 0.04, 0.04, 0.03, '#ffffff', 0, 0.8, true);
           break;
         case 'songkok':
           ball(0, 0.12, -0.06, 0.42, 0.3, 0.4, look.hair);
@@ -228,7 +249,7 @@
         st.rotateZ(-side * P.brow * 0.55 + side * 0.04);
         blk(-0.07, 0, 0, 0.14, 0.035, 0.03, look.hair === '#c9c4e8' ? '#8a86a8' : look.style === 'hood' ? '#2a2150' : look.hair, 0.015, 0);
         st.pop();
-        ball(side * 0.255, -0.09, 0.28, 0.07, 0.045, 0.03, '#ff9aa8', 0, 0.15, true);
+        ball(side * 0.255, -0.09, 0.28, look.gear === 'assistant' ? 0.09 : 0.07, look.gear === 'assistant' ? 0.055 : 0.045, 0.03, look.gear === 'assistant' ? '#ff7fa0' : '#ff9aa8', 0, 0.15, true);
       }
       ball(0, -0.04, 0.378, 0.04, 0.035, 0.03, E.mixColor(skin, '#8a5a3a', 0.2), 0, 0, true);
       st.push();
@@ -255,14 +276,15 @@
         if (other) return point(other.x, other.y);
       }
       if ((mode.state === 'INSPECT' || mode.react === 'annoyed') && e.lookAt && !(e.sitBlend > 0.5)) return point(e.lookAt.x, e.lookAt.y);
-      if (kind === 'player' && !e.working && Math.hypot(e.x - ns.ROOM.home.x, e.y - ns.ROOM.home.y) < 0.2) return Math.PI / 2;
+      const home = e.assistant ? ns.ROOM.assistantHome : ns.ROOM.home;
+      if (kind === 'player' && !e.working && Math.hypot(e.x - home.x, e.y - home.y) < 0.2) return Math.PI / 2;
       if (e.status === 'waiting') return -1.2;
       return null;
     }
 
     /* ----------------------------------------------------------------- person */
     function drawPerson(s, e, kind, dt) {
-      const key = kind === 'player' ? 'abang' : e.id;
+      const key = e.assistant ? 'assistant' : kind === 'player' ? 'abang' : e.id;
       const P = poseOf(key);
       P.seen = R.t;
       const look = lookFor(e, kind);
@@ -295,7 +317,7 @@
       }
 
       // the animation state machine
-      const taskKind = kind === 'player' ? s.activeTask?.kind : null;
+      const taskKind = kind === 'player' ? (e.assistant ? 'event' : s.activeTask?.kind) : null;
       const mode = Anim.stateOf(e, kind, { s, turning, task: taskKind, leaving: kind === 'officer' && s.officer?.stage === 'leave' });
       const tgt = Anim.pose(mode, { mi, phase, t, seed, kind, sit });
       P.state = mode.state;
@@ -379,6 +401,10 @@
         cyl(0, -0.25, 0, 0.073, 0.26, look.skin, 0.9);
         ball(0, -0.3, 0, 0.095, 0.095, 0.095, look.skin);
         if (look.gear === 'officer' && side < 0) { blk(-0.02, -0.34, 0.12, 0.34, 0.04, 0.44, '#8a5a3a', 0.02); blk(-0.02, -0.325, 0.12, 0.28, 0.02, 0.38, '#ffffff', 0.01, 0); }
+        if (e.assistant && e.working && side > 0 && e.workKind === 'mop') { // a mop: stick, and a fluffy white head on the floor
+          blk(0, -1.0, 0.16, 0.05, 1.05, 0.05, '#c9a066', 0.02, 0);
+          blk(0, -1.02, 0.16, 0.3, 0.07, 0.2, '#ffffff', 0.04);
+        }
         if (kind === 'player' && e.working && side > 0 && mode.state === 'TYPE') { blk(0, -0.45, 0.04, 0.07, 0.22, 0.07, '#9aa3bd', 0.03); blk(0, -0.52, 0.04, 0.2, 0.1, 0.1, G.PAL.coral, 0.04); }
         st.pop();
       }
@@ -398,7 +424,7 @@
       const headY = (lerp(0.8, 0.5, sit) + 1.45) * k + 0.25;
       const head = project(e.x, headY, e.y);
       const body = project(e.x, 0.95 * k, e.y);
-      R.anchors.people.push({ kind, id: key, x: head.x, y: head.y, bx: body.x, by: body.y, status: e.status, eventId: e.eventId, anim: mode.state, react: mode.react || null, h: 1.75 * k });
+      R.anchors.people.push({ kind: e.assistant ? 'assistant' : kind, id: key, x: head.x, y: head.y, bx: body.x, by: body.y, status: e.status, eventId: e.eventId, anim: mode.state, react: mode.react || null, h: 1.75 * k });
     }
 
     return { drawPerson, lookFor };

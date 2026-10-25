@@ -74,6 +74,9 @@
     counter: { x: 1.45, y0: 8.0, y1: 11.7, depth: 0.95 },
     hatchY: 7.45, // gap above the counter that Abang uses to walk out (lines up with the front aisle)
     home: { x: 0.62, y: 10.9 },
+    // The hired assistant waits in the corner between the water dispenser and the magazine rack, next to a mop bucket.
+    assistantHome: { x: 1.35, y: 5.6 },
+    assistantBucket: { x: 0.62, y: 5.5 },
     // Fuse box on the left wall between the door and the water dispenser.
     fuse: { x: 0.12, y: 1.45, z: 2.75, spot: { x: 1.05, y: 2.75 } },
     // Left-wall furniture that took the counter's old place
@@ -107,6 +110,8 @@
 
   /* ---------- game balance ---------- */
   const CFG = {
+    // Game version: Alpha 0.13 (see CHANGELOG.md). The keys below and VERSION are the SAVE format, not the game version: it is unchanged
+    // since Alpha 0.12 (new fields are filled in when an older save loads), so saves carry over. Only bump them when the format breaks.
     SAVE: 'abangcc2007_alpha_v12',
     SAVE_BAK: 'abangcc2007_alpha_v12_bak',
     SAVE_V11: 'abangcc2007_alpha_v11',
@@ -129,6 +134,12 @@
     SCHOOL_HOURS_END: 14.5, // 2:30 PM — before this, uniformed students are "truant"
     PC_HEALTH: [94, 91, 88, 91, 91, 91, 100, 100, 100, 100],
     LOAN: { amount: 8000, below: 2500 },
+    UPGRADE_CREDIT: 0.5, // trading in the previous unit of a perk line takes this share of its price off the upgrade
+    GENERATOR: { outage: 5, fuel: 300 }, // seconds a blackout lasts with a generator · sen of diesel per start
+    // The assistant: unlocks on `unlockDay`; `hireFee` once, then `wage` every month with the rent (sen, never refunded, cannot be dismissed).
+    // speed in world units / second (Abang is 4.8) · workScale = how much longer than Abang they take.
+    // Sick leave (MC): in every block of `mcBlock` days one random day, and with chance `mcExtraChance` a second one, never two days running.
+    ASSISTANT: { unlockDay: 15, hireFee: 5000, wage: 6000, speed: 3.6, workScale: 1.5, mcBlock: 10, mcExtraChance: 0.25, name: 'Rina' },
     PREP_MESSAGE: [
       'HARI PERTAMA JAGA CC',
       'RAMAI BUDAK LEPAS SEKOLAH',
@@ -176,9 +187,12 @@
     specials: { school: { fromDay: 3, at: [6, 18] }, slots: [{ fromDay: 2, at: [41, 55] }, { fromDay: 5, at: [83, 95] }] },
     inspection: { window: [22, 85], latest: CFG.SHIFT - 16, summonFromDay: 5, summonRisk: 72, summonChance: 0.025, earlierPerRisk: 0.2 },
     // Daily target (RM): day 1 = `start`, then it grows by `perDay` for every day up to and including `untilDay`:
-    // +RM3 a day through day 10 (30, 33, 36 … 57), +RM4 a day through day 20, +RM5 a day after that. Same on every preset.
+    // +RM2 a day through day 20 (30, 32, 34 … 68), then +RM1 a day (RM78 on day 30, RM88 on day 40). Same on every preset.
+    // Eased from +3/+4/+5 (RM57 on day 10, RM97 on day 20, RM158 on day 40) after players found the later days too hard: daily income
+    // levels off around RM100-120, so the old curve was out of reach by day ~29. With this one the bot simulation (node tests/sim.mjs 42 4)
+    // gets a perfect player and a good one through day 40. Tune it here.
     // Upgrades (extra PCs, perks) stay exclusive: nothing is handed out to keep up with the target.
-    goal: { start: 30, steps: [{ untilDay: 10, perDay: 3 }, { untilDay: 20, perDay: 4 }, { untilDay: Infinity, perDay: 5 }] },
+    goal: { start: 30, steps: [{ untilDay: 20, perDay: 2 }, { untilDay: Infinity, perDay: 1 }] },
     peaks: [{ fromDay: 1, start: [36, 46], len: [17, 23], label: 'LEPAS SEKOLAH' }, { fromDay: 4, start: [82, 92], len: [15, 22], label: 'MALAM CHAOS', endCap: 116 }],
   };
 
@@ -193,6 +207,9 @@
     noconn: { icon: '📡', label: 'Sambungan internet putus', short: 'NO NET', fix: ['reset', 'repair'], auto: 15, autoEnds: 'quit' },
     hardware: { icon: '🔧', label: 'Hardware rosak', short: 'ROSAK', fix: ['repair'], auto: 0, autoEnds: null },
   };
+
+  /** Why the assistant is out on MC, picked at random. */
+  const ASSISTANT_MC = ['demam panas 🤒', 'sakit perut lepas nasi kandar 🍛', 'batuk-batuk 😷', 'sakit gigi 🦷', 'anak buah demam, kena jaga 👶', 'lenguh badan 😴', 'selesema, hidung tersumbat 🤧', 'MC sebab… rasa nak MC 🛌'];
 
   const GAMES = [
     { id: 'puzzle', name: 'Puzzle Mania', genre: 'Casual', online: false },
@@ -216,8 +233,16 @@
       desc: 'Kurangkan kes laman tak sesuai.', downside: 'Langganan harian + kadang-kadang pelanggan merungut laman disekat.', mods: { guilty: -0.35, blockedComplaint: 0.08 } },
     { id: 'router', name: 'Tukar Router', price: 8500, minDay: 3, repeatMax: 2, icon: '📡', weight: 1.5, upkeep: 300,
       desc: 'Bandwidth lebih besar, kurang lag.', downside: 'Kos langganan router dibayar setiap hari (belanja).', mods: { bandwidth: 3 } },
-    { id: 'aircond', name: 'Aircond Kedai', price: 11000, minDay: 3, repeatMax: 1, icon: '❄️', weight: 1, upkeep: 300,
-      desc: 'Pelanggan lebih sabar, PC kurang panas.', downside: 'Kos elektrik aircond dibayar setiap hari (belanja).', mods: { patienceDrain: -0.28, wear: -1, overheat: -0.9 } },
+    // Cooling line: Kipas Siling → Aircond Mudah Alih → Aircond Kedai. Each step replaces the one before it (the old unit is traded in
+    // for half its price off the next one). `line` + `rank` drive the chain, see eligiblePerks() / applyPerk().
+    { id: 'fan', name: 'Kipas Siling', price: 2500, minDay: 2, repeatMax: 1, icon: '🌀', weight: 1.1, upkeep: 50, cheap: true, line: 'cooling', rank: 1,
+      desc: 'Kipas murah: pelanggan sedikit lebih sabar, PC kurang cepat haus.', downside: 'Sejukkan sikit je. Bil elektrik RM0.50 sehari.', mods: { patienceDrain: -0.07, wear: -0.25 } },
+    { id: 'portable', name: 'Aircond Mudah Alih', price: 6500, minDay: 3, repeatMax: 1, icon: '🧊', weight: 1.1, upkeep: 150, line: 'cooling', rank: 2,
+      desc: 'Naik taraf kipas: PC jauh kurang panas, pelanggan lebih sabar.', downside: 'Tangki air menitis, air tumpah lebih kerap. RM1.50 sehari.', mods: { patienceDrain: -0.17, wear: -0.55, spillBias: 1 } },
+    { id: 'aircond', name: 'Aircond Kedai', price: 11000, minDay: 4, repeatMax: 1, icon: '❄️', weight: 1, upkeep: 300, line: 'cooling', rank: 3,
+      desc: 'Naik taraf penuh: pelanggan lebih sabar, PC hampir tak panas lagi.', downside: 'Kos elektrik aircond dibayar setiap hari (belanja).', mods: { patienceDrain: -0.28, wear: -1, overheat: -0.9 } },
+    { id: 'generator', name: 'Generator', price: 7500, minDay: 3, repeatMax: 1, icon: '🔌', weight: 1.1, upkeep: 250,
+      desc: 'Blackout cuma 5 saat: generator hidup sendiri dan sewaan terus jalan.', downside: 'Minyak RM3 setiap kali hidup + servis harian. Bising!', mods: {} },
     { id: 'runner', name: 'Abang Laju', price: 7000, minDay: 3, repeatMax: 2, icon: '🏃', weight: 1.2, upkeep: 200,
       desc: 'Abang bergerak dan bertindak lebih pantas.', downside: 'Belanja air tenaga setiap hari.', mods: { taskSpeed: 0.15 } },
     { id: 'printer', name: 'Printer Corner', price: 9500, minDay: 4, repeatMax: 1, icon: '🖨️', weight: 1, upkeep: 100,
@@ -227,6 +252,26 @@
     { id: 'poster', name: 'Poster Promosi', price: 1500, minDay: 2, repeatMax: 3, icon: '📣', weight: 0.6, upkeep: 0, cheap: true,
       desc: 'Poster murah: lebih ramai pelanggan datang.', downside: 'Menarik lebih ramai budak RM1 yang cepat bosan.', mods: { spawn: 0.08, kidSpawn: 0.3 } },
   ];
+
+
+  /* ---------- reputation tiers ----------
+     Reputation (0-100) is shown as a shop rank. A tier is entered at `min` and only left again 3 points below it, so the rank does not
+     flicker. `patienceDrain` and `spawn` are added to the same sums the perks use; `tip` is the chance that a customer who booked
+     the right length leaves a little extra (`tipSen`); `lepak` multiplies how often the night crowd turns up; `riskDrift` is added to the
+     shop's inspection risk after every shift (the price of being the hangout spot). */
+  const TIERS = [
+    { id: 'biasa', name: 'Kedai Biasa', short: 'Biasa', emoji: '🏪', min: 0, perks: 'Belum ada kelebihan. Jaga reputasi untuk naik taraf.', patienceDrain: 0, spawn: 0, tip: 0, tipSen: 0, lepak: 1, riskDrift: 0 },
+    { id: 'best', name: 'Kedai Best', short: 'Best', emoji: '✨', min: 60, perks: 'Pelanggan 4% lebih sabar.', patienceDrain: -0.04, spawn: 0, tip: 0, tipSen: 0, lepak: 1, riskDrift: 0 },
+    { id: 'popular', name: 'Kedai Popular', short: 'Popular', emoji: '🔥', min: 75, perks: 'Pelanggan 8% lebih sabar, lebih ramai datang, kadang-kadang ada duit kopi RM0.20.', patienceDrain: -0.08, spawn: 0.04, tip: 0.35, tipSen: 20, lepak: 1, riskDrift: 0 },
+    { id: 'lepak', name: 'Port Lepak', short: 'Port Lepak', emoji: '👑', min: 90, perks: 'Pelanggan 12% lebih sabar, lagi ramai, duit kopi RM0.30. Tapi geng lepak malam makin kerap dan pegawai makin berminat.', patienceDrain: -0.12, spawn: 0.08, tip: 0.45, tipSen: 30, lepak: 1.8, riskDrift: 2 },
+  ];
+  const TIER_HOLD = 3; // points below `min` before a tier is lost
+  /** Tier index for a reputation, given the tier index held now (promote at `min`, demote only 3 points under it). */
+  function tierIndexFor(rep, current = 0) {
+    let i = 0;
+    for (let k = 0; k < TIERS.length; k++) if (rep >= TIERS[k].min) i = k;
+    return i >= current ? i : rep >= TIERS[current].min - TIER_HOLD ? current : i;
+  }
 
   /* ---------- customer archetypes ----------
      patience     seconds of waiting this person tolerates at normal pace
@@ -322,5 +367,5 @@
     nomouse: { icon: '🖱️', title: 'Mouse hilang', hint: 'Tak boleh guna tanpa mouse.', time: 13 },
   };
 
-  Object.assign(ns, { CFG, RENTAL, DIRECTOR, ROOM, FAULTS, GAMES, PERKS, TYPES, GAITS, gaitFor, EVENTS, ISSUES, SPECIALS, priceForMinutes, sessionSecondsFor, clamp, lerp, damp, byId, fmtMoney, clock, dayPart, shortestAngle });
+  Object.assign(ns, { CFG, RENTAL, DIRECTOR, ROOM, FAULTS, GAMES, ASSISTANT_MC, PERKS, TIERS, tierIndexFor, TYPES, GAITS, gaitFor, EVENTS, ISSUES, SPECIALS, priceForMinutes, sessionSecondsFor, clamp, lerp, damp, byId, fmtMoney, clock, dayPart, shortestAngle });
 })((window.ABCC = window.ABCC || {}));

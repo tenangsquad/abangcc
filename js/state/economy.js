@@ -4,7 +4,7 @@
 (function (ns) {
   'use strict';
 
-  const { CFG, RENTAL, DIRECTOR, PERKS, GAMES, byId, priceForMinutes } = ns;
+  const { CFG, RENTAL, DIRECTOR, PERKS, GAMES, TIERS, tierIndexFor, byId, priceForMinutes } = ns;
   const S = ns.S;
 
   /* ---------- perks as modifiers ---------- */
@@ -25,6 +25,51 @@
     return mods;
   }
   const mod = (s, key) => perkMods(s)[key] || 0;
+
+  /** 0 = nothing, 1 = Kipas Siling, 2 = Aircond Mudah Alih, 3 = Aircond Kedai (the highest cooling unit the shop owns). */
+  function coolLevel(s) {
+    let level = 0;
+    for (const id of s.perks || []) level = Math.max(level, perkDef(id)?.line === 'cooling' ? perkDef(id).rank : 0);
+    return level;
+  }
+  /** How much a cooling level scales the chance of an overheating PC, and the patience it adds to every new customer. */
+  const OVERHEAT_BY_COOL = [1, 0.7, 0.35, 0.1];
+  const PATIENCE_BY_COOL = [0, 2, 4, 6];
+  const overheatMult = (s) => OVERHEAT_BY_COOL[coolLevel(s)];
+  const coolPatience = (s) => PATIENCE_BY_COOL[coolLevel(s)];
+
+  /** What a perk costs this shop right now: upgrading a perk line trades in the previous unit for half its price. */
+  function perkPrice(s, id) {
+    const def = perkDef(id);
+    if (!def) return 0;
+    return def.price - tradeIn(s, def);
+  }
+  /** The unit of the same line this perk would replace (or null) and the credit it brings. */
+  function replacedBy(s, def) {
+    return def?.line ? (s.perks || []).map(perkDef).find((p) => p && p.line === def.line && p.rank < def.rank) || null : null;
+  }
+  const tradeIn = (s, def) => {
+    const old = replacedBy(s, def);
+    return old ? Math.round((old.price * CFG.UPGRADE_CREDIT) / 50) * 50 : 0;
+  };
+
+  /* ---------- reputation tiers ---------- */
+  const tierIndex = (s) => clampTier(TIERS.findIndex((t) => t.id === s.repTier));
+  const clampTier = (i) => (i < 0 ? 0 : i);
+  const tierOf = (s) => TIERS[tierIndex(s)];
+  /** Called every tick: moves the shop to the tier its reputation now deserves. Returns the new tier when it changed. */
+  function updateTier(s) {
+    const now = tierIndex(s);
+    const next = tierIndexFor(s.rep, now);
+    if (next === now) return null;
+    s.repTier = TIERS[next].id;
+    const up = next > now;
+    S.log(s, up ? `${TIERS[next].emoji} Taraf naik: ${TIERS[next].name}!` : `📉 Taraf turun: ${TIERS[next].name}.`);
+    S.emit('tier', { id: TIERS[next].id, up });
+    if (ns.Meta?.recordTier) ns.Meta.recordTier(next);
+    (s.shiftStats.tierMoves = s.shiftStats.tierMoves || []).push({ id: TIERS[next].id, up });
+    return TIERS[next];
+  }
   const taskSpeedMult = (s) => 1 + mod(s, 'taskSpeed');
 
   /* ---------- the difficulty director ---------- */
@@ -43,7 +88,7 @@
     const p = pressure(s) + (s.peakActive ? D.peakBonus : 0) + extraPcs(s) * D.perExtraPc;
     const base = s.peakActive ? D.peakEvery : D.normalEvery;
     const jitter = D.jitter[0] + S.random(s) * (D.jitter[1] - D.jitter[0]);
-    const popularity = Math.max(0.6, 1 + mod(s, 'spawn') + (s.rep - 55) * D.repEffect); // reputation brings (or scares off) customers
+    const popularity = Math.max(0.6, 1 + mod(s, 'spawn') + tierOf(s).spawn + (s.rep - 55) * D.repEffect); // reputation brings (or scares off) customers
     return (base * jitter) / (Math.max(D.minPressure, p * D.pressureScale) * popularity);
   }
 
@@ -54,7 +99,7 @@
     if (s.peakActive) drain *= D.peakMult;
     if (s.day >= D.lateFromDay) drain *= D.lateMult;
     drain *= 1 + extraPcs(s) * D.perExtraPc;
-    drain *= Math.max(0.3, 1 + mod(s, 'patienceDrain'));
+    drain *= Math.max(0.3, 1 + mod(s, 'patienceDrain') + tierOf(s).patienceDrain);
     drain /= preset(s).patience;
     // professionalism: a well-run shop is a calmer shop (±12 %)
     drain *= 1 - ((s.professionalism - 50) / 50) * 0.12;
@@ -80,7 +125,7 @@
     return base + extra;
   }
 
-  /** Daily revenue target in sen: RM30 on day 1, +RM3 a day through day 10, then +RM4, later +RM5 (see DIRECTOR.goal). */
+  /** Daily revenue target in sen: RM30 on day 1, +RM2 a day through day 20, then +RM1 (see DIRECTOR.goal). */
   function goalFor(s, day = s.day) {
     const G = DIRECTOR.goal;
     let rm = G.start;
@@ -137,7 +182,8 @@
   function monthlyBills(s) {
     const C = CFG.COSTS;
     const electric = C.electric + extraPcs(s) * C.perPcElectric;
-    return { rent: C.rent, electric, internet: C.internet, total: C.rent + electric + C.internet };
+    const assistant = s.assistant ? CFG.ASSISTANT.wage : 0; // paid every month, sick leave or not
+    return { rent: C.rent, electric, internet: C.internet, assistant, total: C.rent + electric + C.internet + assistant };
   }
   /** Daily upkeep of the perks the shop owns (sen) — booked as belanja when it is paid, only if there is any. */
   const perkUpkeep = (s) => (s.perks || []).reduce((sum, id) => sum + (perkDef(id)?.upkeep || 0), 0);
@@ -146,5 +192,5 @@
   const capBandwidth = (s) => 6 + mod(s, 'bandwidth');
   const bandwidth = (s) => s.pcs.reduce((sum, p) => sum + (p.status === 'busy' && byId(GAMES, p.sessionGame)?.online ? 1 : 0), 0);
 
-  Object.assign(S, { perkDef, perkCount, hasPerk, perkOwnedOut, perkMods, mod, taskSpeedMult, preset, extraPcs, pressure, spawnInterval, patienceDrain, troubleInterval, faultChance, goalFor, isTier2, priceFor, priceList, breakdown, shiftTakings, audit, isBillDay, daysToBills, monthlyBills, perkUpkeep, capBandwidth, bandwidth });
+  Object.assign(S, { coolLevel, overheatMult, coolPatience, perkPrice, replacedBy, tierOf, tierIndex, updateTier, perkDef, perkCount, hasPerk, perkOwnedOut, perkMods, mod, taskSpeedMult, preset, extraPcs, pressure, spawnInterval, patienceDrain, troubleInterval, faultChance, goalFor, isTier2, priceFor, priceList, breakdown, shiftTakings, audit, isBillDay, daysToBills, monthlyBills, perkUpkeep, capBandwidth, bandwidth });
 })(window.ABCC);

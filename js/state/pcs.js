@@ -49,13 +49,13 @@
   /** Which kind of fault hits this PC, given its health, cooling and the network. */
   function pickFaultKind(s, p) {
     const online = !!byId(GAMES, p.sessionGame)?.online;
-    const cool = S.hasPerk(s, 'aircond');
+    const cool = S.coolLevel(s);
     const overloaded = S.bandwidth(s) > S.capBandwidth(s);
     const kinds = [
       ['glitch', 3],
       ['freeze', 2],
       ['bsod', 1.2 + clamp((60 - p.health) / 40, 0, 1.5)],
-      ['overheat', cool ? 0.1 : 0.8 + clamp((75 - p.health) / 20, 0, 2.2)],
+      ['overheat', cool >= 3 ? 0.1 : (0.8 + clamp((75 - p.health) / 20, 0, 2.2)) * S.overheatMult(s)],
       ['noconn', online ? 1.4 + (overloaded ? 2.2 : 0) : 0],
       ['hardware', p.health < 45 ? (45 - p.health) / 8 : 0],
     ];
@@ -72,6 +72,7 @@
     p.faultId = (p.faultId || 0) + 1;
     p.autoDone = false;
     s.shiftStats.complaints++;
+    s.shiftStats.pcFaults[p.id] = (s.shiftStats.pcFaults[p.id] || 0) + 1;
     if (!onSeat) {
       s.shiftStats.incidents++;
       s.incidentCount++;
@@ -180,6 +181,7 @@
           restartRefund(s, p, `${c.name} marah dan keluar — PC ${p.id} ${F.short}. Refund 25%.`);
           S.bump(s, 'rep', -3);
           s.shiftStats.walkouts++;
+          S.noteWalkout(s, c, 'fault');
         }
         p.autoDone = true;
         break;
@@ -229,6 +231,7 @@
             S.bump(s, 'rep', -3);
             s.shiftStats.complaints++;
             s.shiftStats.walkouts++;
+            S.noteWalkout(s, c, 'lag');
             continue;
           }
         }

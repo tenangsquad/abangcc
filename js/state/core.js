@@ -58,10 +58,10 @@
      add up to what really happened to the cash. Loans are cash but never sales. */
   const CATEGORY = {
     rental: 'rental',
-    snack: 'other', hero: 'other', promo: 'other', download_tip: 'other', walkin: 'other', tourney: 'other', recovered: 'other', printing: 'other',
+    snack: 'other', hero: 'other', promo: 'other', download_tip: 'other', walkin: 'other', tourney: 'other', recovered: 'other', printing: 'other', tip: 'other',
     refund: 'refund', restart_penalty: 'refund', accusation_refund: 'refund',
     loan: 'loan',
-    rent: 'bill', electric: 'bill', internet: 'bill', // monthly; everything else that costs money is "belanja"
+    rent: 'bill', electric: 'bill', internet: 'bill', wage: 'bill', // monthly; everything else that costs money is "belanja"
   };
   const catOf = (kind) => CATEGORY[kind] || 'expense';
 
@@ -71,7 +71,20 @@
     s.cash += amount;
     const entry = { id: ++s.ledgerSequence, kind, cat: catOf(kind), amount, label };
     s.shiftLedger.push(entry);
+    // the end-of-day recap wants to know when the takings came in: one bucket per game hour (10 real seconds)
+    if (amount > 0 && (entry.cat === 'rental' || entry.cat === 'other') && s.shiftStats?.hourly && s.phase === 'active') {
+      const hour = Math.max(0, Math.min(s.shiftStats.hourly.length - 1, Math.floor(s.elapsed / 10)));
+      s.shiftStats.hourly[hour] += amount;
+    }
     return entry;
+  }
+  /** Count a customer who stormed off, by who they were, for the end-of-day recap. */
+  function noteWalkout(s, c, why) {
+    const st = s.shiftStats;
+    if (!st || !c) return;
+    st.walkByType = st.walkByType || {};
+    st.walkByType[c.type] = (st.walkByType[c.type] || 0) + 1;
+    st.lastWalk = { type: c.type, why };
   }
   /** Idempotent charge/refund: the same key can only ever be booked once per shift (duplicate-click safe). */
   function recordOnce(s, key, kind, amount, label) {
@@ -81,5 +94,5 @@
     return record(s, kind, amount, label);
   }
 
-  ns.S = { emit, drainFx, random, choice, chance, weighted, between, clone, ok, fail, bump, minutesNow, hourNow, log, record, recordOnce, catOf };
+  ns.S = { emit, drainFx, random, choice, chance, weighted, between, clone, ok, fail, bump, minutesNow, hourNow, log, record, recordOnce, catOf, noteWalkout };
 })(window.ABCC);

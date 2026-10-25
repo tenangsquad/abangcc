@@ -6,7 +6,7 @@
 
 Seat the customers · fix the crashing PCs · catch the cheaters · survive the blackout · hit the daily target.
 
-**Alpha 0.12** &nbsp;·&nbsp; 3D cartoon &nbsp;·&nbsp; Plays in your browser &nbsp;·&nbsp; No install &nbsp;·&nbsp; Works on desktop and phone
+**Alpha 0.13** &nbsp;·&nbsp; 3D cartoon &nbsp;·&nbsp; Plays in your browser &nbsp;·&nbsp; No install &nbsp;·&nbsp; Works on desktop and phone
 
 <img src="tests/screenshots/01_scene_afternoon.png" alt="Abang's cyber café in the afternoon" width="760">
 
@@ -16,7 +16,7 @@ Seat the customers · fix the crashing PCs · catch the cheaters · survive the 
 
 ## ▶️ Play in 10 seconds
 
-1. Open **`dist/ABANG_CC_2007_ALPHA_12.html`** in Chrome, Edge or Firefox. It's a single file, so just double-click it.
+1. Open **`dist/ABANG_CC_2007_ALPHA_13.html`** in Chrome, Edge or Firefox. It's a single file, so just double-click it.
 2. Wait for the loading screen (about 3 seconds). You land on the **main menu**: press **Mula Main** (Play) for a new game. Once you have a game going, the menu also shows **Sambung Main** (Continue, picks up where you stopped) and **Main Semula** (Restart, asks first). **Cara Main** is the quick guide and **Koleksi** is your hats.
 3. Follow the **How to play** steps below. Day 1 is a gentle tutorial and has no random trouble.
 
@@ -32,7 +32,7 @@ You are **Abang**, the owner of a tiny *kedai siber*. Each day (a "shift") you m
 |---|---|
 | ✅ **Reach the target** | The day ends with a report. From day 2 you pick **one perk** to upgrade your shop, then the next day starts. |
 | ❌ **Miss the target** | You replay that same day. Everything from earlier days is kept. |
-| 💰 **Target** | RM30 on day 1, then +RM3 a day up to day 10 (RM57), then +RM4 a day, later +RM5. Upgrades are how you keep up. |
+| 💰 **Target** | RM30 on day 1, then +RM2 a day up to day 20 (RM68), then +RM1 a day (RM78 on day 30, RM88 on day 40). Upgrades are how you keep up. |
 | 🧾 **Rent and bills** | Paid once a month (every 30 days), not every day. |
 
 ---
@@ -117,13 +117,41 @@ After each successful day you're offered **two random perks**. Each one helps, a
 | 🛠️ **Spare parts rack** | Repairs 30% cheaper and 25% faster | Daily upkeep |
 | 🛡️ **Content filter** | Fewer shady-website cases | Daily fee, and customers complain about blocked sites |
 | 📡 **New router** | More bandwidth, less lag | Daily subscription |
-| ❄️ **Air-conditioning** | More patient customers, cooler PCs | Daily electricity |
+| 🌀 **Ceiling fan** (cheap) | Slightly more patient customers, PCs wear slower | Barely cools; tiny power bill |
+| 🧊 **Portable aircond** | Upgrade of the fan (old unit traded in for half its price): PCs overheat far less, more patient customers | The water tank drips, so spills happen more often |
+| ❄️ **Shop aircond** | Final cooling upgrade: patient customers, PCs almost never overheat | Daily electricity |
+| 🔌 **Generator** | A blackout lasts 5 seconds instead of 20, rentals keep running | RM3 diesel per blackout plus daily servicing |
 | 🏃 **Abang Laju** | Abang moves and works faster | Daily energy-drink bill |
 | 🖨️ **Printer corner** | Attracts students, adds printing income | Paper jams and paper costs |
 | 📷 **CCTV** | Hints at who's suspicious | Daily upkeep, and the hint isn't always right |
 | 📣 **Promo poster** (cheap) | More customers | Attracts more RM1 kids who get bored fast |
 
+The fan → portable aircond → shop aircond perks are a **chain**: each one is offered only after the one before it, and replaces it.
+
 <img src="tests/screenshots/07_perk_draft.png" alt="Choosing a perk" width="640">
+
+### 6. Hire Rina, the assistant (from day 15)
+
+From day 15 the prep screen lets you hire **Rina**: a one-off RM50, then **RM60 a month** paid with the rent. It is a final decision, there is no way to let her go.
+
+- She **mops spills** (free, and unlike Abang she doesn't slow anything down) and **replaces the fuse** after a blackout (the RM8 fuse is still yours to pay). She is slower than Abang, and skips a blackout that is nearly over.
+- She works on her own (**Auto**). Tap her in the room to switch Auto off or ask **Apa boleh buat?**, or tap a spill or the fuse box and choose **Suruh Rina**.
+- About once every 10 days (sometimes twice, never two days running) she calls in **sick (MC)**. The prep screen tells you in advance, her wage is still due, and Abang does it all alone that day.
+
+### 7. Grow your reputation
+
+Your reputation (0–100) gives the shop a rank, shown in the HUD:
+
+| Rank | From | What it gives |
+|---|---|---|
+| 🏪 **Kedai Biasa** | 0 | Nothing yet |
+| ✨ **Kedai Best** | 60 | Customers 4% more patient |
+| 🔥 **Kedai Popular** | 75 | 8% more patient, a few more customers, and sometimes a little *duit kopi* tip |
+| 👑 **Port Lepak** | 90 | 12% more patient, more customers, bigger tips. But the late-night crowd turns up more and the inspector takes more interest |
+
+A rank is only lost once reputation falls 3 points below its threshold.
+
+Every shift report ends with **Sorotan hari**: a few highlights of the day (best hour, the PC that kept breaking, who stormed off, the biggest sale…). The menu, pause and settings screens show when the game was **last saved**.
 
 ---
 
@@ -195,7 +223,7 @@ The camera is fixed isometric and never rotates. Zooming is optional.
 
 | What | Command |
 |---|---|
-| Play (no tools) | Double-click `index.html` or `dist/ABANG_CC_2007_ALPHA_12.html` |
+| Play (no tools) | Double-click `index.html` or `dist/ABANG_CC_2007_ALPHA_13.html` |
 | Build the single-file bundle | `node tools/build.mjs` (no dependencies, Node 22+) |
 | Logic tests (59) | `node --test tests/state.test.mjs` |
 | Browser tests (29) | `node --test tests/browser.test.mjs` (needs Chrome or Edge; set `CHROME_PATH` if installed somewhere unusual). Screenshots go to `tests/screenshots/`. |

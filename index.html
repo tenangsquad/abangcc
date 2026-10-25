@@ -1,8 +1,8 @@
 <!doctype html>
 <!--
-  ABANG CC: 2007 — Alpha 0.12 (multi-file source).
+  ABANG CC: 2007 — Alpha 0.13 (multi-file source).
   Open this file straight from disk (file://) or serve the folder as a static site.
-  `node tools/build.mjs` bundles everything into dist/ABANG_CC_2007_ALPHA_12.html (one standalone file).
+  `node tools/build.mjs` bundles everything into dist/ABANG_CC_2007_ALPHA_13.html (one standalone file).
 -->
 <html lang="ms">
 <head>
@@ -403,7 +403,7 @@
   <div class="ld-top">
     <span class="ld-kicker">MALAYSIA · KEDAI SIBER</span>
     <div class="ld-title" aria-hidden="true"><span class="ld-abang">ABANG</span><span class="ld-cc">CC</span></div>
-    <div class="ld-year" aria-hidden="true"><i></i><b>2007</b><i></i></div>
+    <div class="ld-year"><b aria-hidden="true">2007</b><span class="ld-neon" aria-label="by Tenang Squad"><span>by</span> <span>Tenang</span> <span class="ld-dim">Squad</span></span></div>
   </div>
   <div class="ld-card">
     <div class="ld-row"><span id="ldLabel">Memuatkan kedai…</span><b id="ldPct">0%</b></div>
@@ -487,12 +487,13 @@
       <section class="card jobs idle" id="jobsPanel">
         <h2 class="card-title"><span>🧑‍🔧 Arahan Abang</span><span class="count" id="taskCount" title="Arahan yang Abang sedang buat (maks. 3)">0/3</span></h2>
         <ol class="job-list" id="jobList"><li class="job-empty">Abang free. Tap PC atau kejadian untuk bagi arahan.</li></ol>
+        <div class="asst-line" id="asstLine" hidden></div>
       </section>
 
       <section class="card vitals">
         <h2 class="card-title"><span>📊 Status kedai</span><span class="combo" id="comboText" title="Combo tindakan pantas">⚡ x0</span></h2>
         <div class="meter-row">
-          <div class="meter" title="Reputasi: pelanggan datang lebih ramai bila tinggi."><div class="meter-head"><span>⭐ Reputasi</span><b id="hudRepValue">55</b></div><div class="meter-track"><i id="hudRepBar"></i></div></div>
+          <div class="meter" id="hudRepMeter" title="Reputasi: pelanggan datang lebih ramai bila tinggi."><div class="meter-head"><span id="hudRepLabel">⭐ Reputasi</span><b id="hudRepValue">55</b></div><div class="meter-track"><i id="hudRepBar"></i></div></div>
           <div class="meter" title="Professionalism: kedai yang diurus profesional lebih tenang dan lebih dipercayai pegawai."><div class="meter-head"><span>🤝 Profesional</span><b id="hudProValue">75</b></div><div class="meter-track"><i id="hudProBar"></i></div></div>
           <div class="meter" title="Patuh peraturan: elakkan denda semasa pemeriksaan."><div class="meter-head"><span>📋 Patuh</span><b id="hudComplianceValue">75</b></div><div class="meter-track"><i id="hudComplianceBar"></i></div></div>
           <div class="meter" title="Risiko pemeriksaan mengejut. Makin tinggi, makin bahaya."><div class="meter-head"><span>👮 Risiko</span><b id="hudRisk">20</b></div><div class="meter-track"><i id="hudRiskBar"></i></div></div>
@@ -510,11 +511,11 @@
     <div class="home-brand">
       <span class="ld-kicker">MALAYSIA · KEDAI SIBER</span>
       <div class="ld-title" aria-label="Abang CC 2007"><span class="ld-abang">ABANG</span><span class="ld-cc">CC</span></div>
-      <div class="ld-year" aria-hidden="true"><b>2007</b><span class="home-chips" id="homeChips"></span></div>
+      <div class="ld-year"><b aria-hidden="true">2007</b><span class="ld-neon" aria-label="by Tenang Squad"><span>by</span> <span>Tenang</span> <span class="ld-dim">Squad</span></span><span class="home-chips" id="homeChips"></span></div>
     </div>
     <nav class="home-card" id="homeCard" aria-label="Menu"></nav>
     <button type="button" class="home-tip" id="homeTip" title="Tip seterusnya"></button>
-    <p class="home-foot">Alpha 0.12 · progress disimpan automatik dalam browser ini · <button type="button" class="link" data-modal="credits">Kredit</button></p>
+    <p class="home-foot">Alpha 0.13 · <span data-saved>Progress disimpan automatik dalam browser ini</span> · <button type="button" class="link" data-modal="credits">Kredit</button></p>
   </div>
 </section>
 <div class="rotate-hint" id="rotateHint" role="alert"><div><span class="rh-phone" aria-hidden="true">📱</span><b>Sila main dalam landskap</b><small>Please play in landscape — turn your phone sideways</small><ol class="rh-steps" id="rhSteps" hidden></ol></div></div>
@@ -535,6 +536,7 @@
 <script src="js/state/pcs.js"></script>
 <script src="js/state/incidents.js"></script>
 <script src="js/state/events.js"></script>
+<script src="js/state/assistant.js"></script>
 <script src="js/state/officer.js"></script>
 <script src="js/state/actions.js"></script>
 <script src="js/state/meta.js"></script>

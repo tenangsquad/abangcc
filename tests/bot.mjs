@@ -9,7 +9,8 @@ export const SKILLS = {
   sloppy: { reaction: 3.4, accuracy: 0.55, handlesIssues: 0.5, perkSmart: false },
 };
 
-const PERK_PRIORITY = ['add_pc', 'poster', 'spares', 'snack', 'router', 'aircond', 'runner', 'cctv', 'filter', 'printer'];
+// best first. A perk that is missing from this list would sort to the front, so every perk in PERKS must appear here.
+export const PERK_PRIORITY = ['add_pc', 'poster', 'fan', 'spares', 'snack', 'router', 'generator', 'portable', 'aircond', 'runner', 'cctv', 'filter', 'printer'];
 
 export function makeBot(ns, skillName) {
   const { State, S } = ns;
@@ -84,11 +85,11 @@ export function makeBot(ns, skillName) {
       // spend on the best-ranked affordable card
       const draft = s.perkDraft || [];
       if (!draft.length || s.perkChoiceMade) return;
-      const affordable = draft.filter((id) => S.perkDef(id).price <= s.cash);
+      const affordable = draft.filter((id) => S.perkPrice(s, id) <= s.cash);
       if (!affordable.length) return;
       const pick = sk.perkSmart ? [...affordable].sort((a, b) => PERK_PRIORITY.indexOf(a) - PERK_PRIORITY.indexOf(b))[0] : affordable[0];
       // keep a small cash buffer for repairs
-      if (s.cash - S.perkDef(pick).price < 500 && sk.perkSmart && pick !== "poster") return;
+      if (s.cash - S.perkPrice(s, pick) < 500 && sk.perkSmart && pick !== "poster") return;
       State.buyPerk(s, pick);
     },
   };

@@ -370,7 +370,11 @@
       eng.cast(false);
       eng.cast(true);
       if (S_has(s, 'snack')) drawSnackMachine(W, lampsOn);
+      if (S_has(s, 'portable')) drawPortableAircond(W, t, power);
+      if (S_has(s, 'generator')) drawGenerator(s, t);
+      if (s.assistant) drawMopBucket(s);
       eng.cast(false);
+      if (S_has(s, 'fan')) drawCeilingFan(dt, power);
       if (S_has(s, 'aircond')) drawAircond(W, t);
       if (S_has(s, 'cctv')) drawCCTV(W, t);
     }
@@ -566,6 +570,69 @@
         const a = 0.18 + 0.1 * Math.sin(t * 2 + k);
         ring(x - 0.4 + k * 0.4, 1.95, 0.62, 0.2, 0.025, '#bff4ff', 0, 1, Math.PI * (0.8 + a));
       }
+    }
+
+    /** Kipas Siling: the room has no ceiling, so the fan hangs from a rafter that juts out of the back wall. It spins down in a blackout. */
+    function drawCeilingFan(dt, power) {
+      R.fanSpeed = damp(R.fanSpeed || 0, power ? 9 : 0, 1.6, dt);
+      R.fanAngle = ((R.fanAngle || 0) + R.fanSpeed * dt) % TAU;
+      const x = ROOM.firstColumnX + ROOM.columnGap * 1.5, z = 1.1;
+      blk(x, 3.02, z / 2, 0.14, 0.13, z, PAL.woodDark, 0.03); // rafter
+      cyl(x, 2.62, z, 0.03, 0.42, PAL.navy, 1, 1); // rod
+      cyl(x, 2.5, z, 0.13, 0.13, '#ffd23f', 1, 1); // motor
+      st.push();
+      st.translate(x, 2.55, z);
+      st.rotateY(R.fanAngle);
+      for (let k = 0; k < 4; k++) {
+        st.push();
+        st.rotateY((k * TAU) / 4);
+        blk(0.56, 0, -0.1, 0.8, 0.035, 0.2, '#f1e3bd', 0.015, 1);
+        st.pop();
+      }
+      st.pop();
+    }
+
+    /** Aircond Mudah Alih: a wheeled floor unit on the right edge of the room with a hose, a little display and a drip tray. */
+    function drawPortableAircond(W, t, power) {
+      const x = W - 0.7, z = 2.35;
+      shadow(x, z, 0.5, 0.42, 0.3);
+      blk(x, 0.14, z, 0.52, 0.95, 0.46, '#f4f1e8', 0.12);
+      blk(x, 0.78, z + 0.235, 0.4, 0.14, 0.03, '#9ad8d1', 0.02, 0); // vent slats
+      blk(x, 0.5, z + 0.235, 0.3, 0.1, 0.03, PAL.navy, 0.02, 0); // display
+      ball(x + 0.12, 0.35, z + 0.25, 0.025, 0.025, 0.025, power ? '#58ff8a' : '#7a2a35', 0, 1, true);
+      for (const [dx, dz] of [[-0.18, -0.14], [0.18, -0.14], [-0.18, 0.14], [0.18, 0.14]]) ball(x + dx, 0.07, z + dz, 0.07, 0.07, 0.07, PAL.navy, 1, 0, true);
+      cyl(x - 0.16, 1.09, z - 0.05, 0.06, 0.55, '#b9c3cf', 1, 1); // exhaust hose
+      blk(x - 0.16, 1.62, z - 0.05, 0.22, 0.08, 0.14, '#b9c3cf', 0.03);
+      blk(x - 0.05, 0, z + 0.55, 0.42, 0.012, 0.26, '#8fd8ff', 0.004, 0, 0.15); // the puddle it drips into
+      ball(x - 0.05, 0.4 - ((t * 0.9) % 1) * 0.36, z + 0.5, 0.022, 0.035, 0.022, '#8fd8ff', 0, 0.5, true);
+    }
+
+    /** Generator: a red diesel genset by the left wall with a fuel can and an exhaust that smokes and shakes while it runs. */
+    function drawGenerator(s, t) {
+      const running = s.powerOutage > 0;
+      const x = 0.58 + (running ? Math.sin(t * 55) * 0.006 : 0), z = 3.65;
+      shadow(0.58, z, 0.55, 0.62, 0.3);
+      blk(x, 0.1, z, 0.7, 0.56, 0.88, '#e0483a', 0.1);
+      blk(x, 0.66, z, 0.6, 0.06, 0.78, PAL.navy, 0.03); // top frame
+      for (const dz of [-0.36, 0.36]) blk(x, 0, z + dz, 0.74, 0.1, 0.1, PAL.navy, 0.03); // skids
+      blk(x + 0.36, 0.28, z, 0.04, 0.3, 0.52, PAL.navy, 0.02, 0); // control panel (faces the room)
+      ball(x + 0.39, 0.4, z - 0.12, 0.05, 0.05, 0.05, running ? '#58ff8a' : '#ffd23f', 0, 1, true);
+      ball(x + 0.39, 0.4, z + 0.12, 0.05, 0.05, 0.05, '#9ad8d1', 0, 0.4, true);
+      cyl(x - 0.22, 0.7, z - 0.26, 0.05, 0.36, '#505a6e', 1, 1); // exhaust
+      blk(x + 0.1, 0.72, z + 0.2, 0.3, 0.3, 0.2, '#ffd23f', 0.04); // jerrycan
+      blk(x + 0.1, 1.02, z + 0.2, 0.08, 0.06, 0.08, PAL.navy, 0.02, 0);
+      if (running && Math.sin(t * 14) > 0.6) burst('smoke', x - 0.22, 1.1, z - 0.26, 1);
+    }
+
+    /** The assistant's corner: a yellow mop bucket with a mop leaning against the wall. */
+    function drawMopBucket(s) {
+      const B = ROOM.assistantBucket;
+      shadow(B.x, B.y, 0.34, 0.34, 0.28);
+      cyl(B.x, 0, B.y, 0.2, 0.34, '#ffd23f', 0.82, 1);
+      cyl(B.x, 0.3, B.y, 0.185, 0.04, '#6d7284', 1, 0);
+      blk(B.x - 0.12, 0.34, B.y + 0.02, 0.05, 0.9, 0.05, '#c9a066', 0.02, 0);
+      blk(B.x - 0.12, 0.2, B.y + 0.02, 0.26, 0.08, 0.2, '#ffffff', 0.04);
+      ball(B.x + 0.16, 0.2, B.y + 0.12, 0.05, 0.04, 0.02, '#ff7ac6', 0, 0.3, true);
     }
 
     function drawCCTV(W, t) {

@@ -473,6 +473,7 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .combo { font: 700 13px var(--font-display); color: var(--ink-2); letter-spacing: 0; text-transform: none; }
 
 /* perk cards */
+.perk small.tradein { color: #7a4d00; font-weight: 800; }
 .perk small.up { color: #1a6a4a; } .perk small.down { color: #a1243b; } .perk small.upkeep { color: var(--ink-3); font-weight: 800; }
 .perk .own { font-style: normal; font-size: 12px; padding: 0 6px; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 999px; vertical-align: middle; }
 .headline { display: flex; align-items: center; gap: 12px; margin: 10px 0; padding: 10px 14px; background: #fff0d6; border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 3px 0 var(--ink); }
@@ -481,6 +482,25 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .headline b { display: block; font: 700 16px/1.25 var(--font-display); color: var(--ink); }
 .headline small { display: block; margin-top: 2px; font: 700 13px/1.35 var(--font-body); color: var(--ink-2); }
 .notice.unlock { background: #e1f7ec; }
+/* end-of-day recap: a few photo-album captions under the report */
+.recap { margin: 12px 0 2px; }
+.recap h2 { margin: 0 0 6px; font: 700 16px var(--font-display); }
+.recap ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.recap li { display: flex; align-items: center; gap: 10px; padding: 7px 10px; background: var(--white); border: 2.5px solid var(--ink); border-radius: 14px; box-shadow: 0 3px 0 var(--ink); animation: ld-rise .45s var(--ease-pop, ease-out) both; animation-delay: calc(var(--i, 0) * .09s + .25s); }
+.recap li:nth-child(odd) { transform: rotate(-.5deg); } .recap li:nth-child(even) { transform: rotate(.4deg); }
+.recap .rc-ico { flex: none; width: 36px; height: 36px; display: grid; place-content: center; font-size: 21px; background: #ffe9a8; border: 2.5px solid var(--ink); border-radius: 12px; }
+.recap b { display: block; font: 700 15px/1.25 var(--font-display); }
+.recap small { display: block; margin-top: 1px; font: 700 12.5px/1.35 var(--font-body); color: var(--ink-2); }
+[data-saved].save-failed { color: var(--coral); font-weight: 800; }
+/* the assistant: hire card on the prep screen, a status line in the jobs panel, a pastel name tag */
+.asst-card { display: flex; align-items: center; gap: 12px; margin: 10px 0; padding: 10px 12px; background: linear-gradient(135deg, #ffe3f1, #ece3ff); border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 4px 0 var(--ink); }
+.asst-card .asst-ico { flex: none; width: 52px; height: 52px; display: grid; place-content: center; font-size: 30px; background: var(--white); border: 3px solid var(--ink); border-radius: 16px; transform: rotate(-5deg); }
+.asst-card .asst-txt { flex: 1; display: grid; gap: 2px; min-width: 0; } .asst-card strong { font: 700 17px var(--font-display); }
+.asst-card small { font: 700 13px/1.35 var(--font-body); color: var(--ink-2); } .asst-card small.up { color: #1a6a4a; } .asst-card small.down { color: #a1243b; }
+.asst-card .btn { flex: none; }
+.notice.asst { background: #ffe3f1; } .notice.asst.sick { background: #fff0b8; }
+.asst-line { margin: 6px 2px 0; padding: 4px 9px; border: 2px dashed var(--ink-3, #8d86b3); border-radius: 12px; background: rgba(255, 227, 241, .7); font: 700 12.5px/1.3 var(--font-body); color: var(--ink-2); }
+.person-tag.assistant .bub { background: #ffc9e3; }
 .perk.hat.locked { opacity: .7; } .perk.hat.locked .perk-icon { filter: grayscale(1); }
 .notice.why ul { margin: 6px 0 0; padding-left: 20px; } .notice.why li { margin: 3px 0; font-weight: 700; }
 
@@ -687,6 +707,15 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 .wp-wave { animation: wp-wave .9s ease-in-out infinite alternate; }
 .wp-neon { animation: wp-flicker 4.5s steps(1) infinite; }
 @keyframes ld-drop { from { opacity: 0; transform: translateY(-30px) scale(.9); } }
+/* "by Tenang Squad": a neon tube under the year; the tube switches on after the logo drops, and one word keeps flickering */
+.ld-neon { align-self: stretch; display: flex; align-items: center; gap: .45em; padding: 0 .9em; font: 600 clamp(11px, 1.7vw, 19px)/1.2 var(--font-display); letter-spacing: .14em; text-transform: uppercase; color: #eafff8;
+  border: 3px solid rgba(76, 195, 255, .85); border-radius: 999px;
+  text-shadow: 0 0 3px #fff, 0 0 8px var(--sky), 0 0 18px var(--sky), 0 0 34px var(--mint);
+  box-shadow: 0 0 6px var(--sky), 0 0 18px rgba(76, 195, 255, .6), inset 0 0 8px rgba(76, 195, 255, .5);
+  animation: ld-neon-on 1.3s steps(1, end) .8s both; }
+.ld-neon .ld-dim { animation: ld-neon-flicker 4.2s linear 2.2s infinite; }
+@keyframes ld-neon-on { 0%, 18%, 30%, 52% { opacity: .08; text-shadow: none; box-shadow: none; } 24%, 40%, 58%, 100% { opacity: 1; } }
+@keyframes ld-neon-flicker { 0%, 100% { opacity: 1; } 6% { opacity: .25; text-shadow: none; } 9% { opacity: 1; } 12% { opacity: .4; text-shadow: none; } 15% { opacity: 1; } 60% { opacity: 1; } 62% { opacity: .5; text-shadow: none; } 64% { opacity: 1; } }
 @keyframes ld-rise { from { opacity: 0; transform: translateY(30px); } }
 @keyframes ld-stripes { to { background-position: 28px 0; } }
 @keyframes wp-twinkle { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
@@ -695,12 +724,12 @@ kbd { font: 700 11px var(--font-display); background: var(--white); border: 2px 
 @keyframes wp-wave { from { transform: rotate(-12deg); } to { transform: rotate(14deg); } }
 @keyframes wp-flicker { 0%, 100% { opacity: 1; } 92% { opacity: .82; } 94% { opacity: 1; } 97% { opacity: .9; } }
 @media (prefers-reduced-motion: reduce) {
-  .loader, .ld-top, .ld-card, .ld-bar > div, .loader * { animation: none !important; transition-duration: .01s !important; }
+  .loader, .ld-top, .ld-card, .ld-bar > div, .ld-neon, .ld-neon .ld-dim, .loader * { animation: none !important; transition-duration: .01s !important; }
 }
 @media (max-width: 600px) { .ld-card { padding: 10px 12px; } .ld-row { font-size: 14px; } .ld-tip { font-size: 12px; } }
 /* phones held sideways: the picture is short, so keep only the logo and a slim bar */
 @media (max-height: 520px) {
-  .ld-kicker, .ld-year i, .ld-tip { display: none; }
+  .ld-kicker, .ld-year i, .ld-tip, .ld-neon { display: none; }
   .ld-top { margin-top: 2px; gap: 0; }
   .ld-title { font-size: clamp(30px, 12vh, 64px); }
   .ld-year b { font-size: 14px; padding: .1em .6em; border-width: 3px; box-shadow: 0 3px 0 var(--ink); }
