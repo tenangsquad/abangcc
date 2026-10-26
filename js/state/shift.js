@@ -12,7 +12,7 @@
     // for the end-of-day recap
     hourly: Array(12).fill(0), pcFaults: {}, walkByType: {}, servedByType: {}, bestSale: null, closeCall: null, tips: 0, generatorRuns: 0, tierMoves: [] });
 
-  function create(seed) {
+  function create(seed, preset) {
     return {
       version: CFG.VERSION,
       seed: seed || (Date.now() >>> 0) ^ 2007,
@@ -26,7 +26,7 @@
       professionalism: 75,
       compliance: 75,
       risk: 20,
-      preset: 'biasa',
+      preset: ns.DIRECTOR.presets[preset] ? preset : 'biasa', // chosen once at New Game and locked to this save
       customerSequence: 0,
       ledgerSequence: 0,
       taskSequence: 0,

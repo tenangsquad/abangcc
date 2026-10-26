@@ -1,4 +1,4 @@
-# ALPHA_12 / ALPHA_13 — development notes (working file; Alpha 0.13 changes are listed in CHANGELOG.md)
+# ALPHA_12 / ALPHA_14 — development notes (working file; Alpha 0.14 changes are listed in CHANGELOG.md)
 
 Goal: bring ABANG_CC_2007_ALPHA_11 into line with `../Requirements.md`. Gap list: `../Requirements_Alignment_ALPHA_11.md` (B1–B10 = bugs, then per-phase tables).
 User decision: **update the game** (ALPHA_12, ALPHA_11 untouched), scope **"all of it"**.
@@ -16,7 +16,7 @@ User decision: **update the game** (ALPHA_12, ALPHA_11 untouched), scope **"all 
 - Every special moment is a **world object or NPC** (door NPCs: gang, mak, download, truancy, LAN group; objects: spill puddle, fuse box, snack machine suspect; PC issue: nomouse). Situasi Panas only lists alerts + "Tengok" (select), never choice buttons. Choices live in Abang's Desk when the object/NPC is selected.
 - Truancy only during school hours (12:00–14:30 in-game) → early-shift slot.
 - PC fault kinds: glitch, freeze, overheat, bsod, noconn, hardware. One refund per incident (`faultId`).
-- Director = one table `DIRECTOR` + `director(s)`; difficulty preset (santai/biasa/mencabar) stored in save.
+- Director = one table `DIRECTOR` + `director(s)`; difficulty preset (santai/biasa/mencabar = Senang Sunggoh / Susah Sikit Jer / Susah Teruk!) is picked at New Game (`State.create(seed, preset)`), stored in the save and locked; presets scale `pressure`, `patience`, `trouble`, `faults` and `goal` (daily target).
 - Perks: data-driven `mods`, weighted draft, ≥1 affordable offer (fallback cheap perk "Poster Promosi"), upkeep per day.
 - Perk lines: `line` + `rank` on a PERKS entry make a chain (cooling: fan → portable → aircond). `eligiblePerks` offers only the next rank, `applyPerk` removes the unit it replaces and `S.perkPrice` takes `CFG.UPGRADE_CREDIT` of its price off. Use `S.coolLevel(s)` instead of `hasPerk('aircond')`.
 - Assistant: `js/state/assistant.js`, state in `s.assistant` (null until hired). Hire on prep from `CFG.ASSISTANT.unlockDay`; one-off fee + monthly wage in `S.monthlyBills`; sick days planned once per `mcBlock` days (`rollSickLeave`, called from `State.proceed`). Jobs: spill (`mop`) and blackout (`fuse`) through `resolveEvent(..., { by: 'assistant' })`. Drawn as `kind: 'player'` with `e.assistant` (look `idol`, gear `assistant`) in characters.js; picked/labelled as kind `'assistant'`.
@@ -24,7 +24,7 @@ User decision: **update the game** (ALPHA_12, ALPHA_11 untouched), scope **"all 
 - End-of-day recap: counters in `s.shiftStats` (hourly, pcFaults, walkByType, servedByType, bestSale, closeCall, tips, generatorRuns, tierMoves) → `State.buildRecap` → `report.recap`.
 - Audio ambience: `UI.Sound.ambience(state)` (js/ui/audio.js) is steered from `UI.refresh`; own switch `settings.ambience`.
 - Last saved: `State.saveInfo()` → `UI.savedLabel()`; any element with `data-saved` is kept fresh by `UI.refreshSaved`.
-- Save: versioned envelope + checksum + backup slot + v11 migration (a version bump never wipes progress, fixes B8).
+- Save: versioned envelope + checksum + backup slot + v11 migration (a version bump never wipes progress, fixes B8). One key per run: `abangcc2007_save_<id>` (+ `_bak`), up to `CFG.MAX_SAVES`; `State.createSave / loadSave / deleteSave / listSaves / getSaved` (newest) and `State.save(s)` writes to the active save only. The old single-save keys are copied in once (`CFG.SAVES_IMPORTED`) and left in place.
 
 ## Milestones / status
 - [x] M0 scaffold: folder split of ALPHA_11, index.html, tools/cdp.mjs, baseline verified identical in headless Chrome
@@ -44,8 +44,8 @@ User decision: **update the game** (ALPHA_12, ALPHA_11 untouched), scope **"all 
 
 ## Main menu page
 - The menu is no longer a pop-up: phase `menu` shows `#home` (`js/ui/home.js`, `css/home.css`) over the live 3D scene (`<html data-screen="home">` hides the HUD/sidebar/docks and shifts the canvas right). Every other phase sets `data-screen="game"`.
-- The game always **boots into `menu`**. A stored session is kept in `s.resumeTo` (the phase it was in; `active` becomes `paused`): "Sambung Main" calls `resumeSession()` in `modals.js`. "Menu utama" from the pause dialog sets `resumeTo` the same way, so Continue now resumes the paused shift instead of restarting the day. `UI.hasSession(s)` decides whether Continue / Main Semula show.
-- Tiles are plain `<button data-modal="…">`, handled by `UI.handleModal`. Restart and "Padam save" use an in-page confirm dialog (`renderConfirm`) instead of the browser's `confirm()`.
+- The game always **boots into `menu`**. A stored session is kept in `s.resumeTo` (the phase it was in; `active` becomes `paused`): "Sambung Main" calls `resumeSession()` in `modals.js`. "Menu utama" from the pause dialog sets `resumeTo` the same way, so Continue now resumes the paused shift instead of restarting the day. `UI.hasSession(s)` decides whether Continue / Main Baru show; Muat Game shows whenever a save exists.
+- Tiles are plain `<button data-modal="…">`, handled by `UI.handleModal`. Deleting or replacing a save uses an in-page confirm dialog (`renderConfirm`) instead of the browser's `confirm()`.
 - Icons are inline SVG from `js/ui/icons.js` (`UI.icon(name, px, tint?)`): play, resume, restart, guide, collection, settings, home. They replace the ▶ / ? / emoji glyphs, which look different on every system.
 
 ## Float layout, living home, tip, credits

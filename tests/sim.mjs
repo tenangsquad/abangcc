@@ -1,15 +1,16 @@
-// Balance simulation: node tests/sim.mjs [days] [seeds]
+// Balance simulation: node tests/sim.mjs [days] [seeds] [preset: santai | biasa | mencabar]
 // Plays the whole campaign with three simulated skill levels and prints income vs target per day.
 import { playCampaign, SKILLS } from './bot.mjs';
 
 const days = Number(process.argv[2]) || 10;
 const seeds = Number(process.argv[3]) || 5;
+const preset = process.argv[4] || 'biasa';
 
 for (const skill of Object.keys(SKILLS)) {
-  console.log(`\n=== ${skill.toUpperCase()} (${seeds} seeds, ${days} days) ===`);
+  console.log(`\n=== ${skill.toUpperCase()} (${seeds} seeds, ${days} days, ${preset}) ===`);
   const byDay = new Map();
   for (let seed = 1; seed <= seeds; seed++) {
-    for (const r of playCampaign({ skill, days, seed: seed * 7919 })) {
+    for (const r of playCampaign({ skill, days, seed: seed * 7919, preset })) {
       if (!byDay.has(r.day)) byDay.set(r.day, []);
       byDay.get(r.day).push(r);
     }

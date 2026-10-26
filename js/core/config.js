@@ -110,8 +110,14 @@
 
   /* ---------- game balance ---------- */
   const CFG = {
-    // Game version: Alpha 0.13 (see CHANGELOG.md). The keys below and VERSION are the SAVE format, not the game version: it is unchanged
+    // Game version: Alpha 0.14 (see CHANGELOG.md). The keys below and VERSION are the SAVE format, not the game version: it is unchanged
     // since Alpha 0.12 (new fields are filled in when an older save loads), so saves carry over. Only bump them when the format breaks.
+    // Every run is its own save: 'abangcc2007_save_<id>' plus '_bak' (the copy before the last write). SAVE, SAVE_BAK and SAVE_V11 are the
+    // old single-save slots; the first one found is copied into a new-style save once (SAVES_IMPORTED marks that it happened).
+    SAVE_PREFIX: 'abangcc2007_save_',
+    SAVE_BAK_SUFFIX: '_bak',
+    SAVES_IMPORTED: 'abangcc2007_saves_imported',
+    MAX_SAVES: 5,
     SAVE: 'abangcc2007_alpha_v12',
     SAVE_BAK: 'abangcc2007_alpha_v12_bak',
     SAVE_V11: 'abangcc2007_alpha_v11',
@@ -170,12 +176,14 @@
   /* ---------- the difficulty director ----------
      One table drives how hard a day is. `pressure` is the single number most systems
      read: it grows with the day, with every perk bought and with every extra PC.
-     Presets scale it for Santai / Biasa / Mencabar. */
+     A preset is chosen once, at New Game, and stays with that save. Its levers:
+       pressure  how many customers come      patience  how long they wait      trouble  how often random events strike
+       faults    how often a PC hangs         goal      multiplier on the daily target (whole RM, from day 1) */
   const DIRECTOR = {
     presets: {
-      santai: { label: 'Santai', pressure: 0.85, patience: 1.15, trouble: 0.8 },
-      biasa: { label: 'Biasa', pressure: 1, patience: 1, trouble: 1 },
-      mencabar: { label: 'Mencabar', pressure: 1.2, patience: 0.88, trouble: 1.25 },
+      santai: { label: 'Senang Sunggoh', icon: '🌴', blurb: 'Pelanggan sabar, kurang kecoh, PC jarang hang dan target lebih rendah. Sesuai untuk belajar dan lepak.', pressure: 0.85, patience: 1.15, trouble: 0.8, faults: 0.7, goal: 0.8 },
+      biasa: { label: 'Susah Sikit Jer', icon: '🙂', blurb: 'Cabaran seimbang, macam yang direka asalnya. Ada masa tenang, ada masa kecoh.', pressure: 1, patience: 1, trouble: 1, faults: 1, goal: 1 },
+      mencabar: { label: 'Susah Teruk!', icon: '🔥', blurb: 'Pelanggan cepat naik angin, banyak masalah, PC kerap hang dan target tinggi. Untuk Abang yang berani.', pressure: 1.2, patience: 0.88, trouble: 1.25, faults: 1.3, goal: 1.1 },
     },
     pressure: { base: 1, perDay: 0.16, perPerk: 0.08, perExtraPc: 0.12 },
     spawn: { normalEvery: 3.6, peakEvery: 1.55, jitter: [0.72, 1.27], pressureScale: 0.72, peakBonus: 0.7, perExtraPc: 0.12, minPressure: 0.8, repEffect: 0.0035 },
@@ -187,7 +195,8 @@
     specials: { school: { fromDay: 3, at: [6, 18] }, slots: [{ fromDay: 2, at: [41, 55] }, { fromDay: 5, at: [83, 95] }] },
     inspection: { window: [22, 85], latest: CFG.SHIFT - 16, summonFromDay: 5, summonRisk: 72, summonChance: 0.025, earlierPerRisk: 0.2 },
     // Daily target (RM): day 1 = `start`, then it grows by `perDay` for every day up to and including `untilDay`:
-    // +RM2 a day through day 20 (30, 32, 34 … 68), then +RM1 a day (RM78 on day 30, RM88 on day 40). Same on every preset.
+    // +RM2 a day through day 20 (30, 32, 34 … 68), then +RM1 a day (RM78 on day 30, RM88 on day 40). These are the Susah Sikit Jer (biasa) numbers;
+    // the other presets scale them with `goal` (see DIRECTOR.presets).
     // Eased from +3/+4/+5 (RM57 on day 10, RM97 on day 20, RM158 on day 40) after players found the later days too hard: daily income
     // levels off around RM100-120, so the old curve was out of reach by day ~29. With this one the bot simulation (node tests/sim.mjs 42 4)
     // gets a perfect player and a good one through day 40. Tune it here.

@@ -6,7 +6,7 @@
 
 Seat the customers · fix the crashing PCs · catch the cheaters · survive the blackout · hit the daily target.
 
-**Alpha 0.13** &nbsp;·&nbsp; 3D cartoon &nbsp;·&nbsp; Plays in your browser &nbsp;·&nbsp; No install &nbsp;·&nbsp; Works on desktop and phone
+**Alpha 0.14** &nbsp;·&nbsp; 3D cartoon &nbsp;·&nbsp; Plays in your browser &nbsp;·&nbsp; No install &nbsp;·&nbsp; Works on desktop and phone
 
 <img src="tests/screenshots/01_scene_afternoon.png" alt="Abang's cyber café in the afternoon" width="760">
 
@@ -16,8 +16,8 @@ Seat the customers · fix the crashing PCs · catch the cheaters · survive the 
 
 ## ▶️ Play in 10 seconds
 
-1. Open **`dist/ABANG_CC_2007_ALPHA_13.html`** in Chrome, Edge or Firefox. It's a single file, so just double-click it.
-2. Wait for the loading screen (about 3 seconds). You land on the **main menu**: press **Mula Main** (Play) for a new game. Once you have a game going, the menu also shows **Sambung Main** (Continue, picks up where you stopped) and **Main Semula** (Restart, asks first). **Cara Main** is the quick guide and **Koleksi** is your hats.
+1. Open **`dist/ABANG_CC_2007_ALPHA_14.html`** in Chrome, Edge or Firefox. It's a single file, so just double-click it.
+2. Wait for the loading screen (about 3 seconds). You land on the **main menu**: press **Mula Main** (Play), pick a difficulty, and you have a new game. Once you have a game going, the menu also shows **Sambung Main** (Continue: the save you played last, picks up where you stopped), **Main Baru** (another new game, as a separate save) and **Muat Game** (all your saves, to open or delete one). **Cara Main** is the quick guide and **Koleksi** is your hats.
 3. Follow the **How to play** steps below. Day 1 is a gentle tutorial and has no random trouble.
 
 > 💡 Prefer a web server? Run `npx serve .` or `python -m http.server` in this folder and open `index.html`.
@@ -35,7 +35,7 @@ Seat the customers · fix the crashing PCs · catch the cheaters · survive the 
 | **Also needed** | JavaScript on. Browser storage (`localStorage`) for saving: if it is blocked the game still plays, but warns "Tak dapat simpan" and progress is lost when you close the page. Web Audio for sound: without it the game is silent. |
 | **Internet** | **Not needed.** The page asks Google Fonts for two fonts when online and uses system fonts when offline. |
 | **Screen** | Desktop: **1366 × 768** or larger is comfortable (the layout fits one screen, no scrolling). Phone: hold it **sideways**; held upright the game pauses and asks you to turn it. |
-| **Size** | One file of about **0.6 MB** (`dist/ABANG_CC_2007_ALPHA_13.html`); a save is a few tens of KB. |
+| **Size** | One file of about **0.6 MB** (`dist/ABANG_CC_2007_ALPHA_14.html`); a save is a few tens of KB. |
 | **Minimum CPU / RAM / GPU** | _To be updated: not measured yet._ |
 | **Tested devices and frame rate** | _To be updated: only tested in headless Chrome with software graphics so far; no real phone or GPU yet._ |
 
@@ -231,7 +231,11 @@ The camera is fixed isometric and never rotates. Zooming is optional.
 
 **Main menu extras:** the café on the menu page is alive (customers come and go behind it, it never touches your real shop), the menu plays the daytime tune once you have tapped anywhere, the box under the menu shows one tip a day (tap it for the next), and **Kredit** at the bottom lists the version, makers and fonts.
 
-**Difficulty:** open Settings (the ⚙ button) and pick **Santai** (easy), **Biasa** (normal) or **Mencabar** (hard).
+**Difficulty:** you choose it once, when you press **Mula Main** / **Main Baru**, and it is locked to that save: **Senang Sunggoh** (easy), **Susah Sikit Jer** (medium) or **Susah Teruk!** (hard). Easy has patient customers, fewer breakdowns and a daily target 20 % lower; hard has short tempers, more trouble, PCs that hang more and a target 10 % higher. Want to try another level? Start a new game: it becomes its own save. Settings shows the level of the save you are playing but cannot change it.
+
+**Saves:** every new game is its own save, up to **5**, stored in this browser only (a different browser or device has its own list, and clearing the browser's site data deletes them). **Muat Game** lists them (level, day, cash, shop tier, when last saved) and opens or deletes one; when all 5 places are used, **Main Baru** asks which old save to replace. **Sambung Main** always opens the save written last. Koleksi (hats and records) is shared by all saves.
+
+**Moving a save:** in **Muat Game**, **Eksport** downloads one save as a small `.json` file (named like `abangcc-susah-teruk-hari9-20261026-1930.json`) and **Import save** adds such a file back as a new save, in any browser or on another device. The imported save keeps its level, progress and last-played time, is checked before it is accepted (a file that is not a save, was edited by hand, comes from a newer version, is already in the list or does not fit because all 5 places are used is refused with a message) and never replaces the save you were playing. The files are plain text, so keep them somewhere safe; they are also a backup. A save from before this version is copied in as the first save the first time you open the game.
 
 ---
 
@@ -254,7 +258,7 @@ The camera is fixed isometric and never rotates. Zooming is optional.
 
 | What | Command |
 |---|---|
-| Play (no tools) | Double-click `index.html` or `dist/ABANG_CC_2007_ALPHA_13.html` |
+| Play (no tools) | Double-click `index.html` or `dist/ABANG_CC_2007_ALPHA_14.html` |
 | Build the single-file bundle | `node tools/build.mjs` (no dependencies, Node 22+) |
 | Logic tests (59) | `node --test tests/state.test.mjs` |
 | Browser tests (29) | `node --test tests/browser.test.mjs` (needs Chrome or Edge; set `CHROME_PATH` if installed somewhere unusual). Screenshots go to `tests/screenshots/`. |
@@ -275,7 +279,7 @@ js/ui/*.js            loader, audio, HUD, panels, labels, modals, input, main
 tests/                state.test.mjs  browser.test.mjs  bot.mjs  sim.mjs  load-state.mjs
 tools/                build.mjs  make-wallpaper.mjs  cdp.mjs  stage.html
 dist/                 the standalone bundle (generated)
-CHANGELOG.md          what changed in each version (Alpha 0.13 is the current one)
+CHANGELOG.md          what changed in each version (Alpha 0.14 is the current one)
 UpgradeCollection/    the backlog of upgrade ideas, with what is done and what is still to do
 ```
 
@@ -283,7 +287,7 @@ Concerns are kept apart: simulation (`state/`), renderer (`gfx/engine` + `scene`
 
 ### Balancing
 
-Everything lives in `js/core/config.js`. `DIRECTOR` is the single difficulty table (spawn rate, patience drain, fault chances, trouble frequency, special slots, inspection, target curve). The `Santai / Biasa / Mencabar` presets scale it. `node tests/sim.mjs` shows the effect.
+Everything lives in `js/core/config.js`. `DIRECTOR` is the single difficulty table (spawn rate, patience drain, fault chances, trouble frequency, special slots, inspection, target curve). The three presets (`santai` = Senang Sunggoh, `biasa` = Susah Sikit Jer, `mencabar` = Susah Teruk!) scale it with `pressure`, `patience`, `trouble`, `faults` and `goal` (the daily target). `node tests/sim.mjs` shows the effect; `playCampaign({ preset })` in `tests/bot.mjs` simulates a given level.
 
 ### Loading screen
 

@@ -60,14 +60,28 @@
   UI.savedLabel = () => {
     const { at, failed } = ns.State.saveInfo();
     if (failed) return '⚠️ Tak dapat simpan: storan browser disekat';
-    if (!at) return null;
+    return at ? `💾 Disimpan ${UI.agoText(at)}` : null;
+  };
+  /** Hand `text` to the player as a file download (a save file). Tests replace this to capture what would be saved. */
+  UI.download = (filename, text) => {
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  };
+  /** "baru sahaja", "3 minit lalu", "pukul 14:05", "12/10 pukul 14:05": when something happened, for the save labels and the save list. */
+  UI.agoText = (at) => {
     const secs = Math.max(0, (Date.now() - at) / 1000);
-    if (secs < 20) return '💾 Disimpan baru sahaja';
-    if (secs < 90) return '💾 Disimpan seminit lalu';
-    if (secs < 3600) return `💾 Disimpan ${Math.round(secs / 60)} minit lalu`;
+    if (secs < 20) return 'baru sahaja';
+    if (secs < 90) return 'seminit lalu';
+    if (secs < 3600) return `${Math.round(secs / 60)} minit lalu`;
     const d = new Date(at);
     const time = `${UI.pad2(d.getHours())}:${UI.pad2(d.getMinutes())}`;
-    return new Date().toDateString() === d.toDateString() ? `💾 Disimpan pukul ${time}` : `💾 Disimpan ${d.getDate()}/${d.getMonth() + 1} pukul ${time}`;
+    return new Date().toDateString() === d.toDateString() ? `pukul ${time}` : `${d.getDate()}/${d.getMonth() + 1} pukul ${time}`;
   };
   UI.refreshSaved = () => {
     const text = UI.savedLabel();

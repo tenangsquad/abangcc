@@ -96,10 +96,10 @@ export function makeBot(ns, skillName) {
 }
 
 /** Play a whole campaign. Returns one row per attempted day. */
-export function playCampaign({ skill = 'good', days = 10, seed = 1, retries = 3, storage = makeStorage() } = {}) {
+export function playCampaign({ skill = 'good', days = 10, seed = 1, retries = 3, preset = 'biasa', storage = makeStorage() } = {}) {
   const { ns } = loadGame({ storage });
   const { State } = ns;
-  let s = State.create(seed);
+  let s = State.create(seed, preset);
   s.phase = 'prep';
   const bot = makeBot(ns, skill);
   const rows = [];

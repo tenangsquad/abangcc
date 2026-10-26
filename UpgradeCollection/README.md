@@ -46,7 +46,8 @@ Legend: ✅ Done · 🟡 Partly done · ⬜ To do
 | 🟡 Partly | **More audio** | A keyboard patter already exists. Ideas still open: a counter bell, sounds that react to events. |
 | ✅ Done | **Night lights: twin fluorescent fittings** | Four office-style fittings (square casing, two tubes) hang over the café from dusk, with a wide cool-white cone and floor pool; one flickers, a faint buzz joins the ambience, dark in a blackout. Code: `drawTubeLights` in `js/gfx/props.js`, engine decal kind `cone`. |
 | ✅ Done | **"Last saved" indicator** | On the menu, pause and settings screens. Warns if the browser blocks saving. |
-| ⬜ To do | **Save export / import** | A save code or `.json` download so progress can move between devices without a server. See section 5. |
+| ✅ Done | **Difficulty levels and several saves** | Senang Sunggoh / Susah Sikit Jer / Susah Teruk! chosen at New Game and locked to the save; up to 5 saves with Sambung Main (newest), Muat Game and replace-when-full. Code: `js/state/save.js`, `DIRECTOR.presets`. |
+| ✅ Done | **Save export / import** | "Eksport" on each save in Muat Game downloads a `.json` file; "Import save" adds one back (checked: checksum, version, duplicates, free place). No server needed. Code: `State.exportSave / importSave` in `js/state/save.js`. See section 5 for the cloud options that build on it. |
 | ⬜ To do | **Phone layout pass** | Re-check the menu, loading screen, recap and settings on a real phone-size screen. The sideways-phone layout is the one least checked. |
 | ⬜ To do | **Customer variety** | Skin tones, hair and shirt colours so the queue doesn't look like 9 copies. |
 | ⬜ To do | **Day-1 hints** | One-line hints on the first fault, first event and first perk draft. |
@@ -58,7 +59,7 @@ The save is already one self-contained JSON envelope with a version, a timestamp
 
 | Status | Option | Effort | Notes |
 |---|---|---|---|
-| ⬜ To do | **1. Export / import a save code or file** | About an afternoon, free | No server. Moves progress between devices manually. Good first step, and its code is reused by option 2. |
+| ✅ Done | **1. Export / import a save file** | Done (a `.json` file; a short "save code" was left out because a save is tens of KB) | No server. Moves progress between devices manually. Its code is reused by option 2. |
 | ⬜ To do | **2. Hosted backend (Supabase or Firebase)** | About a day | Login (Google or email link, or guest with a code) and a database with almost no server code. Free tier is plenty. Needs a size limit on uploads and one save row per user. |
 | ⬜ To do | **3. Own server (Node/PHP + database)** | Most work | Full control, but you write and run login, storage and security yourself. |
 
@@ -71,7 +72,7 @@ Questions to settle first:
 
 ## 6. Suggested order
 
-1. Save export / import (small, useful now).
+1. ~~Save export / import~~ (done).
 2. Listen to the ambience and tune the volumes.
 3. Day-1 hints.
 4. A few more perks and events from sections 1 and 2.

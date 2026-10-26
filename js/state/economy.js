@@ -122,15 +122,15 @@
     const D = DIRECTOR.faults;
     const extra = pressure(s) * D.perPressure + extraPcs(s) * D.perExtraPc;
     const base = pc.health >= D.healthHigh ? D.chanceHigh : pc.health >= D.healthMid ? D.chanceMid : D.chanceLow;
-    return base + extra;
+    return (base + extra) * preset(s).faults;
   }
 
-  /** Daily revenue target in sen: RM30 on day 1, +RM2 a day through day 20, then +RM1 (see DIRECTOR.goal). */
+  /** Daily revenue target in sen: RM30 on day 1, +RM2 a day through day 20, then +RM1 (see DIRECTOR.goal), scaled by the save's difficulty preset. */
   function goalFor(s, day = s.day) {
     const G = DIRECTOR.goal;
     let rm = G.start;
     for (let d = 2; d <= day; d++) rm += G.steps.find((st) => d <= st.untilDay).perDay;
-    return rm * 100;
+    return Math.round(rm * preset(s).goal) * 100;
   }
 
   /* ---------- prices ---------- */
