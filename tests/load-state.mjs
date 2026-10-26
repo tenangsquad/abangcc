@@ -31,6 +31,8 @@ export function makeStorage() {
     getItem: (k) => (m.has(k) ? m.get(k) : null),
     setItem: (k, v) => void m.set(k, String(v)),
     removeItem: (k) => void m.delete(k),
+    key: (i) => [...m.keys()][i] ?? null,
+    get length() { return m.size; },
     _map: m,
   };
 }

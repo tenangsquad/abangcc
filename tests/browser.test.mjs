@@ -97,6 +97,11 @@ async function clickUntil(sel, cond) {
     }
   }
 }
+/** Main menu → Mula Main / Main Baru → pick a difficulty (Senang = santai, Susah Sikit Jer = biasa, Susah Teruk! = mencabar) → `until` is true. */
+async function startNew(preset = 'biasa', until = `!!document.querySelector('[data-modal="introskip"]')`) {
+  await clickUntil('[data-modal="newgame"]', `!!document.querySelector('[data-modal="startnew"]')`);
+  await clickUntil(`[data-modal="startnew"][data-preset="${preset}"]`, until);
+}
 async function clickWorld(kind, id, { touch = false } = {}) {
   await sleep(200); // let a frame draw so the anchors are current
   let p = null;
@@ -134,7 +139,7 @@ test('A1/A23: the game opens without JavaScript errors and renders a genuine 3D 
 
 test('A2/A3: new game → intro cards with Sebelum / Seterusnya / Langkau → Day 1 with RM35, exactly 3 PCs, target RM30', async () => {
   await open();
-  await clickUntil('[data-modal="newgame"]', `/SELAMAT DATANG/.test(document.querySelector('.modal-card')?.textContent || '') && !!document.querySelector('[data-modal="intronext"]')`);
+  await startNew('biasa', `/SELAMAT DATANG/.test(document.querySelector('.modal-card')?.textContent || '') && !!document.querySelector('[data-modal="intronext"]')`);
   assert.match(await ev(`document.querySelector('.modal-card').textContent`), /SELAMAT DATANG/);
   assert.equal(await ev(`!!document.querySelector('[data-modal="introback"]')`), false, 'no Sebelum on the first card');
   await clickUntil('[data-modal="intronext"]', `!!document.querySelector('[data-modal="introback"]')`);
@@ -396,7 +401,7 @@ test('A18/A19: day 2 offers two perk cards; buying one changes the room (an extr
 test('A20: progress survives a browser refresh (Sambung main restores it)', async () => {
   await open();
   await pageReady();
-  await ev(`ABCC.debug.freeze(false); T.seat('student', 1, 60); ABCC.State.save(ABCC.debug.state()); 1`);
+  await ev(`ABCC.debug.freeze(false); T.seat('student', 1, 60); ABCC.State.createSave(ABCC.debug.state()); 1`);
   const cash = await S('s.cash'), day = await S('s.day');
   await b.goto(INDEX); // refresh
   await sleep(500);
@@ -440,7 +445,7 @@ test('Home: the game opens on a main menu page (not a pop-up); Mula Main for a n
   assert.equal(await ev(`document.getElementById('modalRoot').classList.contains('open')`), false);
   assert.equal(await ev(`document.documentElement.dataset.screen`), 'home');
   // play → intro → skip → open the shop → pause → Menu utama
-  await clickUntil('[data-modal="newgame"]', `!!document.querySelector('[data-modal="introskip"]')`);
+  await startNew();
   assert.equal(await ev(`document.documentElement.dataset.screen`), 'game', 'the page is gone once the game starts');
   await clickUntil('[data-modal="introskip"]', `!!document.querySelector('[data-modal="start"]')`);
   await clickUntil('[data-modal="start"]', `ABCC.debug.state().phase === 'active'`);
@@ -449,13 +454,14 @@ test('Home: the game opens on a main menu page (not a pop-up); Mula Main for a n
   await clickEl('[data-modal="mainmenu"]');
   await sleep(250);
   assert.equal(await ev(`document.documentElement.dataset.screen`), 'home');
-  assert.deepEqual(await ev(`[...document.querySelectorAll('#homeCard .tile b')].map((e) => e.textContent)`), ['Sambung Main', 'Main Semula', 'Cara Main', 'Koleksi', 'Tetapan', 'Belanja Kopi'], 'with a session: Continue and Restart appear');
+  assert.deepEqual(await ev(`[...document.querySelectorAll('#homeCard .tile b')].map((e) => e.textContent)`), ['Sambung Main', 'Main Baru', 'Muat Game', 'Cara Main', 'Koleksi', 'Tetapan', 'Belanja Kopi'], 'with a session: Continue, New and Load appear');
   await shot('23_home_session');
-  // Main Semula asks first; Batal changes nothing
-  await clickEl('[data-modal="restart"]');
-  assert.match(await ev(`document.querySelector('.modal-card').textContent`), /Mula dari\s+Hari 1\?/);
+  // Main Baru asks for a difficulty first; Batal changes nothing
+  await clickEl('[data-modal="newgame"]');
+  assert.match(await ev(`document.querySelector('.modal-card').textContent`), /Pilih\s+kesukaran/);
   await clickEl('[data-modal="back"]');
   assert.equal(await S('s.phase'), 'menu');
+  assert.equal(await ev(`ABCC.State.saveCount()`), 1, 'cancelling made no new save');
   assert.equal(await ev(`!!document.querySelector('[data-modal="continue"]')`), true, 'the session is still there');
   // Sambung Main picks the shift up where it was paused
   await clickEl('[data-modal="continue"]');
@@ -463,13 +469,171 @@ test('Home: the game opens on a main menu page (not a pop-up); Mula Main for a n
   assert.equal(await S('s.phase'), 'paused');
   await clickEl('[data-modal="mainmenu"]');
   await sleep(250);
-  // Main Semula → Ya → a brand new run (intro again, Day 1, RM35)
-  await clickEl('[data-modal="restart"]');
-  await clickEl('[data-modal="newgame"]');
+  // Main Baru → a difficulty → a brand new run in its own save (intro again, Day 1, RM35); the old run stays in the list
+  await startNew('mencabar', `ABCC.debug.state().phase === 'onboarding'`);
   await sleep(250);
   assert.equal(await S('s.phase'), 'onboarding');
   assert.equal(await S('s.day'), 1);
   assert.equal(await S('s.cash'), 3500);
+  assert.equal(await S('s.preset'), 'mencabar');
+  assert.equal(await ev(`ABCC.State.saveCount()`), 2, 'the first run is still saved');
+  assert.deepEqual(b.consoleErrors, []);
+});
+
+test('Saves and difficulty: Main Baru asks for a level and makes its own save; Muat Game lists, opens and deletes them; a full list asks which one to replace; Tetapan shows the level but cannot change it', async () => {
+  await open();
+  const rows = () => ev(`[...document.querySelectorAll('.save-row')].map((r) => r.innerText.replace(/\\s+/g, ' ').trim())`);
+  // the picker offers the three levels, locked per save
+  await clickEl('[data-modal="newgame"]');
+  assert.deepEqual(await ev(`[...document.querySelectorAll('.diff-grid .perk strong')].map((e) => e.textContent)`), ['Senang Sunggoh', 'Susah Sikit Jer', 'Susah Teruk!']);
+  assert.match(await ev(`document.querySelector('.modal-card').textContent`), /terkunci pada save ini/);
+  await shot('27_newgame_picker');
+  await clickEl('[data-modal="back"]');
+  assert.equal(await ev(`ABCC.State.saveCount()`), 0, 'cancelling made no save');
+
+  // Senang Sunggoh → its own save, with the level inside it
+  await startNew('santai', `ABCC.debug.state().phase === 'onboarding'`);
+  assert.equal(await S('s.preset'), 'santai');
+  assert.equal(await ev(`ABCC.State.saveCount()`), 1);
+  await clickUntil('[data-modal="introskip"]', `!!document.querySelector('[data-modal="start"]')`);
+  await ev(`ABCC.debug.set((s) => { s.cash += 777; }); ABCC.UI.openOverlay('settings'); 1`);
+  await sleep(250);
+  const settings = await ev(`document.querySelector('.modal-card').innerText`);
+  assert.match(settings, /Kesukaran[\s\S]*Senang Sunggoh/, 'Tetapan names the level');
+  assert.equal(await ev(`!!document.querySelector('[data-setting="preset"]')`), false, 'and offers no way to change it');
+  await clickEl('[data-modal="back"]');
+  await ev(`(() => { const s = ABCC.debug.state(); s.resumeTo = s.phase; s.phase = 'menu'; ABCC.State.save(s); ABCC.UI.resync(); return 1; })()`);
+  await sleep(300);
+  assert.match(await ev(`document.getElementById('homeChips').innerText`), /Senang Sunggoh/, 'the menu names the level too');
+
+  // a second New Game on Susah Teruk! is a second save; the first is untouched
+  await startNew('mencabar', `ABCC.debug.state().phase === 'onboarding'`);
+  assert.equal(await S('s.preset'), 'mencabar');
+  assert.equal(await ev(`ABCC.State.saveCount()`), 2);
+  await ev(`(() => { const s = ABCC.debug.state(); s.resumeTo = s.phase; s.phase = 'menu'; ABCC.State.save(s); ABCC.UI.resync(); return 1; })()`);
+  await sleep(300);
+  await clickEl('[data-modal="loadgame"]');
+  const list = await rows();
+  assert.equal(list.length, 2);
+  assert.match(list[0], /Susah Teruk![\s\S]*sedang dimainkan/, 'the newest is first and is the one being played');
+  assert.match(list[1], /Senang Sunggoh[\s\S]*RM[\d.]+/);
+  assert.ok(list[1].includes('RM42.77'), 'each save keeps its own cash (RM35 + the RM7.77 added above)');
+  await shot('28_load_game');
+
+  // opening the older one switches to it
+  await clickEl('.save-row:nth-child(2) [data-modal="loadsave"]');
+  await sleep(300);
+  assert.equal(await S('s.preset'), 'santai');
+  assert.equal(await S('s.cash'), 4277);
+  assert.notEqual(await S('s.phase'), 'menu', 'it goes straight back into the run');
+
+  // a refresh continues the one written last
+  await b.goto(INDEX);
+  await sleep(500);
+  assert.equal(await S('s.preset'), 'santai', 'Sambung Main is the newest save');
+  assert.equal(await ev(`document.querySelector('[data-modal="continue"] small').textContent.includes('🌴')`), true);
+
+  // Padam asks first
+  await clickEl('[data-modal="loadgame"]');
+  await clickEl('.save-row:nth-child(2) [data-modal="deletesave"]');
+  assert.match(await ev(`document.querySelector('.modal-card').textContent`), /Padam\s+save ini\?/);
+  await clickEl('[data-modal="back"]');
+  assert.equal(await ev(`ABCC.State.saveCount()`), 2, 'Batal deletes nothing');
+  await clickEl('[data-modal="loadgame"]');
+  await clickEl('.save-row:nth-child(2) [data-modal="deletesave"]');
+  await clickEl('[data-modal="confirmdelete"]');
+  await sleep(250);
+  assert.equal(await ev(`ABCC.State.saveCount()`), 1);
+  assert.equal((await rows()).length, 1);
+  await clickEl('[data-modal="back"]');
+
+  // fill the list: the next New Game must take the place of one
+  await ev(`for (let i = 0; i < 4; i++) { const s = ABCC.State.create(i + 1, 'biasa'); s.day = 5 + i; const keep = ABCC.State.activeSaveId(); ABCC.State.createSave(s); ABCC.State.loadSave(keep); } 1`);
+  assert.equal(await ev(`ABCC.State.saveCount()`), 5);
+  await clickEl('[data-modal="newgame"]');
+  assert.match(await ev(`document.querySelector('.modal-card').textContent`), /Save penuh \(5\/5\)/);
+  await clickEl('[data-modal="startnew"][data-preset="biasa"]');
+  assert.match(await ev(`document.querySelector('.modal-card').textContent`), /SAVE PENUH/);
+  assert.equal((await rows()).length, 5);
+  await shot('29_save_full');
+  await clickEl('.save-row:nth-child(5) [data-modal="replacesave"]');
+  assert.match(await ev(`document.querySelector('.modal-card').textContent`), /Ganti save/);
+  await clickEl('[data-modal="confirmreplace"]');
+  await sleep(300);
+  assert.equal(await ev(`ABCC.State.saveCount()`), 5, 'still five: one was replaced');
+  assert.equal(await S('s.phase'), 'onboarding');
+  assert.equal(await S('s.preset'), 'biasa');
+  assert.deepEqual(b.consoleErrors, []);
+});
+
+test('Export / import: Eksport hands over a .json file, Import adds it back as a new save through the real file picker, and bad files are refused with a message', async () => {
+  await open();
+  await ev(`for (let i = 0; i < 2; i++) { const s = ABCC.State.create(i + 1, ['mencabar', 'santai'][i]); s.day = 6 + i; s.cash = 20000 + i; ABCC.State.createSave(s); } ABCC.State.save = () => true; 1`);
+  await b.goto(INDEX); // a refresh, so the menu knows about them
+  await sleep(1000);
+  await clickEl('[data-modal="loadgame"]');
+  assert.equal(await ev(`document.querySelectorAll('.save-row [data-modal="exportsave"]').length`), 2, 'every save has Eksport');
+  assert.equal(await ev(`!!document.querySelector('[data-modal="importsave"]')`), true, 'and there is an Import button');
+  await shot('33_load_export_import');
+
+  // Eksport: the file the browser would download
+  await ev(`window.__dl = []; ABCC.UI.download = (name, text) => window.__dl.push({ name, text }); 1`);
+  const santaiId = await ev(`ABCC.State.listSaves().find((x) => x.preset === 'santai').id`); // (two saves made in the same millisecond have no fixed order in the list)
+  await clickEl(`[data-modal="exportsave"][data-id="${santaiId}"]`);
+  const dl = await ev(`window.__dl`);
+  assert.equal(dl.length, 1);
+  assert.match(dl[0].name, /^abangcc-[a-z-]+-hari\d+-\d{8}-\d{4}\.json$/);
+  const file = JSON.parse(dl[0].text);
+  assert.equal(file.game, 'abangcc2007');
+  assert.match(await ev(`document.getElementById('toastRoot').innerText`), /Save dieksport/);
+
+  // a clean browser: no saves left, then Import through the real <input type=file> change event
+  await ev(`ABCC.State.listSaves().forEach((x) => ABCC.State.deleteSave(x.id)); ABCC.State.save = () => true; 1`);
+  const pick = (text, name = 'save.json') => ev(`(() => { const i = document.getElementById('importFile'); const dt = new DataTransfer(); dt.items.add(new File([${JSON.stringify(text)}], ${JSON.stringify(name)}, { type: 'application/json' })); i.files = dt.files; i.dispatchEvent(new Event('change', { bubbles: true })); return 1; })()`);
+  const toasts = () => ev(`document.getElementById('toastRoot').innerText`);
+  await pick(dl[0].text);
+  await sleep(300);
+  assert.equal(await ev(`ABCC.State.saveCount()`), 1, 'the imported save is in the list');
+  assert.match(await toasts(), /Save diimport/);
+  const imported = await ev(`document.querySelector('.save-row').innerText.replace(/\\s+/g, ' ')`);
+  assert.match(imported, /Hari 7/);
+  assert.equal(await ev(`ABCC.State.listSaves()[0].preset`), 'santai', 'it keeps its level');
+  assert.equal(await ev(`ABCC.State.listSaves()[0].cash`), 20001, 'and its cash');
+
+  // refused: the same file again, something that is not a save, a hand-edited save
+  await pick(dl[0].text);
+  await sleep(250);
+  assert.match(await toasts(), /sudah ada/);
+  await pick('hello, not a save', 'notes.txt');
+  await sleep(250);
+  assert.match(await toasts(), /bukan save ABANG CC/);
+  await pick(JSON.stringify({ ...file, s: file.s.replace('"day":7', '"day":70') }));
+  await sleep(250);
+  assert.match(await toasts(), /rosak atau telah diubah/);
+  assert.equal(await ev(`ABCC.State.saveCount()`), 1, 'nothing bad was added');
+  assert.equal(await ev(`document.querySelectorAll('.save-row').length`), 1);
+  assert.deepEqual(b.consoleErrors, []);
+});
+
+test('Saves and difficulty: the menu and the save list fit a phone held sideways', async () => {
+  await open(844, 390, { mobile: true, dpr: 2 });
+  await ev(`for (let i = 0; i < 3; i++) { const s = ABCC.State.create(i + 1, ['santai', 'biasa', 'mencabar'][i]); s.day = 3 + i; s.cash = 12345; ABCC.State.createSave(s); } ABCC.State.save = () => true; 1`);
+  await b.goto(INDEX); // a refresh: Sambung Main is the newest of the three
+  await sleep(1000); // the menu card slides in for about half a second
+  const fits = (sel) => ev(`(() => { const e = document.querySelector(${JSON.stringify(sel)}); if (!e) return 'missing'; const r = e.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1 && r.top >= 0 && r.bottom <= innerHeight + 1; })()`);
+  assert.equal(await fits('#homeCard'), true, 'the menu card is on screen');
+  assert.equal(await fits('#homeCard .tile-side'), true);
+  await shot('30_home_phone_saves');
+  await clickEl('[data-modal="newgame"]');
+  assert.equal(await ev(`document.querySelectorAll('.diff-grid .perk').length`), 3);
+  await shot('31_newgame_phone');
+  const card = await ev(`(() => { const c = document.querySelector('.modal-card'); return { fits: c.scrollWidth <= c.clientWidth + 1 }; })()`);
+  assert.equal(card.fits, true, 'no sideways scrolling in the picker');
+  await clickEl('[data-modal="back"]');
+  await clickEl('[data-modal="loadgame"]');
+  assert.equal(await ev(`document.querySelectorAll('.save-row').length`), 3);
+  assert.equal(await ev(`(() => { const c = document.querySelector('.modal-card'); return c.scrollWidth <= c.clientWidth + 1; })()`), true, 'no sideways scrolling in the list');
+  await shot('32_load_phone');
   assert.deepEqual(b.consoleErrors, []);
 });
 
@@ -501,12 +665,12 @@ test('Home extras: a living café behind the menu, a daily tip, the Kredit page 
   for (let i = 0; i < 20 && !(await ev(`ABCC.debug.ui().Sound.musicPlaying()`)); i++) await sleep(250); // the page refreshes the music a few times a second; a busy software-rendered page can be slow
   assert.equal(await ev(`ABCC.debug.ui().Sound.musicPlaying()`), true, 'the menu has music');
   await clickEl('[data-modal="credits"]');
-  assert.match(await ev(`document.querySelector('.modal-card').textContent`), /KREDIT[\s\S]*Alpha 0\.13[\s\S]*Fredoka/);
+  assert.match(await ev(`document.querySelector('.modal-card').textContent`), /KREDIT[\s\S]*Alpha 0\.14[\s\S]*Fredoka/);
   await shot('25_credits');
   await clickEl('[data-modal="back"]');
   assert.equal(await ev(`document.documentElement.dataset.screen`), 'home');
   // starting the shop stops the menu music until the shift begins, and the page is gone
-  await clickUntil('[data-modal="newgame"]', `!!document.querySelector('[data-modal="introskip"]')`);
+  await startNew();
   await sleep(500);
   assert.equal(await ev(`ABCC.debug.ui().Sound.musicPlaying()`), false, 'silent during the intro cards');
   assert.deepEqual(b.consoleErrors, []);
@@ -816,14 +980,24 @@ test('Tiers, recap and last saved are on screen: the HUD names the tier, the rep
   await pageReady(3);
   assert.match(await ev(`document.getElementById('hudRepLabel').textContent`), /Kedai Biasa/);
   await ev(`ABCC.debug.set((s) => { s.rep = 78; }); ABCC.debug.advance(0.3); 1`);
-  assert.match(await ev(`document.getElementById('hudRepLabel').textContent`), /Kedai Popular/, 'the HUD follows the reputation tier');
+  assert.match(await ev(`document.getElementById('hudRepLabel').textContent`), /Kedai Biasa ↑/, 'the tier waits for the end of the day; the arrow says the score is pushing it up');
   await ev(`ABCC.S.record(ABCC.debug.state(), 'rental', 99900, 'test'); ABCC.debug.advance(130); 1`);
   await sleep(600);
   const report = await ev(`document.querySelector('.modal-card').innerText`);
   assert.match(report, /Sorotan hari/);
-  assert.match(report, /Naik taraf: Kedai Popular/, 'the tier change is a highlight of the day');
+  assert.doesNotMatch(report, /Taraf naik|Naik taraf/, 'one good day is not enough to be promoted');
+  assert.match(report, /Reputasi\s+55\s*→\s*\d+[\s\S]*bonus/, 'the report shows how reputation moved, with the star bonus');
+  assert.match(report, /Kedai Best: reputasi 60\+ untuk\s+1\/2\s+hari berturut-turut/, 'and how far the shop is from the next tier');
+  // the second day in a row: promoted, and the perks start tomorrow
+  await clickUntil('[data-modal="next"]', `!!document.querySelector('[data-modal="start"]')`);
+  await clickUntil('[data-modal="start"]', `ABCC.debug.state().phase === 'active'`);
+  await ev(`ABCC.debug.freeze(true); ABCC.debug.set((s) => { s.beatPlan = []; s.specialAt = []; s.eventCooldown = 1e9; s.spawnCooldown = 1e9; s.inspectionScheduled = 1e9; s.rep = 78; }); ABCC.S.record(ABCC.debug.state(), 'rental', 99900, 'test'); ABCC.debug.freeze(false); ABCC.debug.advance(130); 1`);
+  await sleep(600);
+  const report2 = await ev(`document.querySelector('.modal-card').innerText`);
+  assert.match(report2, /Taraf naik: [\s\S]*Kedai Best/, 'two days in a row: up one step');
+  assert.match(report2, /Bermula esok/, 'and the perks start tomorrow');
   await shot('21_report_recap');
-  await ev(`(() => { const s = ABCC.debug.state(); s.phase = 'menu'; ABCC.State.save(s); ABCC.UI.resync(); return 1; })()`);
+  await ev(`(() => { const s = ABCC.debug.state(); s.phase = 'menu'; ABCC.State.createSave(s); ABCC.UI.resync(); return 1; })()`);
   await sleep(700);
   assert.match(await ev(`document.querySelector('.home-foot').innerText`), /Disimpan baru sahaja/, 'the menu says the progress was just saved');
   assert.deepEqual(b.consoleErrors, []);
@@ -982,8 +1156,8 @@ test('Phase 17: graceful fallback when WebGL is unavailable — a clickable boar
 });
 
 test('the standalone bundle (dist/) boots and plays the same as the folder build', async () => {
-  const bundle = pathToFileURL(path.join(root, 'dist', 'ABANG_CC_2007_ALPHA_13.html')).href;
-  if (!fs.existsSync(path.join(root, 'dist', 'ABANG_CC_2007_ALPHA_13.html'))) return; // run `node tools/build.mjs` first
+  const bundle = pathToFileURL(path.join(root, 'dist', 'ABANG_CC_2007_ALPHA_14.html')).href;
+  if (!fs.existsSync(path.join(root, 'dist', 'ABANG_CC_2007_ALPHA_14.html'))) return; // run `node tools/build.mjs` first
   await open(1366, 768, { url: bundle });
   assert.deepEqual(b.consoleErrors, []);
   assert.equal(await ev('!!ABCC.debug.gfx()'), true);

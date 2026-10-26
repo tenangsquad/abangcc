@@ -1,4 +1,4 @@
-// Bundles index.html + css + js into ONE standalone file: dist/ABANG_CC_2007_ALPHA_13.html
+// Bundles index.html + css + js into ONE standalone file: dist/ABANG_CC_2007_ALPHA_14.html
 //   node tools/build.mjs
 // No dependencies. The result needs no server and no other files (it still asks Google Fonts for the
 // display fonts when online; offline it falls back to system fonts).
@@ -23,7 +23,7 @@ html = html.replace(/<script src="([^"]+)"><\/script>/g, (_, src) => {
   return `<script>\n/* ---- ${src} ---- */\n${code}\n</script>`;
 });
 
-const out = path.join(root, 'dist', 'ABANG_CC_2007_ALPHA_13.html');
+const out = path.join(root, 'dist', 'ABANG_CC_2007_ALPHA_14.html');
 fs.mkdirSync(path.dirname(out), { recursive: true });
 fs.writeFileSync(out, html);
 const kb = (fs.statSync(out).size / 1024).toFixed(0);

@@ -77,8 +77,12 @@
     };
     vit('Rep', s.rep);
     const tier = State.tierOf(s);
-    setText($('hudRepLabel'), `${tier.emoji} ${tier.name}`);
-    $('hudRepMeter').title = `Reputasi: pelanggan datang lebih ramai bila tinggi. ${tier.name}: ${tier.perks}`;
+    // the tier only changes at the end of the day; the arrow says which way the score is pushing it right now
+    const here = ns.TIERS.indexOf(tier);
+    const want = ns.tierIndexFor(s.rep, here);
+    const arrow = want > here ? ' ↑' : want < here ? ' ↓' : '';
+    setText($('hudRepLabel'), `${tier.emoji} ${tier.name}${arrow}`);
+    $('hudRepMeter').title = `Reputasi: pelanggan datang lebih ramai bila tinggi. ${tier.name}: ${tier.perks}${want > here ? ` Naik ke ${ns.TIERS[here + 1].name} kalau reputasi kekal ${ns.TIERS[here + 1].min}+ dan target capai ${ns.TIERS[here + 1].days} hari berturut-turut (${s.tierStreak || 0}/${ns.TIERS[here + 1].days}).` : want < here ? ' Taraf turun hujung hari kalau reputasi tak naik semula.' : ''}`;
     vit('Pro', s.professionalism);
     vit('Compliance', s.compliance);
     setText($('hudRisk'), String(Math.round(s.risk)));

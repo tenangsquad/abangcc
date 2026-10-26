@@ -3,16 +3,17 @@
    --------------------------------------------------------------------------
    Full-screen page: the live 3D café stays on screen behind a floating menu card. What the card offers depends on
    whether there is a session to go back to:
-     no session   →  Mula Main · Cara Main · Koleksi · Tetapan
-     has session  →  Sambung Main · Main Semula · Cara Main · Koleksi · Tetapan
-   Buttons carry data-modal="…" so js/ui/modals.js (UI.handleModal) does the work, exactly as for the pop-ups.
+     no session   →  Mula Main (pick a difficulty → a new save) · Cara Main · Koleksi · Tetapan
+     has session  →  Sambung Main (the save written last) · Main Baru · Muat Game · Cara Main · Koleksi · Tetapan
+   Every New Game is its own save; Muat Game lists them all (see js/state/save.js). Buttons carry data-modal="…" so js/ui/modals.js (UI.handleModal) does the work, exactly as for the pop-ups.
    ========================================================================== */
 (function (ns) {
   'use strict';
 
-  const { fmtMoney } = ns;
+  const { fmtMoney, DIRECTOR } = ns;
   const UI = ns.UI;
   const { $, safe } = UI;
+  const State = ns.State;
 
   const home = $('home');
   const card = $('homeCard');
@@ -29,6 +30,7 @@
     result: 'Laporan hari',
     active: 'Shift dijeda',
   };
+  UI.stageLabel = (stage) => where[stage] || '';
 
   /** One tip a day (it changes at midnight); tap the tip for the next one. Every line is true of the game as it is. */
   const TIPS = [
@@ -60,24 +62,29 @@
   const COFFEE_URL = 'https://payment.tngdigital.com.my/sc/bDLoeTIL3c';
   const coffeeTile = `<a class="tile coffee" href="${COFFEE_URL}" target="_blank" rel="noopener noreferrer"><span class="tile-ico">${UI.icon('coffee', 44)}</span><b>Belanja Kopi</b><small>Sokong kami</small></a>`;
 
+  /** A small side-by-side tile (icon left, label right) for the secondary buttons next to the big one. */
+  const mini = (cmd, ico, label, css) => `<button type="button" class="tile mini ${css}" data-modal="${cmd}"><span class="tile-ico">${UI.icon(ico, 26)}</span><b>${label}</b></button>`;
+
   UI.renderHome = function renderHome() {
     const s = UI.s;
     const session = UI.hasSession(s);
     const meta = ns.Meta.get();
+    const diff = DIRECTOR.presets[s.preset] || DIRECTOR.presets.biasa;
     const hero = session
-      ? tile('continue', 'resume', 'Sambung Main', `Hari ${s.day} · ${fmtMoney(s.cash)}${where[s.resumeTo] ? ` · ${where[s.resumeTo]}` : ''}`, 'hero', 60)
-      : tile('newgame', 'play', 'Mula Main', `Hari 1 · modal ${fmtMoney(ns.CFG.START_CASH)} · 3 PC`, 'hero', 60);
+      ? tile('continue', 'resume', 'Sambung Main', `${diff.icon} Hari ${s.day} · ${fmtMoney(s.cash)}${where[s.resumeTo] ? ` · ${where[s.resumeTo]}` : ''}`, 'hero', 60)
+      : tile('newgame', 'play', 'Mula Main', `Pilih kesukaran · modal ${fmtMoney(ns.CFG.START_CASH)}`, 'hero', 60);
     const row = [
       tile('help', 'guide', 'Cara Main', 'Panduan', 'sky'),
       tile('collection', 'collection', 'Koleksi', `${ns.Meta.hats().filter((h) => h.unlocked).length}/${ns.Meta.hats().length} topi`, 'violet'),
       tile('settings', 'settings', 'Tetapan', 'Bunyi · grafik', ''),
       coffeeTile,
     ].filter(Boolean);
-    // with a session the big button shares its row with Main Semula (70 / 30); the four small buttons sit below, evenly
-    const top = session ? `<div class="tile-top">${hero}${tile('restart', 'restart', 'Main Semula', 'Dari Hari 1', 'coral')}</div>` : hero;
+    // the big button shares its row (70 / 30) with Main Baru (when a run is open) and Muat Game (when there are saves); the small buttons sit below, evenly
+    const side = [session ? mini('newgame', 'play', 'Main Baru', 'coral') : '', State.saveCount() ? mini('loadgame', 'collection', 'Muat Game', 'sky') : ''].filter(Boolean);
+    const top = side.length ? `<div class="tile-top">${hero}<div class="tile-side">${side.join('')}</div></div>` : hero;
     card.innerHTML = `${top}<div class="tile-row" style="--n:${row.length}">${row.join('')}</div>`;
     showTip();
-    chips.innerHTML = meta.bestDay ? `<span>🏆 Hari terbaik ${safe(meta.bestDay)}</span>` : '';
+    chips.innerHTML = (session ? `<span>${diff.icon} ${safe(diff.label)}</span>` : '') + (meta.bestDay ? `<span>🏆 Hari terbaik ${safe(meta.bestDay)}</span>` : '');
     document.documentElement.dataset.screen = 'home';
     home.hidden = false;
     card.querySelector('.tile')?.focus({ preventScroll: true });

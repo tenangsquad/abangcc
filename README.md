@@ -6,7 +6,7 @@
 
 Seat the customers · fix the crashing PCs · catch the cheaters · survive the blackout · hit the daily target.
 
-**Alpha 0.13** &nbsp;·&nbsp; 3D cartoon &nbsp;·&nbsp; Plays in your browser &nbsp;·&nbsp; No install &nbsp;·&nbsp; Works on desktop and phone
+**Alpha 0.14** &nbsp;·&nbsp; 3D cartoon &nbsp;·&nbsp; Plays in your browser &nbsp;·&nbsp; No install &nbsp;·&nbsp; Works on desktop and phone
 
 <img src="tests/screenshots/01_scene_afternoon.png" alt="Abang's cyber café in the afternoon" width="760">
 
@@ -16,11 +16,38 @@ Seat the customers · fix the crashing PCs · catch the cheaters · survive the 
 
 ## ▶️ Play in 10 seconds
 
-1. Open **`dist/ABANG_CC_2007_ALPHA_13.html`** in Chrome, Edge or Firefox. It's a single file, so just double-click it.
-2. Wait for the loading screen (about 3 seconds). You land on the **main menu**: press **Mula Main** (Play) for a new game. Once you have a game going, the menu also shows **Sambung Main** (Continue, picks up where you stopped) and **Main Semula** (Restart, asks first). **Cara Main** is the quick guide and **Koleksi** is your hats.
+1. Open **`dist/ABANG_CC_2007_ALPHA_14.html`** in Chrome, Edge or Firefox. It's a single file, so just double-click it.
+2. Wait for the loading screen (about 3 seconds). You land on the **main menu**: press **Mula Main** (Play), pick a difficulty, and you have a new game. Once you have a game going, the menu also shows **Sambung Main** (Continue: the save you played last, picks up where you stopped), **Main Baru** (another new game, as a separate save) and **Muat Game** (all your saves, to open or delete one). **Cara Main** is the quick guide and **Koleksi** is your hats.
 3. Follow the **How to play** steps below. Day 1 is a gentle tutorial and has no random trouble.
 
 > 💡 Prefer a web server? Run `npx serve .` or `python -m http.server` in this folder and open `index.html`.
+
+---
+
+## 🧰 System requirements
+
+### To play
+
+| | Requirement |
+|---|---|
+| **Browser** | A current **Chrome** or **Edge** (these are the ones it is tested in). Firefox and Safari should work but have not been tested. |
+| **Graphics** | **WebGL 2** (WebGL 1 with instancing also works). With no WebGL at all the game falls back to a plain clickable board and stays playable, just without the 3D café. |
+| **Also needed** | JavaScript on. Browser storage (`localStorage`) for saving: if it is blocked the game still plays, but warns "Tak dapat simpan" and progress is lost when you close the page. Web Audio for sound: without it the game is silent. |
+| **Internet** | **Not needed.** The page asks Google Fonts for two fonts when online and uses system fonts when offline. |
+| **Screen** | Desktop: **1366 × 768** or larger is comfortable (the layout fits one screen, no scrolling). Phone: hold it **sideways**; held upright the game pauses and asks you to turn it. |
+| **Size** | One file of about **0.6 MB** (`dist/ABANG_CC_2007_ALPHA_14.html`); a save is a few tens of KB. |
+| **Minimum CPU / RAM / GPU** | _To be updated: not measured yet._ |
+| **Tested devices and frame rate** | _To be updated: only tested in headless Chrome with software graphics so far; no real phone or GPU yet._ |
+
+If it runs slowly, open **Tetapan** and set the graphics quality to **Sederhana** or **Rendah**. Phones and low-memory devices already start on a lighter setting.
+
+### To develop and run the tests
+
+| | Requirement |
+|---|---|
+| **Node.js** | **22 or newer** (the browser tests use its built-in `WebSocket`); developed on Node 25. |
+| **Browser for tests** | Chrome or Edge installed (set `CHROME_PATH` if it is somewhere unusual). |
+| **Packages** | None: there are no npm dependencies. |
 
 ---
 
@@ -149,7 +176,9 @@ Your reputation (0–100) gives the shop a rank, shown in the HUD:
 | 🔥 **Kedai Popular** | 75 | 8% more patient, a few more customers, and sometimes a little *duit kopi* tip |
 | 👑 **Port Lepak** | 90 | 12% more patient, more customers, bigger tips. But the late-night crowd turns up more and the inspector takes more interest |
 
-A rank is only lost once reputation falls 3 points below its threshold.
+Your reputation score moves **all day** (a happy customer, a fixed problem and a good inspection push it up; walk-outs, accusations and a bad inspection pull it down), but your **rank only changes at the end of the day**, so the perks you opened with are the perks you keep for that shift. The little arrow next to the rank in the HUD (↑ or ↓) shows which way the score is pushing it.
+
+Climbing has to be **earned over time**. To move up, your reputation must stay at the next rank's mark at the end of several days **in a row**, each day meeting the target: **Kedai Best** needs 2 days, **Kedai Popular** 5 and **Port Lepak** 10 (the report shows the count, for example `Kedai Popular: reputasi 75+ untuk 3/5 hari berturut-turut`). A day with the score under the mark starts the count again; a day you miss is replayed, so it neither counts nor breaks the count. Even a perfect run therefore needs at least **17 days** to reach Port Lepak, and only players who keep the shop running well day after day get there. The **stars** give the day's reputation gain a boost: each star adds **20 %** of the points you gained that day (a ⭐⭐ day +40 %, a ⭐⭐⭐ day +60 %). The shift report shows the change (for example `Reputasi 55 → 72, termasuk +12 bonus ⭐⭐⭐`) and how far you are from the next rank. Falling is quicker than climbing: a rank is lost once reputation drops more than 3 points below its threshold (one step a day). The days needed are `days` in `TIERS` (`js/core/config.js`) if you want to tune them.
 
 Every shift report ends with **Sorotan hari**: a few highlights of the day (best hour, the PC that kept breaking, who stormed off, the biggest sale…). The menu, pause and settings screens show when the game was **last saved**.
 
@@ -196,11 +225,19 @@ The camera is fixed isometric and never rotates. Zooming is optional.
 
 **Sound:** the ♫ button mutes everything. In Settings you can turn the **Muzik** (a small looping tune that gets slower and moodier at night and busier in peak hour) off separately. You hear a coin sound for every sale, a soft warning beep when a waiting customer is almost out of patience, and a fanfare when you reach the day's target.
 
+**Café ambience:** under the music the café itself makes noise: the hum of the PCs (louder with more people online), the fan or aircond, the street outside with a motorbike passing now and then, crickets at night, and the generator chugging during a blackout. It has its own **Suasana kedai** switch in Settings, and goes quiet during a blackout and on pause.
+
+**Night lights:** from dusk four office-style **twin fluorescent fittings** (a square casing with a tube on each side, hanging on chains) switch on over the café, one by the counter and three along the aisle in front of the PCs. Each throws a wide, cool-white cone of light and a soft pool onto the floor, one of them flickers now and then, and the café ambience adds a faint tube buzz. In a blackout they hang dark. (The engine draws the cones with its own "light cone" decal; the fittings are in `js/gfx/props.js`, `drawTubeLights`.)
+
 **Layout on a PC:** by default the game uses the classic layout (top bar and a sidebar). In Settings, **Susun atur → Terapung** makes the 3D shop fill the whole window with the panels floating in its four corners, which gives you a noticeably bigger café. The choice is remembered. (Phones always use the corner layout.)
 
 **Main menu extras:** the café on the menu page is alive (customers come and go behind it, it never touches your real shop), the menu plays the daytime tune once you have tapped anywhere, the box under the menu shows one tip a day (tap it for the next), and **Kredit** at the bottom lists the version, makers and fonts.
 
-**Difficulty:** open Settings (the ⚙ button) and pick **Santai** (easy), **Biasa** (normal) or **Mencabar** (hard).
+**Difficulty:** you choose it once, when you press **Mula Main** / **Main Baru**, and it is locked to that save: **Senang Sunggoh** (easy), **Susah Sikit Jer** (medium) or **Susah Teruk!** (hard). Easy has patient customers, fewer breakdowns and a daily target 20 % lower; hard has short tempers, more trouble, PCs that hang more and a target 10 % higher. Want to try another level? Start a new game: it becomes its own save. Settings shows the level of the save you are playing but cannot change it.
+
+**Saves:** every new game is its own save, up to **5**, stored in this browser only (a different browser or device has its own list, and clearing the browser's site data deletes them). **Muat Game** lists them (level, day, cash, shop tier, when last saved) and opens or deletes one; when all 5 places are used, **Main Baru** asks which old save to replace. **Sambung Main** always opens the save written last. Koleksi (hats and records) is shared by all saves.
+
+**Moving a save:** in **Muat Game**, **Eksport** downloads one save as a small `.json` file (named like `abangcc-susah-teruk-hari9-20261026-1930.json`) and **Import save** adds such a file back as a new save, in any browser or on another device. The imported save keeps its level, progress and last-played time, is checked before it is accepted (a file that is not a save, was edited by hand, comes from a newer version, is already in the list or does not fit because all 5 places are used is refused with a message) and never replaces the save you were playing. The files are plain text, so keep them somewhere safe; they are also a backup. A save from before this version is copied in as the first save the first time you open the game.
 
 ---
 
@@ -223,7 +260,7 @@ The camera is fixed isometric and never rotates. Zooming is optional.
 
 | What | Command |
 |---|---|
-| Play (no tools) | Double-click `index.html` or `dist/ABANG_CC_2007_ALPHA_13.html` |
+| Play (no tools) | Double-click `index.html` or `dist/ABANG_CC_2007_ALPHA_14.html` |
 | Build the single-file bundle | `node tools/build.mjs` (no dependencies, Node 22+) |
 | Logic tests (59) | `node --test tests/state.test.mjs` |
 | Browser tests (29) | `node --test tests/browser.test.mjs` (needs Chrome or Edge; set `CHROME_PATH` if installed somewhere unusual). Screenshots go to `tests/screenshots/`. |
@@ -244,13 +281,15 @@ js/ui/*.js            loader, audio, HUD, panels, labels, modals, input, main
 tests/                state.test.mjs  browser.test.mjs  bot.mjs  sim.mjs  load-state.mjs
 tools/                build.mjs  make-wallpaper.mjs  cdp.mjs  stage.html
 dist/                 the standalone bundle (generated)
+CHANGELOG.md          what changed in each version (Alpha 0.14 is the current one)
+UpgradeCollection/    the backlog of upgrade ideas, with what is done and what is still to do
 ```
 
 Concerns are kept apart: simulation (`state/`), renderer (`gfx/engine` + `scene`), character movement (`state/movement.js`) and animation (`gfx/anim.js`, `gfx/characters.js`), picking (`gfx/picking.js`, `ui/input.js`), UI (`ui/`), audio (`ui/audio.js`), assets (`gfx/props.js`), save/load (`state/save.js`), tests (`tests/`).
 
 ### Balancing
 
-Everything lives in `js/core/config.js`. `DIRECTOR` is the single difficulty table (spawn rate, patience drain, fault chances, trouble frequency, special slots, inspection, target curve). The `Santai / Biasa / Mencabar` presets scale it. `node tests/sim.mjs` shows the effect.
+Everything lives in `js/core/config.js`. `DIRECTOR` is the single difficulty table (spawn rate, patience drain, fault chances, trouble frequency, special slots, inspection, target curve). The three presets (`santai` = Senang Sunggoh, `biasa` = Susah Sikit Jer, `mencabar` = Susah Teruk!) scale it with `pressure`, `patience`, `trouble`, `faults` and `goal` (the daily target). `node tests/sim.mjs` shows the effect; `playCampaign({ preset })` in `tests/bot.mjs` simulates a given level.
 
 ### Loading screen
 
@@ -262,7 +301,7 @@ An inline-SVG illustration (sunset over a shophouse street, the ABANG CC shop, A
 - The renderer is a custom WebGL2 engine, not Three.js. Shadows are planar (floor only) and there is no ambient-occlusion pass.
 - Characters are posed from a small rig, not skeletal animation clips.
 - Picking uses ray tests against bounding shapes, not per-triangle.
-- Sounds are tiny synthesised effects. There is no music.
+- Sound is synthesised in the browser (effects, a small looping tune and the café ambience), with no audio files, so it is simple and quiet rather than studio quality.
 - Tested headlessly and in headless Chrome (software GL). It has **not** been run on real phones or GPUs, and the 60 / 30 FPS targets are not measured. Quality tiers and an automatic step-down exist for slow devices.
 - The whole scene is rebuilt each frame (about 1.6 ms of JavaScript for an 8-PC busy shop), so caching would save under a millisecond.
 - Balance is tuned with scripted players, not human playtesters.

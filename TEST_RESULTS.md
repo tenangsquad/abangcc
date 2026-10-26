@@ -1,4 +1,6 @@
-# Test results — ALPHA_13
+# Test results — ALPHA_14
+
+> **Alpha 0.14 re-run (2026-10-26, macOS, Node 24.21, headless Chrome with software WebGL):** game logic **86 / 86** and browser **40 / 40** pass. The tables below are from the Alpha 0.13 run on 2026-10-25 and were not repeated in full.
 
 Run on 2026-10-25 on Windows 11, Node 25.6, Chrome (headless, software WebGL via SwiftShader). Nothing here was run on a physical phone, a real GPU, or with a human playing.
 

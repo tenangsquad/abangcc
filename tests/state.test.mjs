@@ -63,11 +63,12 @@ test('7.6: targets climb +RM2 a day for the first 20 days, then +RM1 (RM88 on da
   const s = State.create(1);
   const days = [1, 2, 3, 4, 5, 10, 11, 12, 20, 21, 22, 30];
   assert.deepEqual(plain(days.map((d) => State.calcRevenueGoal(s, d) / 100)), [30, 32, 34, 36, 38, 48, 50, 52, 68, 69, 70, 78]);
-  // PC count and difficulty preset do not change the numbers
+  // PC count does not change the numbers; the difficulty preset scales them (whole RM): Senang ×0.8, Susah Sikit Jer ×1, Susah Teruk! ×1.1
   while (s.pcs.length < 6) ns.State.addPc(s);
+  const expected = { santai: [24, 26, 27, 38], biasa: [30, 32, 34, 48], mencabar: [33, 35, 37, 53] };
   for (const preset of ['santai', 'biasa', 'mencabar']) {
     s.preset = preset;
-    assert.deepEqual(plain([1, 2, 3, 10].map((d) => State.calcRevenueGoal(s, d) / 100)), [30, 32, 34, 48], preset);
+    assert.deepEqual(plain([1, 2, 3, 10].map((d) => State.calcRevenueGoal(s, d) / 100)), expected[preset], preset);
   }
 });
 
@@ -701,7 +702,8 @@ test('A20: save → refresh → load restores the run; a corrupt save falls back
   s.spawnCooldown = 0;
   advance(ns, s, 20);
   s.cash += 123;
-  assert.ok(State.save(s));
+  const id = State.createSave(s);
+  assert.ok(id);
   State.save(s); // second write moves the first to the backup slot
   // "refresh the browser": brand-new game instance, same storage
   ({ ns, State } = fresh({ storage }));
@@ -711,11 +713,241 @@ test('A20: save → refresh → load restores the run; a corrupt save falls back
   assert.equal(loaded.day, s.day);
   assert.equal(loaded.phase, 'paused', 'a mid-shift save resumes paused');
   // corrupt the main slot
-  storage.setItem(ns.CFG.SAVE, storage.getItem(ns.CFG.SAVE).slice(0, 200));
+  const key = ns.CFG.SAVE_PREFIX + id;
+  storage.setItem(key, storage.getItem(key).slice(0, 200));
   ({ ns, State } = fresh({ storage }));
   const fallback = State.getSaved();
   assert.ok(fallback, 'falls back to the backup');
   assert.equal(fallback.day, s.day);
+});
+
+/** Run `fn` with Date.now() under our control, so saves written "one minute apart" really are, whatever the speed of the test. */
+function withClock(start, fn) {
+  const real = Date.now;
+  let now = start;
+  Date.now = () => now;
+  try {
+    return fn((ms) => { now += ms; });
+  } finally {
+    Date.now = real;
+  }
+}
+
+test('Saves: every New Game is its own save with its own difficulty; Continue opens the one written last', () => {
+  const storage = makeStorage();
+  withClock(1_700_000_000_000, (tick) => {
+    let { ns, State } = fresh({ storage });
+    assert.equal(State.getSaved(), null, 'nothing yet');
+    assert.equal(State.save(State.create(1)), false, 'a fresh game with no save writes nothing');
+    assert.equal(State.saveCount(), 0);
+
+    const a = State.create(1, 'santai'); a.day = 3;
+    const idA = State.createSave(a);
+    tick(60_000);
+    const b = State.create(2, 'mencabar'); b.day = 7; b.cash = 4242;
+    const idB = State.createSave(b);
+    tick(60_000);
+    const c = State.create(3); c.day = 5;
+    const idC = State.createSave(c);
+    assert.equal(new Set([idA, idB, idC]).size, 3, 'three different saves');
+    assert.equal(State.saveCount(), 3);
+
+    // "refresh": Continue is the newest, and every save keeps its own difficulty and progress
+    ({ ns, State } = fresh({ storage }));
+    const list = State.listSaves();
+    assert.deepEqual(plain(list.map((x) => [x.id, x.preset, x.day])), [[idC, 'biasa', 5], [idB, 'mencabar', 7], [idA, 'santai', 3]]);
+    const cont = State.getSaved();
+    assert.equal(cont.day, 5);
+    assert.equal(cont.preset, 'biasa');
+    assert.equal(State.activeSaveId(), idC);
+
+    // opening another save makes it the active one; writes go only to it
+    tick(60_000);
+    const loaded = State.loadSave(idB);
+    assert.equal(loaded.preset, 'mencabar');
+    assert.equal(loaded.cash, 4242);
+    loaded.cash += 100;
+    State.save(loaded);
+    assert.equal(State.listSaves()[0].id, idB, 'the save just written is now the newest');
+    assert.equal(State.loadSave(idC).day, 5, 'the others are untouched');
+    assert.equal(State.loadSave(idA).preset, 'santai');
+    assert.equal(State.loadSave('nosuchid'), null);
+  });
+});
+
+test('Saves: at most CFG.MAX_SAVES; deleting one frees a place and takes its backup with it; the others are untouched', () => {
+  const storage = makeStorage();
+  withClock(1_700_000_000_000, (tick) => {
+    const { ns, State } = fresh({ storage });
+    const ids = [];
+    for (let i = 0; i < ns.CFG.MAX_SAVES; i++) {
+      tick(1000);
+      const s = State.create(i + 1); s.day = i + 1;
+      ids.push(State.createSave(s));
+      State.save(s); // a second write, so a backup exists
+    }
+    assert.equal(State.createSave(State.create(99)), null, 'no sixth save');
+    assert.equal(State.saveCount(), ns.CFG.MAX_SAVES);
+    const bak = ns.CFG.SAVE_PREFIX + ids[2] + ns.CFG.SAVE_BAK_SUFFIX;
+    assert.ok(storage.getItem(bak), 'the backup exists');
+
+    assert.equal(State.deleteSave(ids[2]), true);
+    assert.equal(storage.getItem(bak), null, 'the backup goes too');
+    assert.equal(storage.getItem(ns.CFG.SAVE_PREFIX + ids[2]), null);
+    assert.equal(State.saveCount(), ns.CFG.MAX_SAVES - 1);
+    assert.ok(State.createSave(State.create(100)), 'a place is free again');
+    assert.deepEqual(plain(State.listSaves().map((x) => x.day).sort()), [1, 1, 2, 4, 5], 'the other four are intact, plus the new one');
+    assert.equal(State.deleteSave('../meta'), false, 'only well-formed ids are accepted');
+    assert.ok(State.deleteSave(State.activeSaveId()) && State.activeSaveId() === null, 'deleting the active save leaves none active');
+  });
+});
+
+test('Saves: a damaged save falls back to its own backup, and one that is damaged twice is skipped without hiding the others', () => {
+  const storage = makeStorage();
+  withClock(1_700_000_000_000, (tick) => {
+    let { ns, State } = fresh({ storage });
+    const mk = (day) => { tick(1000); const s = State.create(day); s.day = day; const id = State.createSave(s); State.save(s); return id; };
+    const idA = mk(2), idB = mk(4), idC = mk(6);
+    const cut = (id, suffix = '') => storage.setItem(ns.CFG.SAVE_PREFIX + id + suffix, storage.getItem(ns.CFG.SAVE_PREFIX + id + suffix).slice(0, 80));
+    cut(idB);
+    cut(idC); cut(idC, ns.CFG.SAVE_BAK_SUFFIX);
+    ({ ns, State } = fresh({ storage }));
+    assert.deepEqual(plain(State.listSaves().map((x) => x.id)), [idB, idA], 'C is unreadable; B was recovered from its backup');
+    assert.equal(State.getSaved().day, 4, 'Continue skips the unreadable save');
+  });
+});
+
+test('Saves: the old single save is copied in once, never again, and the old keys stay as a safety net', () => {
+  const storage = makeStorage();
+  let { ns, State } = fresh({ storage });
+  const old = State.create(9); old.day = 8; old.cash = 1234; old.phase = 'prep';
+  const env = (s) => JSON.stringify({ v: 12, t: 1_650_000_000_000, sum: State.checksum(JSON.stringify(s)), s: JSON.stringify(s) });
+  storage.setItem(ns.CFG.SAVE, env(old));
+  const first = State.getSaved();
+  assert.equal(first.day, 8);
+  assert.equal(State.saveCount(), 1);
+  assert.equal(State.saveInfo().at, 1_650_000_000_000, 'it keeps the time it was last written');
+  assert.ok(storage.getItem(ns.CFG.SAVE), 'the old key is still there');
+
+  // delete it, and the next page load must not bring it back
+  State.deleteSave(State.activeSaveId());
+  ({ ns, State } = fresh({ storage }));
+  assert.equal(State.getSaved(), null);
+  assert.equal(State.saveCount(), 0);
+});
+
+test('Difficulty: Senang Sunggoh / Susah Sikit Jer / Susah Teruk! is chosen when a run is created, travels with the save, and an unknown name falls back to Susah Sikit Jer', () => {
+  const { ns, State, S } = fresh();
+  const P = ns.DIRECTOR.presets;
+  assert.deepEqual(plain(['santai', 'biasa', 'mencabar'].map((k) => P[k].label)), ['Senang Sunggoh', 'Susah Sikit Jer', 'Susah Teruk!']);
+  assert.equal(State.create(1, 'mencabar').preset, 'mencabar');
+  assert.equal(State.create(1).preset, 'biasa');
+  assert.equal(State.create(1, 'impossible').preset, 'biasa');
+
+  // each step up is harder in every way a preset can touch
+  const [easy, mid, hard] = ['santai', 'biasa', 'mencabar'].map((k) => { const s = State.create(1, k); s.day = 10; return s; });
+  const pc = hard.pcs[0]; pc.health = 10;
+  for (const [lo, hi] of [[easy, mid], [mid, hard]]) {
+    assert.ok(S.pressure(lo) < S.pressure(hi), 'more customers');
+    assert.ok(S.patienceDrain(lo) < S.patienceDrain(hi), 'they lose patience faster');
+    assert.ok(S.troubleInterval(lo) > S.troubleInterval(hi), 'trouble comes more often');
+    assert.ok(S.faultChance(lo, pc) < S.faultChance(hi, pc), 'PCs hang more often');
+    assert.ok(State.calcRevenueGoal(lo, 10) < State.calcRevenueGoal(hi, 10), 'the daily target is higher');
+  }
+
+  // it survives a save and a reload, and a save from before presets existed is Susah Sikit Jer
+  const storage = makeStorage();
+  const g = fresh({ storage });
+  const s = g.State.create(5, 'santai');
+  g.State.createSave(s);
+  assert.equal(fresh({ storage }).State.getSaved().preset, 'santai');
+  const legacy = plain(g.State.create(6)); delete legacy.preset;
+  assert.equal(g.State.migrate(legacy).preset, 'biasa');
+});
+
+test('Export / import: a save travels as a file into another browser, keeps its level, progress and time, and never takes over Sambung Main', () => {
+  withClock(1_700_000_000_000, (tick) => {
+    const a = fresh({ storage: makeStorage() });
+    const s = a.State.create(7, 'mencabar'); s.day = 9; s.cash = 5150; s.rep = 71;
+    const id = a.State.createSave(s);
+    tick(5000);
+    const file = a.State.exportSave(id);
+    assert.ok(file && typeof file.text === 'string');
+    assert.equal(file.summary.preset, 'mencabar');
+    assert.equal(a.State.exportSave('nosuchid'), null);
+    assert.equal(a.State.exportSave('../x'), null);
+
+    // another browser (empty storage) that already has its own, newer save
+    const b = fresh({ storage: makeStorage() });
+    tick(60_000);
+    const own = b.State.create(1); own.day = 2;
+    const ownId = b.State.createSave(own);
+    tick(60_000);
+    const r = b.State.importSave(file.text);
+    assert.equal(r.ok, true);
+    assert.equal(b.State.saveCount(), 2);
+    assert.equal(b.State.activeSaveId(), ownId, 'importing does not switch to the imported save');
+    assert.equal(b.State.getSaved().day, 2, 'Sambung Main is still the save that was played last');
+    const got = b.State.loadSave(r.id);
+    assert.equal(got.preset, 'mencabar');
+    assert.equal(got.day, 9);
+    assert.equal(got.cash, 5150);
+    assert.equal(got.rep, 71);
+    assert.equal(r.summary.t, 1_700_000_000_000, 'it keeps the time it was last played');
+
+    // the same file again is not added twice
+    assert.deepEqual(plain(b.State.importSave(file.text)), { ok: false, error: 'duplicate' });
+    assert.equal(b.State.saveCount(), 2);
+  });
+});
+
+test('Export / import: files that are not a save, were edited, or come from a newer game are refused and nothing is added', () => {
+  const { ns, State } = fresh();
+  const s = State.create(3); s.day = 4;
+  const file = JSON.parse((State.createSave(s), State.exportSave(State.activeSaveId())).text);
+  const bad = (text) => State.importSave(text);
+  assert.equal(bad('hello').error, 'notsave');
+  assert.equal(bad('{"a":1}').error, 'notsave');
+  assert.equal(bad('[1,2,3]').error, 'notsave');
+  assert.equal(bad(JSON.stringify({ ...file, game: 'another-game' })).error, 'notsave');
+  assert.equal(bad(JSON.stringify({ ...file, s: file.s.replace('"day":4', '"day":40') })).error, 'damaged', 'the checksum catches a hand edit');
+  assert.equal(bad(JSON.stringify({ ...file, s: 'not json', sum: State.checksum('not json') })).error, 'damaged');
+  const notState = JSON.stringify({ x: 1 });
+  assert.equal(bad(JSON.stringify({ ...file, s: notState, sum: State.checksum(notState) })).error, 'damaged', 'valid JSON that is not a game');
+  assert.equal(bad(JSON.stringify({ ...file, v: ns.CFG.VERSION + 1 })).error, 'newer');
+  assert.equal(bad('x'.repeat(2_000_001)).error, 'toobig');
+  assert.equal(bad(null).error, 'toobig');
+  assert.equal(State.saveCount(), 1, 'nothing was added');
+});
+
+test('Export / import: a full list refuses another import; a "__proto__" key in a file cannot change what a loaded save is made of', () => {
+  const storage = makeStorage();
+  const { ns, State } = fresh({ storage });
+  const donor = State.create(2); donor.day = 6;
+  State.createSave(donor);
+  const file = State.exportSave(State.activeSaveId()).text;
+  State.deleteSave(State.activeSaveId());
+  for (let i = 0; i < ns.CFG.MAX_SAVES; i++) State.createSave(State.create(i + 1));
+  assert.deepEqual(plain(State.importSave(file)), { ok: false, error: 'full' });
+  assert.equal(State.saveCount(), ns.CFG.MAX_SAVES);
+
+  // a poisoned file: its checksum is right (the attacker made it), but it carries "__proto__"
+  const inner = '{"pcs":[{"id":1,"__proto__":{"polluted":true}},{"id":2},{"id":3}],"day":3,"cash":100,"__proto__":{"isAdmin":true},"perks":[]}';
+  State.deleteSave(State.listSaves()[0].id);
+  const r = State.importSave(JSON.stringify({ game: 'abangcc2007', v: ns.CFG.VERSION, t: 1, sum: State.checksum(inner), s: inner }));
+  assert.equal(r.ok, true);
+  const loaded = State.loadSave(r.id);
+  assert.equal(loaded.day, 3);
+  assert.equal(loaded.isAdmin, undefined, 'the prototype was not replaced');
+  assert.equal(({}).polluted, undefined);
+  assert.equal(loaded.pcs[0].polluted, undefined);
+
+  // the same poisoned text put straight into the browser's storage (no import in between) is read the same safe way
+  storage.setItem(`${ns.CFG.SAVE_PREFIX}poison01`, JSON.stringify({ v: ns.CFG.VERSION, t: 1, sum: State.checksum(inner), s: inner }));
+  const direct = State.loadSave('poison01');
+  assert.equal(direct.day, 3);
+  assert.equal(direct.isAdmin, undefined, 'the prototype was not replaced');
+  assert.equal(direct.pcs[0].polluted, undefined);
 });
 
 test('B8: older (v11-style) saves are migrated, never discarded', () => {
@@ -732,6 +964,8 @@ test('B8: older (v11-style) saves are migrated, never discarded', () => {
   assert.equal('upgrades' in s, false);
   assert.equal(s.version, ns.CFG.VERSION);
   assert.equal('installed' in s.pcs[0], false);
+  assert.equal(State.saveCount(), 1, 'the old save became the first save in the list');
+  assert.ok(storage.getItem(ns.CFG.SAVE_V11), 'the old key is left in place');
 });
 
 /* ---------------------------------------------------- 7.5 bookkeeping, end of day */
@@ -1009,8 +1243,8 @@ test('Koleksi: hats unlock by clearing days, only unlocked hats can be worn, and
   assert.deepEqual(plain(M.recordDay(10, 3).map((h) => h.id)).sort(), ['crown', 'straw'], 'a jump to day 10 unlocks everything on the way');
   M.recordRun();
   assert.equal(JSON.parse(storage.getItem('abangcc2007_meta')).hat, 'phones', 'stored on its own, apart from the run save');
-  // a brand-new run (State.create / resetSave) does not touch it
-  ns.State.resetSave();
+  // a brand-new run (State.create) and deleting a save do not touch it
+  ns.State.deleteSave(ns.State.createSave(ns.State.create()));
   ns.State.create();
   assert.equal(M.get().bestDay, 10);
   assert.equal(M.get().runs, 1);
@@ -1132,6 +1366,145 @@ test('Reputation tiers: Biasa → Best → Popular → Port Lepak, with a 3-poin
   assert.ok(s.shiftStats.tierMoves.length >= 5, 'each change is remembered for the recap');
 });
 
+/** A calm one-day run that ends with `sales` (sen) of rental income, starting from tier `tier` with the score at `rep` (the day's gain is measured from `repStart`). */
+function tierDay(ns, { tier = 'biasa', rep, repStart = rep, sales, day = 3, seed = 5 }) {
+  const s = calmShift(ns, { seed, day });
+  s.repTier = tier;
+  s.rep = rep;
+  s.repAtStart = repStart;
+  if (sales) ns.S.record(s, 'rental', sales, 'test');
+  return s;
+}
+
+/** Play the next day of a calm run to its end with `sales` sen of rental income; `rep` (if given) is the score for the whole day. */
+function nextTierDay(ns, s, { sales = 99900, rep } = {}) {
+  ns.State.proceed(s);
+  ns.State.startShift(s);
+  s.spawnCooldown = s.eventCooldown = 1e9; s.beatPlan = []; s.specialAt = []; s.inspectionScheduled = 1e9;
+  if (rep !== undefined) { s.rep = rep; s.repAtStart = rep; }
+  if (sales) ns.S.record(s, 'rental', sales, 'test');
+  run(ns, s, ns.CFG.SHIFT + 5);
+  return s.lastReport;
+}
+
+test('Reputation tiers settle once a day: the tier never moves in the middle of a shift, and going up needs the score to hold for several days in a row', () => {
+  const { ns } = fresh();
+  assert.deepEqual(plain(ns.TIERS.map((t) => t.days)), [null, 2, 5, 10], 'Kedai Biasa is where everyone starts; the higher the tier, the longer it takes');
+
+  // day 1 at 95: far above Kedai Best's mark, but the tier does not budge during the shift, or after one such day
+  const s = tierDay(ns, { rep: 95, sales: 99900 });
+  run(ns, s, 60);
+  assert.equal(s.repTier, 'biasa', 'still Kedai Biasa half way through the day');
+  assert.deepEqual(plain(s.shiftStats.tierMoves || []), [], 'no tier change was announced during the shift');
+  run(ns, s, ns.CFG.SHIFT);
+  assert.equal(s.lastReport.goalMet, true);
+  assert.equal(s.repTier, 'biasa', 'one day is not enough');
+  assert.equal(s.lastReport.tierStreak, 1);
+  assert.equal(s.lastReport.tierDays, 2, 'Kedai Best asks for two days in a row');
+
+  // day 2: the second day in a row, so up one step, even though 95 would also be Port Lepak's mark
+  const r2 = nextTierDay(ns, s, { rep: 95 });
+  assert.equal(s.repTier, 'best');
+  assert.equal(r2.tierBefore, 'biasa');
+  assert.equal(r2.tier, 'best');
+  assert.equal(r2.tierStreak, 0, 'the count starts again for the next tier');
+  assert.equal(r2.tierDays, 5);
+  assert.match(r2.recap.map((x) => x.title).join('|'), /Naik taraf: Kedai Best/);
+});
+
+test('Reputation tiers: a day with the score under the next mark starts the count again; a missed day neither counts nor breaks it', () => {
+  const { ns } = fresh();
+  const s = tierDay(ns, { tier: 'best', rep: 95, sales: 99900 });
+  run(ns, s, ns.CFG.SHIFT + 5);
+  assert.equal(s.lastReport.tierStreak, 1);
+  nextTierDay(ns, s, { rep: 95 });
+  assert.equal(s.tierStreak, 2);
+  nextTierDay(ns, s, { rep: 70 }); // 70 is still Kedai Best's, but short of Popular's 75
+  assert.equal(s.repTier, 'best');
+  assert.equal(s.tierStreak, 0, 'a day under the mark starts the count again');
+
+  // a missed day: not counted, and replayed, so the count is as it was
+  nextTierDay(ns, s, { rep: 95 });
+  assert.equal(s.tierStreak, 1);
+  const miss = nextTierDay(ns, s, { rep: 95, sales: 0 });
+  assert.equal(miss.goalMet, false);
+  assert.equal(s.tierStreak, 1, 'a missed day does not count');
+  assert.equal(s.repTier, 'best', 'and cannot promote');
+  assert.equal(miss.starBonus, 0, 'and no star bonus either');
+});
+
+test('Reputation tiers: Port Lepak takes ten days in a row at 90+, each meeting the target', () => {
+  const { ns } = fresh();
+  const s = tierDay(ns, { tier: 'popular', rep: 95, sales: 99900 });
+  run(ns, s, ns.CFG.SHIFT + 5);
+  for (let day = 2; day <= 9; day++) {
+    assert.equal(s.repTier, 'popular', `day ${day - 1}: still Kedai Popular`);
+    nextTierDay(ns, s, { rep: 95 });
+  }
+  assert.equal(s.repTier, 'popular', 'nine days in a row is not enough');
+  assert.equal(s.tierStreak, 9);
+  nextTierDay(ns, s, { rep: 95 });
+  assert.equal(s.repTier, 'lepak', 'the tenth day makes it');
+  assert.equal(s.tierStreak, 0);
+  assert.equal(s.lastReport.tierDays, 0, 'nothing above Port Lepak');
+});
+
+test('Reputation tiers: a tier is lost one step at a time, and only when the score is more than 3 points under its mark at the end of the day', () => {
+  const { ns } = fresh();
+  const after = (tier, rep, sales = 99900) => { const s = tierDay(ns, { tier, rep, sales }); run(ns, s, ns.CFG.SHIFT + 5); return s.repTier; };
+  assert.equal(after('lepak', 88), 'lepak', 'two under the mark: the cushion holds');
+  assert.equal(after('lepak', 80), 'popular', 'a long way under: one step down');
+  assert.equal(after('lepak', 20), 'popular', 'even a collapse costs only one tier a day');
+  assert.equal(after('popular', 20, 0), 'best', 'a missed day can still demote');
+  assert.equal(after('biasa', 20), 'biasa');
+});
+
+test('Star bonus: a day that met the target adds 20% of its reputation gain for each star; a missed day adds nothing', () => {
+  const { ns, S } = fresh();
+  const goal = S.goalFor({ preset: 'biasa', day: 3 }, 3);
+  const day = (sales) => { const s = tierDay(ns, { rep: 60, repStart: 40, sales }); run(ns, s, ns.CFG.SHIFT + 5); return s.lastReport; };
+
+  const two = day(Math.round(goal * 1.1));
+  assert.equal(two.stars, 2);
+  assert.equal(two.starBonus, 8, '20 points gained × 20% × 2 stars');
+  assert.equal(Math.round(two.rep), 68);
+  assert.equal(two.repStart, 40);
+
+  const three = day(Math.round(goal * 1.6));
+  assert.equal(three.stars, 3);
+  assert.equal(three.starBonus, 12, '20 × 20% × 3 stars');
+  assert.equal(Math.round(three.rep), 72);
+
+  assert.equal(day(0).starBonus, 0, 'a missed day (1 star) gets no bonus');
+
+  // only a gain is boosted: a day that lost reputation is not made worse
+  const s = tierDay(ns, { rep: 50, repStart: 60, sales: 99900 });
+  run(ns, s, ns.CFG.SHIFT + 5);
+  assert.equal(s.lastReport.starBonus, 0);
+  assert.equal(Math.round(s.rep), 50);
+
+  // and the score cannot pass 100
+  const top = tierDay(ns, { rep: 98, repStart: 70, sales: 99900 });
+  run(ns, top, ns.CFG.SHIFT + 5);
+  assert.equal(top.rep, 100);
+});
+
+test('Reputation tiers: a save from the middle of a shift keeps its tier and count, and one from before the rule (no start mark, no count) loads and plays on', () => {
+  const { ns, State } = fresh();
+  const s = tierDay(ns, { tier: 'best', rep: 80, sales: 99900 });
+  s.tierStreak = 3;
+  const copy = State.migrate(plain(s));
+  assert.equal(copy.repTier, 'best', 'loading does not re-evaluate the tier');
+  assert.equal(copy.tierStreak, 3);
+  delete copy.repAtStart;
+  delete copy.tierStreak; // a save from before the rule
+  copy.phase = 'active';
+  assert.equal(State.migrate(plain(copy)).tierStreak, 0, 'it starts the count at zero');
+  run(ns, copy, ns.CFG.SHIFT + 5);
+  assert.equal(copy.lastReport.starBonus, 0, 'no start mark, so no star bonus that day');
+  assert.equal(copy.tierStreak, 1, 'but the day counts towards the next tier');
+});
+
 test('Reputation tiers: higher tiers make people more patient, bring regulars and duit kopi — and Port Lepak draws the officer', () => {
   const { ns, State, S } = fresh();
   const drain = (rep) => { const s = calmShift(ns, { seed: 5 }); s.rep = rep; S.updateTier(s); return { drain: S.patienceDrain(s), tier: S.tierOf(s) }; };
@@ -1186,18 +1559,20 @@ test('Last saved: the save remembers when it was written and survives a reload; 
   assert.equal(State.saveInfo().at, 0, 'nothing saved yet');
   const s = State.create(3);
   const t0 = Date.now();
-  assert.ok(State.save(s));
+  assert.ok(State.createSave(s));
   const info = State.saveInfo();
   assert.ok(info.at >= t0 && info.at <= Date.now() && !info.failed);
 
   // a second page load reads the time back from the stored envelope
   const again = loadGame({ storage });
+  assert.ok(again.ns.State.getSaved());
   assert.ok(Math.abs(again.ns.State.saveInfo().at - info.at) < 5);
 
-  // storage that refuses writes
+  // storage that refuses writes: the game still plays, and the failure is reported
   const blocked = loadGame({ storage: { getItem: () => null, setItem: () => { throw new Error('quota'); }, removeItem: () => {} } });
-  assert.equal(blocked.ns.State.save(blocked.ns.State.create(1)), false);
+  assert.ok(blocked.ns.State.createSave(blocked.ns.State.create(1)), 'a run can still start');
   assert.equal(blocked.ns.State.saveInfo().failed, true);
+  assert.equal(blocked.ns.State.save(blocked.ns.State.create(1)), false);
 });
 
 test('Old saves load: tiers are worked out from reputation and new recap counters are filled in', () => {

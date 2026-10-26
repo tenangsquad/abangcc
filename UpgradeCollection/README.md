@@ -33,7 +33,7 @@ Legend: ✅ Done · 🟡 Partly done · ⬜ To do
 
 | Status | Idea | Notes |
 |---|---|---|
-| ✅ Done | **Reputation tiers: Kedai Biasa → Best → Popular → Port Lepak** | Start at 60 / 75 / 90 reputation, 3-point cushion before a tier is lost. Best: 4% more patience. Popular: 8%, more customers, sometimes RM0.20 *duit kopi*. Port Lepak: 12%, bigger tips, but more night crowd and +2 inspection risk per night. Shown in the HUD; best tier is kept in Koleksi. Data: `TIERS` in `js/core/config.js`. |
+| ✅ Done | **Reputation tiers: Kedai Biasa → Best → Popular → Port Lepak** | Start at 60 / 75 / 90 reputation, 3-point cushion before a tier is lost. The tier changes only at the end of the day; going up needs the score to hold the mark for 2 / 5 / 10 days in a row (each meeting the target), so Port Lepak takes 17 days at the very least, and each star adds 20 % of the day's reputation gain. Best: 4% more patience. Popular: 8%, more customers, sometimes RM0.20 *duit kopi*. Port Lepak: 12%, bigger tips, but more night crowd and +2 inspection risk per night. Shown in the HUD; best tier is kept in Koleksi. Data: `TIERS` in `js/core/config.js`. |
 | ✅ Done | **End-of-day recap "Sorotan hari"** | Up to 5 highlights per report: best hour, who stormed off, the PC that kept breaking, biggest sale, near miss, tips, generator, combos, tier changes. Built by `State.buildRecap`. |
 | ⬜ To do | **Goals beyond day 20 / mid-game milestones** | The goal climbs RM5 a day. Milestones like "lunasi pinjaman" or "bil bulan ini" would break up the grind. |
 | ⬜ To do | **More hats with moment-based unlocks** | The 4 hats unlock by clearing days. Unlocks tied to moments, like "tolak 5 budak ponteng", would feel earned. |
@@ -44,8 +44,10 @@ Legend: ✅ Done · 🟡 Partly done · ⬜ To do
 |---|---|---|
 | ✅ Done | **Ambient audio** | Room tone, PC hum that grows with busy PCs, fan or aircond, street with passing motorbikes, crickets at night, generator chug. Own "Suasana kedai" setting. Written quietly: **tune the volumes by ear**. |
 | 🟡 Partly | **More audio** | A keyboard patter already exists. Ideas still open: a counter bell, sounds that react to events. |
+| ✅ Done | **Night lights: twin fluorescent fittings** | Four office-style fittings (square casing, two tubes) hang over the café from dusk, with a wide cool-white cone and floor pool; one flickers, a faint buzz joins the ambience, dark in a blackout. Code: `drawTubeLights` in `js/gfx/props.js`, engine decal kind `cone`. |
 | ✅ Done | **"Last saved" indicator** | On the menu, pause and settings screens. Warns if the browser blocks saving. |
-| ⬜ To do | **Save export / import** | A save code or `.json` download so progress can move between devices without a server. See section 5. |
+| ✅ Done | **Difficulty levels and several saves** | Senang Sunggoh / Susah Sikit Jer / Susah Teruk! chosen at New Game and locked to the save; up to 5 saves with Sambung Main (newest), Muat Game and replace-when-full. Code: `js/state/save.js`, `DIRECTOR.presets`. |
+| ✅ Done | **Save export / import** | "Eksport" on each save in Muat Game downloads a `.json` file; "Import save" adds one back (checked: checksum, version, duplicates, free place). No server needed. Code: `State.exportSave / importSave` in `js/state/save.js`. See section 5 for the cloud options that build on it. |
 | ⬜ To do | **Phone layout pass** | Re-check the menu, loading screen, recap and settings on a real phone-size screen. The sideways-phone layout is the one least checked. |
 | ⬜ To do | **Customer variety** | Skin tones, hair and shirt colours so the queue doesn't look like 9 copies. |
 | ⬜ To do | **Day-1 hints** | One-line hints on the first fault, first event and first perk draft. |
@@ -57,7 +59,7 @@ The save is already one self-contained JSON envelope with a version, a timestamp
 
 | Status | Option | Effort | Notes |
 |---|---|---|---|
-| ⬜ To do | **1. Export / import a save code or file** | About an afternoon, free | No server. Moves progress between devices manually. Good first step, and its code is reused by option 2. |
+| ✅ Done | **1. Export / import a save file** | Done (a `.json` file; a short "save code" was left out because a save is tens of KB) | No server. Moves progress between devices manually. Its code is reused by option 2. |
 | ⬜ To do | **2. Hosted backend (Supabase or Firebase)** | About a day | Login (Google or email link, or guest with a code) and a database with almost no server code. Free tier is plenty. Needs a size limit on uploads and one save row per user. |
 | ⬜ To do | **3. Own server (Node/PHP + database)** | Most work | Full control, but you write and run login, storage and security yourself. |
 
@@ -70,7 +72,7 @@ Questions to settle first:
 
 ## 6. Suggested order
 
-1. Save export / import (small, useful now).
+1. ~~Save export / import~~ (done).
 2. Listen to the ambience and tune the volumes.
 3. Day-1 hints.
 4. A few more perks and events from sections 1 and 2.

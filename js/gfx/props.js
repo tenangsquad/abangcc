@@ -374,6 +374,7 @@
       if (S_has(s, 'generator')) drawGenerator(s, t);
       if (s.assistant) drawMopBucket(s);
       eng.cast(false);
+      drawTubeLights(W, t, lampsOn, L.lamps);
       if (S_has(s, 'fan')) drawCeilingFan(dt, power);
       if (S_has(s, 'aircond')) drawAircond(W, t);
       if (S_has(s, 'cctv')) drawCCTV(W, t);
@@ -570,6 +571,48 @@
         const a = 0.18 + 0.1 * Math.sin(t * 2 + k);
         ring(x - 0.4 + k * 0.4, 1.95, 0.62, 0.2, 0.025, '#bff4ff', 0, 1, Math.PI * (0.8 + a));
       }
+    }
+
+    /**
+     * Four office-style twin fluorescent fittings (lampu pendafluor), the kind a 2007 café would have: a square white casing with two
+     * tubes under it, hanging on chains. One over the queue by the counter and three along the aisle in front of the PCs. They come on as
+     * evening falls and throw a wide, cool-white cone and pool onto the floor; one of them flickers now and then, as old tubes do.
+     * The cone is a standing quad turned to face the camera (engine decal kind 'cone'). Dark, and still hanging, in a blackout.
+     */
+    function tubeSpots(W) {
+      const spots = [{ x: 2.3, z: 8.7 }];
+      for (let i = 0; i < 3; i++) spots.push({ x: 5.4 + ((W - 2.2 - 5.4) * i) / 2, z: ROOM.aisleBack });
+      return spots;
+    }
+    function drawTubeLights(W, t, lampsOn, evening) {
+      if (evening < 0.3) return; // by day the fittings are not drawn at all; from dusk they hang there (dark in a blackout)
+      const on = clamp((lampsOn - 0.45) / 0.5, 0, 1); // starts at dusk, full at night, 0 in a blackout
+      const H = 2.95;
+      const yaw = R.cam ? Math.atan2(-R.cam.right[2], R.cam.right[0]) : 0;
+      tubeSpots(W).forEach((p, i) => {
+        // the third fitting has a tired tube: every so often it stutters
+        const ph = (t + 3.1) % 11;
+        const k = on * (i === 2 && ph > 10.15 ? (Math.sin(ph * 70) > 0 ? 0.3 : 1) : 1);
+        const lit = k > 0.02;
+        const tube = lit ? '#f4fbff' : '#9aa2b8';
+        // two chains, the square casing, its reflector, and the two tubes
+        for (const dx of [-0.3, 0.3]) blk(p.x + dx - 0.011, H + 0.1, p.z - 0.3, 0.022, 1.5, 0.022, PAL.navy, 0.01, 0);
+        blk(p.x - 0.35, H, p.z - 0.35, 0.7, 0.11, 0.7, '#eef1f7', 0.03);
+        // from this camera the underside is hidden, so the twin tubes sit just outside the casing, one on each side, where they show
+        for (const dz of [-0.47, 0.47]) {
+          blk(p.x - 0.42, H - 0.01, p.z + dz - 0.05, 0.84, 0.07, 0.1, tube, 0.03, 0, 0.1 + 0.9 * k);
+          for (const ex of [-0.44, 0.44]) blk(p.x + ex - 0.025, H - 0.02, p.z + dz - 0.06, 0.05, 0.09, 0.12, '#59607a', 0.015, 0); // end caps
+        }
+        if (!lit) return;
+        // the wide cone of cool light, facing the camera: casing at the top (local +z), floor at the bottom
+        st.push();
+        st.translate(p.x, H / 2, p.z);
+        st.rotateY(yaw);
+        st.rotateX(-Math.PI / 2);
+        putDecalM('cone', 2 * 1.55, H, [0.82, 0.92, 1], 0.24 * k);
+        st.pop();
+        glow(p.x, p.z, 1.4, 1.25, '#d4e9ff', 0.26 * k); // the soft pool on the floor
+      });
     }
 
     /** Kipas Siling: the room has no ceiling, so the fan hangs from a rafter that juts out of the back wall. It spins down in a blackout. */

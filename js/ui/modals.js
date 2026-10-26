@@ -27,23 +27,45 @@
   const stat = (label, value, cls = '') => `<span class="${cls}">${label} ${value}</span>`;
 
   /** A yes / no question in the game's own style (replaces the browser's confirm() box). `yes` is the data-modal command. */
-  function renderConfirm({ eye, title, text, yes, yesLabel, icon = 'restart' }) {
+  function renderConfirm({ eye, title, text, yes, yesLabel, icon = 'restart', data = {} }) {
     overlay = 'confirm';
+    const attrs = Object.entries(data).map(([k, v]) => ` data-${k}="${safe(v)}"`).join(''); // e.g. which save a "Padam" is about
     showModal(`
       <span class="modal-eyebrow">${eye}</span>
       <h1>${title}</h1>
       <p class="modal-lead">${text}</p>
       <div class="modal-actions">
-        <button class="btn big coral" data-modal="${yes}">${UI.icon(icon, 22, '#ffcf3d')} ${yesLabel}</button>
+        <button class="btn big coral" data-modal="${yes}"${attrs}>${UI.icon(icon, 22, '#ffcf3d')} ${yesLabel}</button>
         <button class="btn big paper" data-modal="back">Batal</button>
       </div>`);
     modalRoot.querySelector('[data-modal="back"]')?.focus({ preventScroll: true }); // the safe answer is the default one
   }
   const CONFIRMS = {
     hire: () => ({ eye: 'UPAH PEMBANTU', title: `Upah <em>${CFG.ASSISTANT.name}</em>?`, text: `Bayaran sekali ${fmtMoney(CFG.ASSISTANT.hireFee)}, kemudian gaji <b>${fmtMoney(CFG.ASSISTANT.wage)} sebulan</b> dibayar bersama sewa. <b>Tak boleh dipecat, tak boleh tarik balik.</b> Dia lap air tumpah dan tukar fius, tapi kadang-kadang MC juga. 🤒`, yes: 'hireconfirm', yesLabel: 'Ya, upah dia', icon: 'play' }),
-    restart: () => ({ eye: 'MAIN SEMULA', title: 'Mula dari <em>Hari 1</em>?', text: `Progress sekarang (Hari ${UI.s.day}, ${fmtMoney(UI.s.cash)}) akan dipadam. Topi dalam Koleksi dan rekod hari terbaik <b>kekal</b>.`, yes: 'newgame', yesLabel: 'Ya, mula semula' }),
-    wipe: () => ({ eye: 'PADAM SAVE', title: 'Padam <em>semua</em> progress?', text: 'Semua progress akan dipadam dan kau mula dari awal. Topi dalam Koleksi kekal.', yes: 'confirmwipe', yesLabel: 'Ya, padam', icon: 'restart' }),
+    /** Padam one save (from the list). */
+    deletesave: (id) => {
+      const e = State.listSaves().find((x) => x.id === id);
+      return { eye: 'PADAM SAVE', title: 'Padam <em>save ini</em>?', text: `${e ? `${presetOf(e.preset).icon} ${safe(presetOf(e.preset).label)}, Hari ${e.day}, ${fmtMoney(e.cash)}. ` : ''}Save ini akan hilang dan tak boleh dipulihkan. Topi dalam Koleksi dan save lain <b>kekal</b>.`, yes: 'confirmdelete', yesLabel: 'Ya, padam', data: { id } };
+    },
+    /** Padam the save being played (from Tetapan). */
+    wipe: () => ({ eye: 'PADAM SAVE', title: 'Padam <em>save ini</em>?', text: `${presetOf(UI.s.preset).icon} ${safe(presetOf(UI.s.preset).label)}, Hari ${UI.s.day}, ${fmtMoney(UI.s.cash)}. Save ini akan hilang. Topi dalam Koleksi dan save lain <b>kekal</b>.`, yes: 'confirmwipe', yesLabel: 'Ya, padam' }),
+    /** The list is full: a new run needs one of the old saves gone. */
+    replace: (id, preset) => {
+      const e = State.listSaves().find((x) => x.id === id);
+      return { eye: 'GANTI SAVE', title: 'Ganti save <em>ini</em>?', text: `${e ? `${presetOf(e.preset).icon} ${safe(presetOf(e.preset).label)}, Hari ${e.day}, ${fmtMoney(e.cash)}` : 'Save ini'} akan dipadam dan diganti dengan game baru (${safe(presetOf(preset).label)}).`, yes: 'confirmreplace', yesLabel: 'Ya, ganti', data: { id, preset } };
+    },
   };
+
+  const presetOf = (key) => DIRECTOR.presets[key] || DIRECTOR.presets.biasa;
+  const tierName = (id) => (ns.TIERS.find((t) => t.id === id) || ns.TIERS[0]).name; // "Kedai Biasa": the short "Biasa" would read like a difficulty
+  /** A save that was stored mid-run comes back at the main menu with the stage to return to in `resumeTo` (what a page load does too). */
+  function toMenu(s) {
+    if (s.phase !== 'menu') {
+      s.resumeTo = s.phase;
+      s.phase = 'menu';
+    }
+    return s;
+  }
 
   /** Bring a stored session back to where the player left it (the main menu always comes first). */
   function resumeSession(s) {
@@ -107,6 +129,20 @@
       </div>`);
   }
 
+  /** After a day that met the target: how reputation moved (stars boost the gain), and the tier, which only changes here. */
+  function repNote(r, tier) {
+    if (!r.goalMet) return ''; // a missed day is played again from the start, so its reputation does not count
+    const tiers = ns.TIERS;
+    const was = tiers.findIndex((t) => t.id === r.tierBefore);
+    const now = tiers.indexOf(tier);
+    const gain = Math.round(r.rep - r.repStart);
+    const next = tiers[now + 1];
+    const bonus = r.starBonus ? `, termasuk <b>+${r.starBonus}</b> bonus ${'⭐'.repeat(r.stars)}` : '';
+    const move = now > was ? `<div class="notice unlock">🎉 <b>Taraf naik: ${safe(tier.emoji)} ${safe(tier.name)}!</b> ${safe(tier.perks)} Bermula esok.</div>` : now < was ? `<div class="notice">📉 <b>Taraf turun: ${safe(tier.emoji)} ${safe(tier.name)}.</b> Naikkan reputasi untuk dapat balik.</div>` : '';
+    const to = !next ? 'Taraf tertinggi.' : r.rep >= next.min ? `${safe(next.name)}: reputasi ${next.min}+ untuk <b>${r.tierStreak}/${r.tierDays}</b> hari berturut-turut.` : `${Math.ceil(next.min - r.rep)} lagi untuk ${safe(next.name)}, kemudian kekal ${next.days} hari berturut-turut.`;
+    return `${move}<div class="notice">⭐ Reputasi <b>${Math.round(r.repStart)} → ${Math.round(r.rep)}</b> (${gain >= 0 ? '+' : ''}${gain} hari ini${bonus}). ${to}</div>`;
+  }
+
   function renderResult() {
     const s = UI.s;
     const r = s.lastReport;
@@ -117,8 +153,8 @@
     const why = hl || (!r.goalMet && r.reasons?.length ? `<div class="notice why"><b>Kenapa gagal?</b><ul>${r.reasons.map((x) => `<li>${safe(x.icon)} ${safe(x.text)}</li>`).join('')}</ul></div>` : '') ;
     const unlocked = (r.unlocked || []).map((id) => ns.Meta.HATS.find((h) => h.id === id)).filter(Boolean);
     const unlockNote = unlocked.length ? `<div class="notice unlock">🔓 <b>Topi baru dibuka:</b> ${unlocked.map((h) => `${safe(h.emoji)} ${safe(h.name)}`).join(', ')}. Pakai di <b>🎩 Koleksi</b> (menu utama).</div>` : '';
-    const whyAll = unlockNote + why + (hl ? more : '');
     const tier = ns.TIERS.find((t) => t.id === r.tier) || ns.TIERS[0];
+    const whyAll = repNote(r, tier) + unlockNote + why + (hl ? more : '');
     const recap = r.recap?.length ? `<div class="recap"><h2>📸 Sorotan hari</h2><ul>${r.recap.map((x, i) => `<li style="--i:${i}"><span class="rc-ico" aria-hidden="true">${safe(x.icon)}</span><div><b>${safe(x.title)}</b><small>${safe(x.text)}</small></div></li>`).join('')}</ul></div>` : '';
     showModal(`
       <span class="modal-eyebrow">LAPORAN HARI ${s.day}</span>
@@ -158,7 +194,7 @@
         <a class="btn big yellow" href="https://payment.tngdigital.com.my/sc/bDLoeTIL3c" target="_blank" rel="noopener noreferrer">${UI.icon('coffee', 22)} Belanja Kopi</a>
         <button class="btn big paper" data-modal="mainmenu">${UI.icon('home', 22)} Menu utama</button>
       </div>
-      <p class="small"><span data-saved>Progress disimpan automatik.</span></p>`);
+      <p class="small">${presetOf(UI.s.preset).icon} ${safe(presetOf(UI.s.preset).label)} · <span data-saved>Progress disimpan automatik.</span></p>`);
     UI.refreshSaved();
   }
 
@@ -226,13 +262,13 @@
 
   /** Who made it and what it runs on. Edit this block to change the credits. */
   const CREDITS = {
-    version: 'Alpha 0.13',
+    version: 'Alpha 0.14',
     team: 'Tenang Squad',
     lines: [
       ['🎮', 'Game', 'Cyber café 2007 dalam 3D, untuk browser. Tanpa install.'],
       ['🧊', 'Enjin', 'Grafik WebGL buatan sendiri (tiada library). Bunyi dan muzik dijana terus dalam browser.'],
       ['🔤', 'Fon', 'Fredoka dan Nunito (Google Fonts, SIL Open Font License).'],
-      ['💾', 'Simpanan', 'Progress disimpan dalam browser ini sahaja. Padam di Tetapan.'],
+      ['💾', 'Simpanan', 'Setiap game ada save sendiri (sehingga ' + CFG.MAX_SAVES + '), disimpan dalam browser ini sahaja. Padam di Muat Game.'],
     ],
   };
   function renderCredits() {
@@ -265,6 +301,131 @@
       <div class="modal-actions"><button class="btn big mint" data-modal="back">Siap</button></div>`);
   }
 
+  /** Main Baru: the difficulty is picked here, once. It is locked into the new save; another level means another New Game. */
+  function renderNewGame() {
+    overlay = 'newgame';
+    const full = State.saveCount() >= CFG.MAX_SAVES;
+    const cards = Object.entries(DIRECTOR.presets).map(([k, p]) => `<div class="perk diff diff-${k}"><div class="perk-icon">${safe(p.icon)}</div><strong>${safe(p.label)}</strong>
+        <small>${safe(p.blurb)}</small><button type="button" class="btn ${k === 'biasa' ? 'mint' : ''}" data-modal="startnew" data-preset="${k}">Pilih</button></div>`).join('');
+    showModal(`
+      <span class="modal-eyebrow">MAIN BARU</span>
+      <h1>Pilih <em>kesukaran</em></h1>
+      <p class="modal-lead">Kesukaran terkunci pada save ini. Nak cuba tahap lain? Mula game baru, ia jadi save berasingan.</p>
+      <div class="store-grid diff-grid">${cards}</div>
+      ${full ? `<div class="notice">Save penuh (${CFG.MAX_SAVES}/${CFG.MAX_SAVES}). Lepas pilih kesukaran, kau pilih satu save lama untuk diganti.</div>` : ''}
+      <div class="modal-actions"><button class="btn big paper" data-modal="back">Batal</button></div>`);
+  }
+
+  /** One row per save: difficulty, progress and when it was last written, with Main / Padam. */
+  function saveRow(e, buttons) {
+    const p = presetOf(e.preset);
+    const where = UI.stageLabel(e.stage);
+    return `<div class="save-row ${e.active ? 'active' : ''}"><span class="save-ico" aria-hidden="true">${safe(p.icon)}</span>
+      <div class="save-info"><b>${safe(p.label)}${e.active ? ' <em>sedang dimainkan</em>' : ''}</b>
+        <small>Hari ${e.day} · ${fmtMoney(e.cash)} · ${safe(tierName(e.tier))}${where ? ` · ${safe(where)}` : ''}</small>
+        <small class="when">💾 ${safe(UI.agoText(e.t))}</small></div>
+      <div class="save-btns">${buttons}</div></div>`;
+  }
+
+  /** Muat Game: every save in this browser, newest first. */
+  function renderLoadGame() {
+    overlay = 'loadgame';
+    const list = State.listSaves();
+    const rows = list.map((e) => saveRow(e, `<button type="button" class="btn mint" data-modal="loadsave" data-id="${e.id}">Main</button><button type="button" class="btn sky" data-modal="exportsave" data-id="${e.id}" title="Simpan sebagai fail .json">Eksport</button><button type="button" class="btn coral" data-modal="deletesave" data-id="${e.id}" aria-label="Padam save">Padam</button>`)).join('');
+    showModal(`
+      <span class="modal-eyebrow">MUAT GAME</span>
+      <h1>Save <em>tersimpan</em></h1>
+      <p class="modal-lead">${list.length ? `${list.length} daripada ${CFG.MAX_SAVES} save. Sambung Main membuka yang paling baru.` : 'Belum ada save. Tekan Main Baru untuk mula.'}</p>
+      <div class="save-list">${rows}</div>
+      <p class="small">Save disimpan dalam browser ini sahaja. Kalau data browser dipadam, save pun hilang. <b>Eksport</b> simpan satu save sebagai fail .json; <b>Import</b> masukkan fail itu sebagai save baru (di browser atau peranti lain).</p>
+      <input type="file" id="importFile" accept=".json,application/json" hidden>
+      <div class="modal-actions">
+        ${list.length < CFG.MAX_SAVES ? '<button class="btn big coral" data-modal="newgame">+ Main Baru</button>' : ''}
+        <button class="btn big sky" data-modal="importsave">Import save</button>
+        <button class="btn big mint" data-modal="back">Siap</button>
+      </div>`);
+  }
+
+  const IMPORT_ERRORS = {
+    notsave: 'Fail ini bukan save ABANG CC.',
+    damaged: 'Save ini rosak atau telah diubah, tak boleh dibuka.',
+    newer: 'Save ini dari versi game yang lebih baru. Guna versi terkini dulu.',
+    duplicate: 'Save ini sudah ada dalam senarai.',
+    full: `Save penuh (${CFG.MAX_SAVES}/${CFG.MAX_SAVES}). Padam satu dulu, kemudian import lagi.`,
+    toobig: 'Fail ini terlalu besar untuk jadi save.',
+    storage: 'Tak dapat simpan: storan browser disekat.',
+  };
+
+  /** "abangcc-susah-teruk-hari9-20261026-1930.json" */
+  function exportFileName(sum) {
+    const slug = presetOf(sum.preset).label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const d = new Date(sum.t || Date.now());
+    const stamp = `${d.getFullYear()}${UI.pad2(d.getMonth() + 1)}${UI.pad2(d.getDate())}-${UI.pad2(d.getHours())}${UI.pad2(d.getMinutes())}`;
+    return `abangcc-${slug}-hari${sum.day}-${stamp}.json`;
+  }
+
+  /** Eksport: the chosen save, as a file for the player to keep. */
+  function exportOne(id) {
+    const file = State.exportSave(id);
+    if (!file) return UI.toast('Save ini tak boleh dieksport.', 'bad');
+    const name = exportFileName(file.summary);
+    UI.download(name, file.text);
+    UI.toast(`Save dieksport: ${name}`, 'good');
+  }
+
+  /** Import: the picked file becomes a new save in the list (it does not replace the run being continued). */
+  async function importFile(file) {
+    if (!file) return;
+    let text = null;
+    try {
+      if (file.size <= 2_000_000) text = await file.text(); // anything bigger goes in as null and is refused as too big
+    } catch {
+      text = ''; // unreadable: refused as "not a save"
+    }
+    const r = State.importSave(text);
+    if (r.ok) UI.toast(`Save diimport: ${presetOf(r.summary.preset).label}, Hari ${r.summary.day}.`, 'good');
+    else UI.toast(IMPORT_ERRORS[r.error] || IMPORT_ERRORS.notsave, 'bad');
+    renderLoadGame();
+  }
+
+  /** The list is full: choose which old save the new run takes the place of. */
+  function renderReplace(preset) {
+    overlay = 'replace';
+    const rows = State.listSaves().map((e) => saveRow(e, `<button type="button" class="btn coral" data-modal="replacesave" data-id="${e.id}" data-preset="${preset}">Ganti</button>`)).join('');
+    showModal(`
+      <span class="modal-eyebrow">SAVE PENUH</span>
+      <h1>Ganti <em>satu</em> save</h1>
+      <p class="modal-lead">Ada ${CFG.MAX_SAVES} save dah. Game baru (${presetOf(preset).icon} ${safe(presetOf(preset).label)}) perlukan satu tempat. Pilih save yang nak diganti.</p>
+      <div class="save-list">${rows}</div>
+      <div class="modal-actions"><button class="btn big paper" data-modal="back">Batal</button></div>`);
+  }
+
+  /** Start a fresh run as its own save. `replaceId` (when the list is full) is the old save it takes the place of. */
+  function beginNewGame(preset, replaceId) {
+    if (State.activeSaveId()) State.save(UI.s); // the run being left stays exactly as it was
+    if (replaceId) State.deleteSave(replaceId);
+    ns.Meta.recordRun();
+    const s = State.create(undefined, preset);
+    s.phase = 'onboarding';
+    s.introStep = 0;
+    if (!State.createSave(s)) {
+      UI.toast('Save penuh. Padam satu dulu.', 'bad');
+      return renderLoadGame();
+    }
+    UI.s = s;
+    overlay = null;
+    UI.resync();
+  }
+
+  /** After a save is deleted: if it was the one being played, carry on with the newest left (or an empty shop). */
+  function afterDelete(wasActive) {
+    if (wasActive) {
+      const next = State.getSaved();
+      UI.s = next ? toMenu(next) : State.create();
+    }
+    UI.toast('Save dipadam.', 'good');
+  }
+
   function renderSettings() {
     overlay = 'settings';
     const s = UI.s;
@@ -276,16 +437,16 @@
       <div class="switch-row"><span>🎵 Muzik</span>${seg('music', [[true, 'ON'], [false, 'OFF']], UI.settings.music !== false)}</div>
       <div class="switch-row"><span>🌆 Suasana kedai</span>${seg('ambience', [[true, 'ON'], [false, 'OFF']], UI.settings.ambience !== false)}</div>
       <div class="switch-row"><span>🎨 Kualiti grafik</span>${seg('quality', [['high', 'Tinggi'], ['medium', 'Sederhana'], ['low', 'Rendah']], UI.settings.quality)}</div>
-      <div class="switch-row"><span>🎚️ Kesukaran</span>${seg('preset', Object.entries(DIRECTOR.presets).map(([k, v]) => [k, v.label]), s.preset || 'biasa')}</div>
+      ${State.activeSaveId() ? `<div class="switch-row"><span>🎚️ Kesukaran</span><b class="diff-tag">${presetOf(s.preset).icon} ${safe(presetOf(s.preset).label)}</b></div>` : ''}
       ${ns.Layout.isPhone() ? '' : `<div class="switch-row"><span>🧩 Susun atur</span>${seg('layout', [['classic', 'Klasik'], ['float', 'Terapung']], UI.settings.layout === 'float' ? 'float' : 'classic')}</div>`}
       <div class="switch-row"><span>💡 Tunjuk petunjuk</span>${seg('hints', [[true, 'ON'], [false, 'OFF']], UI.settings.hints)}</div>
       <div class="switch-row"><span>📈 Tunjuk FPS</span>${seg('showFps', [[true, 'ON'], [false, 'OFF']], !!UI.settings.showFps)}</div>
       <div class="switch-row"><span>🐢 Kurangkan animasi</span>${seg('reduceMotion', [[true, 'ON'], [false, 'OFF']], UI.settings.reduceMotion)}</div>
-      <p class="small">Kualiti Rendah mematikan outline &amp; bayang matahari dan menurunkan resolusi — sesuai untuk telefon lama. Kesukaran berkuat kuasa untuk hari seterusnya.</p>
+      <p class="small">Kualiti Rendah mematikan outline &amp; bayang matahari dan menurunkan resolusi — sesuai untuk telefon lama.${State.activeSaveId() ? ' Kesukaran terkunci pada save ini: nak tukar, mula Main Baru.' : ''}</p>
       <p class="small"><span data-saved>Progress disimpan automatik dalam browser ini.</span></p>
       <div class="modal-actions">
         <button class="btn big mint" data-modal="back">Siap</button>
-        <button class="btn coral" data-modal="wipe">Padam save</button>
+        ${State.activeSaveId() ? '<button class="btn coral" data-modal="wipe">Padam save ini</button>' : ''}
       </div>`);
     UI.refreshSaved();
   }
@@ -346,15 +507,40 @@
     UI.Sound.play('click');
     let s = UI.s;
     switch (cmd) {
-      case 'restart': return renderConfirm(CONFIRMS.restart());
-      case 'newgame':
-        State.resetSave();
-        ns.Meta.recordRun();
-        UI.s = s = State.create();
-        s.phase = 'onboarding';
-        s.introStep = 0;
+      case 'newgame': return renderNewGame();
+      case 'startnew': {
+        const preset = DIRECTOR.presets[el.dataset.preset] ? el.dataset.preset : 'biasa';
+        return State.saveCount() >= CFG.MAX_SAVES ? renderReplace(preset) : beginNewGame(preset);
+      }
+      case 'replacesave': return renderConfirm(CONFIRMS.replace(el.dataset.id, el.dataset.preset));
+      case 'confirmreplace': return beginNewGame(DIRECTOR.presets[el.dataset.preset] ? el.dataset.preset : 'biasa', el.dataset.id);
+      case 'loadgame': return renderLoadGame();
+      case 'loadsave': {
+        if (el.dataset.id !== State.activeSaveId()) {
+          if (State.activeSaveId()) State.save(s); // leave the current run as it is
+          const next = State.loadSave(el.dataset.id);
+          if (!next) {
+            UI.toast('Save ini rosak dan tak boleh dibuka.', 'bad');
+            return renderLoadGame();
+          }
+          UI.s = s = toMenu(next);
+        }
+        overlay = null;
+        resumeSession(s);
         State.save(s);
         return UI.resync();
+      }
+      case 'exportsave': return exportOne(el.dataset.id);
+      case 'importsave': return modalRoot.querySelector('#importFile')?.click();
+      case 'deletesave': return renderConfirm(CONFIRMS.deletesave(el.dataset.id));
+      case 'confirmdelete': {
+        const wasActive = el.dataset.id === State.activeSaveId();
+        State.deleteSave(el.dataset.id);
+        afterDelete(wasActive);
+        if (State.saveCount()) return renderLoadGame();
+        overlay = null;
+        return UI.resync();
+      }
       case 'continue':
         resumeSession(s);
         State.save(s);
@@ -422,8 +608,9 @@
         return UI.syncModal(true);
       case 'wipe': return renderConfirm(CONFIRMS.wipe());
       case 'confirmwipe':
-        State.resetSave();
-        UI.s = State.create();
+        State.deleteSave(State.activeSaveId());
+        afterDelete(true);
+        overlay = null;
         return UI.resync();
       case 'introskip':
         s.phase = 'prep';
@@ -454,18 +641,19 @@
     }
   };
 
+  modalRoot.addEventListener('change', (e) => {
+    if (e.target.id === 'importFile') importFile(e.target.files?.[0]);
+  });
+
   modalRoot.addEventListener('click', (e) => {
     const setting = e.target.closest('[data-setting]');
     if (setting) {
       const raw = setting.dataset.value;
       const key = setting.dataset.setting;
       const val = raw === 'true' ? true : raw === 'false' ? false : raw;
-      if (key === 'preset') UI.s.preset = val;
-      else {
-        UI.settings[key] = val;
-        if (key === 'quality') UI.settings.qualityChosen = true;
-        UI.saveSettings();
-      }
+      UI.settings[key] = val;
+      if (key === 'quality') UI.settings.qualityChosen = true;
+      UI.saveSettings();
       UI.applySettings();
       if (key === 'layout') ns.Layout.set(val); // Klasik = top bar + sidebar, Terapung = panels floating in the corners of a full-screen scene
       UI.Sound.play('click');
