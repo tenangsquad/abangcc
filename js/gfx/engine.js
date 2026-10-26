@@ -325,6 +325,14 @@ window.ABCC.GfxEngine = (function () {
       float d = length(vLocal) * 2.0;
       if (uKind < 0.5) { gl_FragColor = vec4(0.17, 0.10, 0.34, (1.0 - smoothstep(0.30, 1.0, d)) * vA); }
       else if (uKind < 1.5) { gl_FragColor = vec4(vCol, pow(1.0 - clamp(d, 0.0, 1.0), 1.5) * vA * (1.0 + uDark * 0.8)); }
+      else if (uKind > 2.5) {                              /* light cone: a standing quad, narrow at the lamp (local +z, which points up) and wide at the floor */
+        vec2 q = vLocal * 2.0;
+        float t = clamp(0.5 - 0.5 * q.y, 0.0, 1.0);        /* 0 at the lamp, 1 at the floor */
+        float hw = mix(0.07, 1.0, t);                      /* half-width of the beam at this height */
+        float edge = 1.0 - smoothstep(hw * 0.35, hw, abs(q.x));
+        float fade = mix(1.0, 0.4, t) * smoothstep(0.0, 0.05, t);
+        gl_FragColor = vec4(vCol, edge * fade * vA * (1.0 + uDark * 0.8));
+      }
       else {                                               /* window light patch: soft-edged rectangle */
         vec2 q = abs(vLocal) * 2.0;
         float e = (1.0 - smoothstep(0.62, 1.0, q.x)) * (1.0 - smoothstep(0.62, 1.0, q.y));
@@ -474,7 +482,7 @@ window.ABCC.GfxEngine = (function () {
 
     /* ---- instance submission ---- */
     const stack = new MatrixStack();
-    const decalLists = { shadow: { inst: new Float32Array(24 * 64), n: 0 }, glow: { inst: new Float32Array(24 * 64), n: 0 }, patch: { inst: new Float32Array(24 * 32), n: 0 } };
+    const decalLists = { shadow: { inst: new Float32Array(24 * 64), n: 0 }, glow: { inst: new Float32Array(24 * 64), n: 0 }, patch: { inst: new Float32Array(24 * 32), n: 0 }, cone: { inst: new Float32Array(24 * 16), n: 0 } };
     const casters = new Map(); // mesh -> { m, inst, n }   (instances that also cast a planar sun shadow)
     const casterOrder = [];
     let castFrame = 0;
@@ -658,7 +666,7 @@ window.ABCC.GfxEngine = (function () {
     function flush(cw, ch) {
       // 1. pack every instance into one buffer: toon meshes, blob shadows, glows, light patches, then sun-shadow casters
       const sunShadows = frame.shadows && shadowsEnabled && frame.shadowCol[3] > 0.01;
-      let total = usedMeshes.reduce((s, m) => s + m.n, 0) + decalLists.shadow.n + decalLists.glow.n + decalLists.patch.n + (sunShadows ? casterOrder.reduce((s, L) => s + L.n, 0) : 0);
+      let total = usedMeshes.reduce((s, m) => s + m.n, 0) + decalLists.shadow.n + decalLists.glow.n + decalLists.patch.n + decalLists.cone.n + (sunShadows ? casterOrder.reduce((s, L) => s + L.n, 0) : 0);
       if (total * 24 > staging.length) staging = new Float32Array(total * 24 * 2);
       let cursor = 0;
       for (const m of usedMeshes) {
@@ -675,6 +683,9 @@ window.ABCC.GfxEngine = (function () {
       const patchBase = cursor;
       staging.set(decalLists.patch.inst.subarray(0, decalLists.patch.n * 24), cursor * 24);
       cursor += decalLists.patch.n;
+      const coneBase = cursor;
+      staging.set(decalLists.cone.inst.subarray(0, decalLists.cone.n * 24), cursor * 24);
+      cursor += decalLists.cone.n;
       if (sunShadows) {
         for (const L of casterOrder) {
           L.base = cursor;
@@ -802,6 +813,7 @@ window.ABCC.GfxEngine = (function () {
       gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE, gl.ZERO, gl.ONE);
       drawDecals(2, patchBase, decalLists.patch.n);
       drawDecals(1, glowBase, decalLists.glow.n);
+      drawDecals(3, coneBase, decalLists.cone.n);
       enableInstancing(false);
       gl.depthMask(true);
       gl.disable(gl.BLEND);
@@ -813,6 +825,7 @@ window.ABCC.GfxEngine = (function () {
       decalLists.shadow.n = 0;
       decalLists.glow.n = 0;
       decalLists.patch.n = 0;
+      decalLists.cone.n = 0;
       casterOrder.length = 0;
       castFrame++;
       castOn = false;
@@ -824,7 +837,7 @@ window.ABCC.GfxEngine = (function () {
       purgeMeshes();
     }
 
-    const stats = () => ({ meshes: usedMeshes.length, instances: usedMeshes.reduce((n, m) => n + m.n, 0) + decalLists.shadow.n + decalLists.glow.n + decalLists.patch.n, casters: casterOrder.reduce((n, L) => n + L.n, 0), specials: specials.length, cached: meshCache.size });
+    const stats = () => ({ meshes: usedMeshes.length, instances: usedMeshes.reduce((n, m) => n + m.n, 0) + decalLists.shadow.n + decalLists.glow.n + decalLists.patch.n + decalLists.cone.n, casters: casterOrder.reduce((n, L) => n + L.n, 0), specials: specials.length, cached: meshCache.size });
 
     return {
       stats, gl, stack, meshes, put, putDecal, putDecalM, putSpecial, makeTexture, frame, beginFrame, endFrame, rgb, mixColor,

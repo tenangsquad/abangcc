@@ -24,6 +24,33 @@ Seat the customers · fix the crashing PCs · catch the cheaters · survive the 
 
 ---
 
+## 🧰 System requirements
+
+### To play
+
+| | Requirement |
+|---|---|
+| **Browser** | A current **Chrome** or **Edge** (these are the ones it is tested in). Firefox and Safari should work but have not been tested. |
+| **Graphics** | **WebGL 2** (WebGL 1 with instancing also works). With no WebGL at all the game falls back to a plain clickable board and stays playable, just without the 3D café. |
+| **Also needed** | JavaScript on. Browser storage (`localStorage`) for saving: if it is blocked the game still plays, but warns "Tak dapat simpan" and progress is lost when you close the page. Web Audio for sound: without it the game is silent. |
+| **Internet** | **Not needed.** The page asks Google Fonts for two fonts when online and uses system fonts when offline. |
+| **Screen** | Desktop: **1366 × 768** or larger is comfortable (the layout fits one screen, no scrolling). Phone: hold it **sideways**; held upright the game pauses and asks you to turn it. |
+| **Size** | One file of about **0.6 MB** (`dist/ABANG_CC_2007_ALPHA_13.html`); a save is a few tens of KB. |
+| **Minimum CPU / RAM / GPU** | _To be updated: not measured yet._ |
+| **Tested devices and frame rate** | _To be updated: only tested in headless Chrome with software graphics so far; no real phone or GPU yet._ |
+
+If it runs slowly, open **Tetapan** and set the graphics quality to **Sederhana** or **Rendah**. Phones and low-memory devices already start on a lighter setting.
+
+### To develop and run the tests
+
+| | Requirement |
+|---|---|
+| **Node.js** | **22 or newer** (the browser tests use its built-in `WebSocket`); developed on Node 25. |
+| **Browser for tests** | Chrome or Edge installed (set `CHROME_PATH` if it is somewhere unusual). |
+| **Packages** | None: there are no npm dependencies. |
+
+---
+
 ## 🎯 Your goal
 
 You are **Abang**, the owner of a tiny *kedai siber*. Each day (a "shift") you must earn enough money to reach the **daily target**.
@@ -196,6 +223,10 @@ The camera is fixed isometric and never rotates. Zooming is optional.
 
 **Sound:** the ♫ button mutes everything. In Settings you can turn the **Muzik** (a small looping tune that gets slower and moodier at night and busier in peak hour) off separately. You hear a coin sound for every sale, a soft warning beep when a waiting customer is almost out of patience, and a fanfare when you reach the day's target.
 
+**Café ambience:** under the music the café itself makes noise: the hum of the PCs (louder with more people online), the fan or aircond, the street outside with a motorbike passing now and then, crickets at night, and the generator chugging during a blackout. It has its own **Suasana kedai** switch in Settings, and goes quiet during a blackout and on pause.
+
+**Night lights:** from dusk four office-style **twin fluorescent fittings** (a square casing with a tube on each side, hanging on chains) switch on over the café, one by the counter and three along the aisle in front of the PCs. Each throws a wide, cool-white cone of light and a soft pool onto the floor, one of them flickers now and then, and the café ambience adds a faint tube buzz. In a blackout they hang dark. (The engine draws the cones with its own "light cone" decal; the fittings are in `js/gfx/props.js`, `drawTubeLights`.)
+
 **Layout on a PC:** by default the game uses the classic layout (top bar and a sidebar). In Settings, **Susun atur → Terapung** makes the 3D shop fill the whole window with the panels floating in its four corners, which gives you a noticeably bigger café. The choice is remembered. (Phones always use the corner layout.)
 
 **Main menu extras:** the café on the menu page is alive (customers come and go behind it, it never touches your real shop), the menu plays the daytime tune once you have tapped anywhere, the box under the menu shows one tip a day (tap it for the next), and **Kredit** at the bottom lists the version, makers and fonts.
@@ -244,6 +275,8 @@ js/ui/*.js            loader, audio, HUD, panels, labels, modals, input, main
 tests/                state.test.mjs  browser.test.mjs  bot.mjs  sim.mjs  load-state.mjs
 tools/                build.mjs  make-wallpaper.mjs  cdp.mjs  stage.html
 dist/                 the standalone bundle (generated)
+CHANGELOG.md          what changed in each version (Alpha 0.13 is the current one)
+UpgradeCollection/    the backlog of upgrade ideas, with what is done and what is still to do
 ```
 
 Concerns are kept apart: simulation (`state/`), renderer (`gfx/engine` + `scene`), character movement (`state/movement.js`) and animation (`gfx/anim.js`, `gfx/characters.js`), picking (`gfx/picking.js`, `ui/input.js`), UI (`ui/`), audio (`ui/audio.js`), assets (`gfx/props.js`), save/load (`state/save.js`), tests (`tests/`).
@@ -262,7 +295,7 @@ An inline-SVG illustration (sunset over a shophouse street, the ABANG CC shop, A
 - The renderer is a custom WebGL2 engine, not Three.js. Shadows are planar (floor only) and there is no ambient-occlusion pass.
 - Characters are posed from a small rig, not skeletal animation clips.
 - Picking uses ray tests against bounding shapes, not per-triangle.
-- Sounds are tiny synthesised effects. There is no music.
+- Sound is synthesised in the browser (effects, a small looping tune and the café ambience), with no audio files, so it is simple and quiet rather than studio quality.
 - Tested headlessly and in headless Chrome (software GL). It has **not** been run on real phones or GPUs, and the 60 / 30 FPS targets are not measured. Quality tiers and an automatic step-down exist for slow devices.
 - The whole scene is rebuilt each frame (about 1.6 ms of JavaScript for an 8-PC busy shop), so caching would save under a millisecond.
 - Balance is tuned with scripted players, not human playtesters.

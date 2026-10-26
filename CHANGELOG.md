@@ -10,8 +10,9 @@ Versions are named `Alpha 0.N`; the standalone build is `dist/ABANG_CC_2007_ALPH
 - **Generator.** A blackout lasts 5 seconds instead of 20, for RM3 of diesel each time plus daily servicing.
 - **Reputation tiers.** Kedai Biasa → Kedai Best → Kedai Popular → Port Lepak, with passive bonuses (patience, customers, duit kopi tips) and, at Port Lepak, a busier night crowd and more inspector attention. The best tier ever reached is kept in Koleksi.
 - **End-of-day recap, "Sorotan hari".** Up to five highlights on every shift report.
-- **Café ambience.** Room tone, PC hum, fan/aircond, street with passing motorbikes, night crickets and the generator chug. Own "Suasana kedai" switch in settings.
+- **Café ambience.** Room tone, PC hum, fan/aircond, street with passing motorbikes, night crickets (short random chirps with pauses, not a steady pulse) and the generator chug. Own "Suasana kedai" switch in settings.
 - **Last saved.** The menu, pause and settings screens say when the game was last saved, and warn if the browser blocks saving.
+- **Night lights: twin fluorescents.** From dusk four office-style twin fluorescent fittings (square casing, two tubes, hanging on chains) hang over the café: one by the counter and three along the aisle in front of the PCs. Each throws a wide cool-white cone and a soft pool onto the floor, one of them flickers now and then, and the café ambience adds a faint tube buzz. They go dark in a blackout. (New "light cone" decal in the engine.)
 - **Menu and loading screen:** a neon "by Tenang Squad" tag beside the 2007 pill.
 
 ### Changed

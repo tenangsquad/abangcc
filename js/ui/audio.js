@@ -172,7 +172,7 @@
      The sound of the café itself, under the music: room tone, the hum of the PCs, the fan or aircond, the street outside with a
      motorbike now and then, crickets at night and the diesel chug of the generator. Everything is looped noise or an oscillator
      whose volume is steered a few times a second from what is happening (see UI.Sound.ambience). It is very quiet on purpose. */
-  const am = { nodes: null, bikeAt: 0, on: false };
+  const am = { nodes: null, bikeAt: 0, cricketAt: 0, on: false };
 
   function noiseLoop(c, seconds, brown) {
     const len = Math.floor(c.sampleRate * seconds), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
@@ -223,6 +223,12 @@
     humF.type = 'lowpass'; humF.frequency.value = 240; humG.gain.value = 0;
     hum.connect(humF).connect(humG).connect(out);
     hum.start();
+    const buzz = c.createOscillator(); // fluorescent tubes: a thin 100 Hz buzz (mains frequency doubled), only when the lights are on
+    buzz.type = 'sawtooth'; buzz.frequency.value = 100;
+    const buzzF = c.createBiquadFilter(), buzzG = c.createGain();
+    buzzF.type = 'bandpass'; buzzF.frequency.value = 420; buzzF.Q.value = 1.4; buzzG.gain.value = 0;
+    buzz.connect(buzzF).connect(buzzG).connect(out);
+    buzz.start();
     const brown = noiseLoop(c, 4, true), brown2 = noiseLoop(c, 5, true), white = noiseLoop(c, 3, false), white2 = noiseLoop(c, 3, false);
     return {
       out,
@@ -231,9 +237,34 @@
       whoosh: layer(white, 'bandpass', 1700, 0.6), // PC fans' air
       cool: layer(white2, 'bandpass', 1200, 0.5), // ceiling fan / aircond
       hum: { g: humG },
-      crickets: pulsing('sine', 4300, 11, 'square'),
+      buzz: { g: buzzG },
       chug: pulsing('sawtooth', 52, 7.5, 'sine', 210),
     };
+  }
+
+  /**
+   * One cricket "phrase": two to four soft little chirps, then silence. A steady on/off pulse (which this used to be) sounds like a
+   * machine, so the pitch, the number of chirps and the pause before the next phrase are all a bit random.
+   */
+  function chirp(level) {
+    const c = ctx;
+    if (!c || !am.nodes) return;
+    const t0 = c.currentTime + 0.02;
+    const base = 3700 + Math.random() * 900;
+    const pulses = 2 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < pulses; i++) {
+      const t = t0 + i * (0.075 + Math.random() * 0.03);
+      const osc = c.createOscillator(), g = c.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(base, t);
+      osc.frequency.linearRampToValueAtTime(base * 1.04, t + 0.05);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(level, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.055);
+      osc.connect(g).connect(am.nodes.out);
+      osc.start(t);
+      osc.stop(t + 0.07);
+    }
   }
 
   /** A motorbike passing the shop: a rising and falling engine note that sweeps across the stereo field. */
@@ -276,10 +307,10 @@
     to(n.street, night ? 0.007 : 0.014);
     to(n.hum, dark ? 0 : Math.min(1, want.busy / 8) * 0.016 + (want.busy ? 0.004 : 0), 0.4);
     to(n.whoosh, dark ? 0 : Math.min(1, want.busy / 8) * 0.004);
+    to(n.buzz, dark ? 0 : night ? 0.0028 : want.part === 'dusk' ? 0.0014 : 0, 1.2); // tubes buzz from dusk, never in a blackout
     const level = want.cool;
     n.cool.f.frequency.setTargetAtTime(level === 1 ? 1400 : level === 2 ? 900 : 650, t, 0.5); // a fan whooshes, an aircond rumbles lower
     to(n.cool, dark || !level ? 0 : [0, 0.007, 0.011, 0.012][level]);
-    to(n.crickets, night ? 0.0045 : want.part === 'dusk' ? 0.002 : 0, 1.5);
     to(n.chug, want.generator ? 0.04 : 0, 0.3);
   }
 
@@ -329,6 +360,11 @@
       }
       am.nodes.out.gain.setTargetAtTime(1, ctx.currentTime, 0.8);
       ambienceSet(am.nodes, want);
+      const cricketLevel = want.part === 'night' ? 0.004 : want.part === 'dusk' ? 0.002 : 0;
+      if (cricketLevel && performance.now() > am.cricketAt) {
+        chirp(cricketLevel);
+        am.cricketAt = performance.now() + 900 + Math.random() * 3200; // a phrase, then a pause
+      }
       if (performance.now() > am.bikeAt) {
         am.bikeAt = performance.now() + 14000 + Math.random() * 18000;
         if (want.part !== 'night' || Math.random() < 0.5) motorbike();

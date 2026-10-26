@@ -44,6 +44,7 @@ Legend: ✅ Done · 🟡 Partly done · ⬜ To do
 |---|---|---|
 | ✅ Done | **Ambient audio** | Room tone, PC hum that grows with busy PCs, fan or aircond, street with passing motorbikes, crickets at night, generator chug. Own "Suasana kedai" setting. Written quietly: **tune the volumes by ear**. |
 | 🟡 Partly | **More audio** | A keyboard patter already exists. Ideas still open: a counter bell, sounds that react to events. |
+| ✅ Done | **Night lights: twin fluorescent fittings** | Four office-style fittings (square casing, two tubes) hang over the café from dusk, with a wide cool-white cone and floor pool; one flickers, a faint buzz joins the ambience, dark in a blackout. Code: `drawTubeLights` in `js/gfx/props.js`, engine decal kind `cone`. |
 | ✅ Done | **"Last saved" indicator** | On the menu, pause and settings screens. Warns if the browser blocks saving. |
 | ⬜ To do | **Save export / import** | A save code or `.json` download so progress can move between devices without a server. See section 5. |
 | ⬜ To do | **Phone layout pass** | Re-check the menu, loading screen, recap and settings on a real phone-size screen. The sideways-phone layout is the one least checked. |
