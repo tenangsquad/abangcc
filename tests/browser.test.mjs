@@ -980,12 +980,22 @@ test('Tiers, recap and last saved are on screen: the HUD names the tier, the rep
   await pageReady(3);
   assert.match(await ev(`document.getElementById('hudRepLabel').textContent`), /Kedai Biasa/);
   await ev(`ABCC.debug.set((s) => { s.rep = 78; }); ABCC.debug.advance(0.3); 1`);
-  assert.match(await ev(`document.getElementById('hudRepLabel').textContent`), /Kedai Popular/, 'the HUD follows the reputation tier');
+  assert.match(await ev(`document.getElementById('hudRepLabel').textContent`), /Kedai Biasa ↑/, 'the tier waits for the end of the day; the arrow says the score is pushing it up');
   await ev(`ABCC.S.record(ABCC.debug.state(), 'rental', 99900, 'test'); ABCC.debug.advance(130); 1`);
   await sleep(600);
   const report = await ev(`document.querySelector('.modal-card').innerText`);
   assert.match(report, /Sorotan hari/);
-  assert.match(report, /Naik taraf: Kedai Popular/, 'the tier change is a highlight of the day');
+  assert.doesNotMatch(report, /Taraf naik|Naik taraf/, 'one good day is not enough to be promoted');
+  assert.match(report, /Reputasi\s+55\s*→\s*\d+[\s\S]*bonus/, 'the report shows how reputation moved, with the star bonus');
+  assert.match(report, /Kedai Best: reputasi 60\+ untuk\s+1\/2\s+hari berturut-turut/, 'and how far the shop is from the next tier');
+  // the second day in a row: promoted, and the perks start tomorrow
+  await clickUntil('[data-modal="next"]', `!!document.querySelector('[data-modal="start"]')`);
+  await clickUntil('[data-modal="start"]', `ABCC.debug.state().phase === 'active'`);
+  await ev(`ABCC.debug.freeze(true); ABCC.debug.set((s) => { s.beatPlan = []; s.specialAt = []; s.eventCooldown = 1e9; s.spawnCooldown = 1e9; s.inspectionScheduled = 1e9; s.rep = 78; }); ABCC.S.record(ABCC.debug.state(), 'rental', 99900, 'test'); ABCC.debug.freeze(false); ABCC.debug.advance(130); 1`);
+  await sleep(600);
+  const report2 = await ev(`document.querySelector('.modal-card').innerText`);
+  assert.match(report2, /Taraf naik: [\s\S]*Kedai Best/, 'two days in a row: up one step');
+  assert.match(report2, /Bermula esok/, 'and the perks start tomorrow');
   await shot('21_report_recap');
   await ev(`(() => { const s = ABCC.debug.state(); s.phase = 'menu'; ABCC.State.createSave(s); ABCC.UI.resync(); return 1; })()`);
   await sleep(700);

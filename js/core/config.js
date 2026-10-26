@@ -124,6 +124,7 @@
     SETTINGS: 'abangcc2007_settings',
     VERSION: 12,
     SHIFT: 120, // seconds of real time per shop day (TWO real minutes)
+    REP_STAR_BOOST: 0.2, // end of a day that met the target: each star adds this share of the day's reputation gain (2 stars = +40 %, 3 = +60 %)
     GAME_MINUTE_RATE: 6, // in-game minutes per real second → 12:00 PM … 12:00 AM
     DAY_START_MINUTES: 720,
     MAX_QUEUE: 4,
@@ -267,12 +268,13 @@
      Reputation (0-100) is shown as a shop rank. A tier is entered at `min` and only left again 3 points below it, so the rank does not
      flicker. `patienceDrain` and `spawn` are added to the same sums the perks use; `tip` is the chance that a customer who booked
      the right length leaves a little extra (`tipSen`); `lepak` multiplies how often the night crowd turns up; `riskDrift` is added to the
-     shop's inspection risk after every shift (the price of being the hangout spot). */
+     shop's inspection risk after every shift (the price of being the hangout spot). `days` is how many days in a row (each one meeting the
+     daily target) the reputation must stay at the tier's mark before the shop is promoted to it: the higher the tier, the longer it takes. */
   const TIERS = [
     { id: 'biasa', name: 'Kedai Biasa', short: 'Biasa', emoji: '🏪', min: 0, perks: 'Belum ada kelebihan. Jaga reputasi untuk naik taraf.', patienceDrain: 0, spawn: 0, tip: 0, tipSen: 0, lepak: 1, riskDrift: 0 },
-    { id: 'best', name: 'Kedai Best', short: 'Best', emoji: '✨', min: 60, perks: 'Pelanggan 4% lebih sabar.', patienceDrain: -0.04, spawn: 0, tip: 0, tipSen: 0, lepak: 1, riskDrift: 0 },
-    { id: 'popular', name: 'Kedai Popular', short: 'Popular', emoji: '🔥', min: 75, perks: 'Pelanggan 8% lebih sabar, lebih ramai datang, kadang-kadang ada duit kopi RM0.20.', patienceDrain: -0.08, spawn: 0.04, tip: 0.35, tipSen: 20, lepak: 1, riskDrift: 0 },
-    { id: 'lepak', name: 'Port Lepak', short: 'Port Lepak', emoji: '👑', min: 90, perks: 'Pelanggan 12% lebih sabar, lagi ramai, duit kopi RM0.30. Tapi geng lepak malam makin kerap dan pegawai makin berminat.', patienceDrain: -0.12, spawn: 0.08, tip: 0.45, tipSen: 30, lepak: 1.8, riskDrift: 2 },
+    { id: 'best', name: 'Kedai Best', short: 'Best', emoji: '✨', min: 60, days: 2, perks: 'Pelanggan 4% lebih sabar.', patienceDrain: -0.04, spawn: 0, tip: 0, tipSen: 0, lepak: 1, riskDrift: 0 },
+    { id: 'popular', name: 'Kedai Popular', short: 'Popular', emoji: '🔥', min: 75, days: 5, perks: 'Pelanggan 8% lebih sabar, lebih ramai datang, kadang-kadang ada duit kopi RM0.20.', patienceDrain: -0.08, spawn: 0.04, tip: 0.35, tipSen: 20, lepak: 1, riskDrift: 0 },
+    { id: 'lepak', name: 'Port Lepak', short: 'Port Lepak', emoji: '👑', min: 90, days: 10, perks: 'Pelanggan 12% lebih sabar, lagi ramai, duit kopi RM0.30. Tapi geng lepak malam makin kerap dan pegawai makin berminat.', patienceDrain: -0.12, spawn: 0.08, tip: 0.45, tipSen: 30, lepak: 1.8, riskDrift: 2 },
   ];
   const TIER_HOLD = 3; // points below `min` before a tier is lost
   /** Tier index for a reputation, given the tier index held now (promote at `min`, demote only 3 points under it). */

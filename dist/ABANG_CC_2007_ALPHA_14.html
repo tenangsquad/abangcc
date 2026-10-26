@@ -2066,6 +2066,7 @@ html[data-layout="phone"] .save-info b { font-size: 14px; } html[data-layout="ph
     SETTINGS: 'abangcc2007_settings',
     VERSION: 12,
     SHIFT: 120, // seconds of real time per shop day (TWO real minutes)
+    REP_STAR_BOOST: 0.2, // end of a day that met the target: each star adds this share of the day's reputation gain (2 stars = +40 %, 3 = +60 %)
     GAME_MINUTE_RATE: 6, // in-game minutes per real second → 12:00 PM … 12:00 AM
     DAY_START_MINUTES: 720,
     MAX_QUEUE: 4,
@@ -2209,12 +2210,13 @@ html[data-layout="phone"] .save-info b { font-size: 14px; } html[data-layout="ph
      Reputation (0-100) is shown as a shop rank. A tier is entered at `min` and only left again 3 points below it, so the rank does not
      flicker. `patienceDrain` and `spawn` are added to the same sums the perks use; `tip` is the chance that a customer who booked
      the right length leaves a little extra (`tipSen`); `lepak` multiplies how often the night crowd turns up; `riskDrift` is added to the
-     shop's inspection risk after every shift (the price of being the hangout spot). */
+     shop's inspection risk after every shift (the price of being the hangout spot). `days` is how many days in a row (each one meeting the
+     daily target) the reputation must stay at the tier's mark before the shop is promoted to it: the higher the tier, the longer it takes. */
   const TIERS = [
     { id: 'biasa', name: 'Kedai Biasa', short: 'Biasa', emoji: '🏪', min: 0, perks: 'Belum ada kelebihan. Jaga reputasi untuk naik taraf.', patienceDrain: 0, spawn: 0, tip: 0, tipSen: 0, lepak: 1, riskDrift: 0 },
-    { id: 'best', name: 'Kedai Best', short: 'Best', emoji: '✨', min: 60, perks: 'Pelanggan 4% lebih sabar.', patienceDrain: -0.04, spawn: 0, tip: 0, tipSen: 0, lepak: 1, riskDrift: 0 },
-    { id: 'popular', name: 'Kedai Popular', short: 'Popular', emoji: '🔥', min: 75, perks: 'Pelanggan 8% lebih sabar, lebih ramai datang, kadang-kadang ada duit kopi RM0.20.', patienceDrain: -0.08, spawn: 0.04, tip: 0.35, tipSen: 20, lepak: 1, riskDrift: 0 },
-    { id: 'lepak', name: 'Port Lepak', short: 'Port Lepak', emoji: '👑', min: 90, perks: 'Pelanggan 12% lebih sabar, lagi ramai, duit kopi RM0.30. Tapi geng lepak malam makin kerap dan pegawai makin berminat.', patienceDrain: -0.12, spawn: 0.08, tip: 0.45, tipSen: 30, lepak: 1.8, riskDrift: 2 },
+    { id: 'best', name: 'Kedai Best', short: 'Best', emoji: '✨', min: 60, days: 2, perks: 'Pelanggan 4% lebih sabar.', patienceDrain: -0.04, spawn: 0, tip: 0, tipSen: 0, lepak: 1, riskDrift: 0 },
+    { id: 'popular', name: 'Kedai Popular', short: 'Popular', emoji: '🔥', min: 75, days: 5, perks: 'Pelanggan 8% lebih sabar, lebih ramai datang, kadang-kadang ada duit kopi RM0.20.', patienceDrain: -0.08, spawn: 0.04, tip: 0.35, tipSen: 20, lepak: 1, riskDrift: 0 },
+    { id: 'lepak', name: 'Port Lepak', short: 'Port Lepak', emoji: '👑', min: 90, days: 10, perks: 'Pelanggan 12% lebih sabar, lagi ramai, duit kopi RM0.30. Tapi geng lepak malam makin kerap dan pegawai makin berminat.', patienceDrain: -0.12, spawn: 0.08, tip: 0.45, tipSen: 30, lepak: 1.8, riskDrift: 2 },
   ];
   const TIER_HOLD = 3; // points below `min` before a tier is lost
   /** Tier index for a reputation, given the tier index held now (promote at `min`, demote only 3 points under it). */
@@ -2485,11 +2487,10 @@ html[data-layout="phone"] .save-info b { font-size: 14px; } html[data-layout="ph
   const tierIndex = (s) => clampTier(TIERS.findIndex((t) => t.id === s.repTier));
   const clampTier = (i) => (i < 0 ? 0 : i);
   const tierOf = (s) => TIERS[tierIndex(s)];
-  /** Called every tick: moves the shop to the tier its reputation now deserves. Returns the new tier when it changed. */
-  function updateTier(s) {
+  /** Move the shop to tier `next`: say so, tell the UI, and remember it for the report and the Koleksi. Returns the new tier, or null when nothing changed. */
+  function moveTier(s, next) {
+    if (next === tierIndex(s)) return null;
     const now = tierIndex(s);
-    const next = tierIndexFor(s.rep, now);
-    if (next === now) return null;
     s.repTier = TIERS[next].id;
     const up = next > now;
     S.log(s, up ? `${TIERS[next].emoji} Taraf naik: ${TIERS[next].name}!` : `📉 Taraf turun: ${TIERS[next].name}.`);
@@ -2497,6 +2498,31 @@ html[data-layout="phone"] .save-info b { font-size: 14px; } html[data-layout="ph
     if (ns.Meta?.recordTier) ns.Meta.recordTier(next);
     (s.shiftStats.tierMoves = s.shiftStats.tierMoves || []).push({ id: TIERS[next].id, up });
     return TIERS[next];
+  }
+  /** Put the shop straight on the tier its reputation deserves, however many steps that is (used when a state is set up, not during play). */
+  const updateTier = (s) => moveTier(s, tierIndexFor(s.rep, tierIndex(s)));
+  /**
+   * Settle the tier once a day, at the end of the shift: the reputation score moves all day, but the tier (and its perks) never changes in the
+   * middle of one. Going up has to be earned: the score must stand at the next tier's mark at the end of TIERS[next].days days IN A ROW, each
+   * of them meeting the daily target (`s.tierStreak` counts them; a day below the mark starts the count again, a missed day is replayed so it
+   * does not count at all). Going down is faster: one step when the score has fallen more than the cushion under the tier's mark.
+   */
+  function settleTier(s, goalMet) {
+    const now = tierIndex(s);
+    const want = tierIndexFor(s.rep, now);
+    if (want < now) {
+      s.tierStreak = 0;
+      return moveTier(s, now - 1);
+    }
+    if (!goalMet) return null;
+    if (want === now) {
+      s.tierStreak = 0;
+      return null;
+    }
+    s.tierStreak = (s.tierStreak || 0) + 1;
+    if (s.tierStreak < TIERS[now + 1].days) return null;
+    s.tierStreak = 0;
+    return moveTier(s, now + 1);
   }
   const taskSpeedMult = (s) => 1 + mod(s, 'taskSpeed');
 
@@ -2620,7 +2646,7 @@ html[data-layout="phone"] .save-info b { font-size: 14px; } html[data-layout="ph
   const capBandwidth = (s) => 6 + mod(s, 'bandwidth');
   const bandwidth = (s) => s.pcs.reduce((sum, p) => sum + (p.status === 'busy' && byId(GAMES, p.sessionGame)?.online ? 1 : 0), 0);
 
-  Object.assign(S, { coolLevel, overheatMult, coolPatience, perkPrice, replacedBy, tierOf, tierIndex, updateTier, perkDef, perkCount, hasPerk, perkOwnedOut, perkMods, mod, taskSpeedMult, preset, extraPcs, pressure, spawnInterval, patienceDrain, troubleInterval, faultChance, goalFor, isTier2, priceFor, priceList, breakdown, shiftTakings, audit, isBillDay, daysToBills, monthlyBills, perkUpkeep, capBandwidth, bandwidth });
+  Object.assign(S, { coolLevel, overheatMult, coolPatience, perkPrice, replacedBy, tierOf, tierIndex, updateTier, settleTier, perkDef, perkCount, hasPerk, perkOwnedOut, perkMods, mod, taskSpeedMult, preset, extraPcs, pressure, spawnInterval, patienceDrain, troubleInterval, faultChance, goalFor, isTier2, priceFor, priceList, breakdown, shiftTakings, audit, isBillDay, daysToBills, monthlyBills, perkUpkeep, capBandwidth, bandwidth });
 })(window.ABCC);
 
 </script>
@@ -5235,6 +5261,7 @@ html[data-layout="phone"] .save-info b { font-size: 14px; } html[data-layout="ph
       compliance: 75,
       risk: 20,
       preset: ns.DIRECTOR.presets[preset] ? preset : 'biasa', // chosen once at New Game and locked to this save
+      tierStreak: 0, // days in a row the reputation has stood at the next tier's mark (see settleTier)
       customerSequence: 0,
       ledgerSequence: 0,
       taskSequence: 0,
@@ -5335,6 +5362,7 @@ html[data-layout="phone"] .save-info b { font-size: 14px; } html[data-layout="ph
       eventTypes: [],
       shiftLedger: [],
       shiftStartCash: s.cash,
+      repAtStart: s.rep, // the day's reputation gain is measured from here (see the settlement in endShift)
       once: {},
       violationLog: [],
       inspectionDoneDay: false,
@@ -5495,6 +5523,17 @@ html[data-layout="phone"] .save-info b { font-size: 14px; } html[data-layout="ph
     // risk drifts with how the shop was run
     S.bump(s, 'risk', s.violationLog.length * 4 - (s.violationLog.length === 0 && s.compliance >= 70 ? 3 : 0) - (s.professionalism >= 70 ? 2 : 0) + S.tierOf(s).riskDrift); // Port Lepak draws the officer's eye
 
+    // Reputation settles once a day. The score has been moving all shift; now a day that met the target pays a bonus on what it gained
+    // (CFG.REP_STAR_BOOST per star), and only then may the tier move, one step at most. During the shift the tier never changed.
+    const stars = !goalMet ? 1 : income >= goal * 1.4 && s.rep >= 55 ? 3 : 2; // 1 = goal missed, 2 = goal met, 3 = goal beaten by 40% with a healthy reputation
+    const repStart = s.repAtStart ?? s.rep;
+    const repGain = s.rep - repStart;
+    const starBonus = goalMet && repGain > 0 ? Math.round(repGain * CFG.REP_STAR_BOOST * stars) : 0;
+    if (starBonus) S.bump(s, 'rep', starBonus);
+    const tierBefore = s.repTier;
+    S.settleTier(s, goalMet);
+    const nextTier = TIERS[S.tierIndex(s) + 1] || null;
+
     const after = S.breakdown(s);
     const report = {
       day: s.day,
@@ -5519,14 +5558,18 @@ html[data-layout="phone"] .save-info b { font-size: 14px; } html[data-layout="ph
       repairs: s.shiftStats.repairs,
       inspections: s.shiftStats.inspections,
       rep: s.rep,
+      repStart,
+      starBonus, // reputation points the stars added on top of the day's own gain
+      tierBefore,
+      tierStreak: s.tierStreak || 0, // days in a row at the next tier's mark, counting today
+      tierDays: nextTier ? nextTier.days : 0, // days in a row that tier asks for
       professionalism: s.professionalism,
       compliance: s.compliance,
       violations: s.violationLog.length,
       specialEvents: s.specialHandled || 0,
       tier: s.repTier,
       recap: buildRecap(s),
-      // 1–3 stars: 1 = goal missed, 2 = goal met, 3 = goal beaten by 40% with a healthy reputation.
-      stars: !goalMet ? 1 : income >= goal * 1.4 && s.rep >= 55 ? 3 : 2,
+      stars,
     };
     report.unlocked = goalMet && ns.Meta ? ns.Meta.recordDay(s.day, report.stars).map((h) => h.id) : []; // cosmetic hats kept across runs
     s.lastReport = report;
@@ -5596,7 +5639,6 @@ html[data-layout="phone"] .save-info b { font-size: 14px; } html[data-layout="ph
     }
     if (s.cleanupSlow > 0) s.cleanupSlow = Math.max(0, s.cleanupSlow - dt);
     if (s.peakRush > 0) s.peakRush -= dt;
-    S.updateTier(s);
 
     // Rush hour windows
     const peakIndex = (s.peakWindows || []).findIndex((w) => s.elapsed >= w.start && s.elapsed < w.end);
@@ -9582,8 +9624,12 @@ window.ABCC.GfxEngine = (function () {
     };
     vit('Rep', s.rep);
     const tier = State.tierOf(s);
-    setText($('hudRepLabel'), `${tier.emoji} ${tier.name}`);
-    $('hudRepMeter').title = `Reputasi: pelanggan datang lebih ramai bila tinggi. ${tier.name}: ${tier.perks}`;
+    // the tier only changes at the end of the day; the arrow says which way the score is pushing it right now
+    const here = ns.TIERS.indexOf(tier);
+    const want = ns.tierIndexFor(s.rep, here);
+    const arrow = want > here ? ' ↑' : want < here ? ' ↓' : '';
+    setText($('hudRepLabel'), `${tier.emoji} ${tier.name}${arrow}`);
+    $('hudRepMeter').title = `Reputasi: pelanggan datang lebih ramai bila tinggi. ${tier.name}: ${tier.perks}${want > here ? ` Naik ke ${ns.TIERS[here + 1].name} kalau reputasi kekal ${ns.TIERS[here + 1].min}+ dan target capai ${ns.TIERS[here + 1].days} hari berturut-turut (${s.tierStreak || 0}/${ns.TIERS[here + 1].days}).` : want < here ? ' Taraf turun hujung hari kalau reputasi tak naik semula.' : ''}`;
     vit('Pro', s.professionalism);
     vit('Compliance', s.compliance);
     setText($('hudRisk'), String(Math.round(s.risk)));
@@ -10464,6 +10510,20 @@ window.ABCC.GfxEngine = (function () {
       </div>`);
   }
 
+  /** After a day that met the target: how reputation moved (stars boost the gain), and the tier, which only changes here. */
+  function repNote(r, tier) {
+    if (!r.goalMet) return ''; // a missed day is played again from the start, so its reputation does not count
+    const tiers = ns.TIERS;
+    const was = tiers.findIndex((t) => t.id === r.tierBefore);
+    const now = tiers.indexOf(tier);
+    const gain = Math.round(r.rep - r.repStart);
+    const next = tiers[now + 1];
+    const bonus = r.starBonus ? `, termasuk <b>+${r.starBonus}</b> bonus ${'⭐'.repeat(r.stars)}` : '';
+    const move = now > was ? `<div class="notice unlock">🎉 <b>Taraf naik: ${safe(tier.emoji)} ${safe(tier.name)}!</b> ${safe(tier.perks)} Bermula esok.</div>` : now < was ? `<div class="notice">📉 <b>Taraf turun: ${safe(tier.emoji)} ${safe(tier.name)}.</b> Naikkan reputasi untuk dapat balik.</div>` : '';
+    const to = !next ? 'Taraf tertinggi.' : r.rep >= next.min ? `${safe(next.name)}: reputasi ${next.min}+ untuk <b>${r.tierStreak}/${r.tierDays}</b> hari berturut-turut.` : `${Math.ceil(next.min - r.rep)} lagi untuk ${safe(next.name)}, kemudian kekal ${next.days} hari berturut-turut.`;
+    return `${move}<div class="notice">⭐ Reputasi <b>${Math.round(r.repStart)} → ${Math.round(r.rep)}</b> (${gain >= 0 ? '+' : ''}${gain} hari ini${bonus}). ${to}</div>`;
+  }
+
   function renderResult() {
     const s = UI.s;
     const r = s.lastReport;
@@ -10474,8 +10534,8 @@ window.ABCC.GfxEngine = (function () {
     const why = hl || (!r.goalMet && r.reasons?.length ? `<div class="notice why"><b>Kenapa gagal?</b><ul>${r.reasons.map((x) => `<li>${safe(x.icon)} ${safe(x.text)}</li>`).join('')}</ul></div>` : '') ;
     const unlocked = (r.unlocked || []).map((id) => ns.Meta.HATS.find((h) => h.id === id)).filter(Boolean);
     const unlockNote = unlocked.length ? `<div class="notice unlock">🔓 <b>Topi baru dibuka:</b> ${unlocked.map((h) => `${safe(h.emoji)} ${safe(h.name)}`).join(', ')}. Pakai di <b>🎩 Koleksi</b> (menu utama).</div>` : '';
-    const whyAll = unlockNote + why + (hl ? more : '');
     const tier = ns.TIERS.find((t) => t.id === r.tier) || ns.TIERS[0];
+    const whyAll = repNote(r, tier) + unlockNote + why + (hl ? more : '');
     const recap = r.recap?.length ? `<div class="recap"><h2>📸 Sorotan hari</h2><ul>${r.recap.map((x, i) => `<li style="--i:${i}"><span class="rc-ico" aria-hidden="true">${safe(x.icon)}</span><div><b>${safe(x.title)}</b><small>${safe(x.text)}</small></div></li>`).join('')}</ul></div>` : '';
     showModal(`
       <span class="modal-eyebrow">LAPORAN HARI ${s.day}</span>

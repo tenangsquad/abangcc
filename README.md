@@ -176,7 +176,9 @@ Your reputation (0–100) gives the shop a rank, shown in the HUD:
 | 🔥 **Kedai Popular** | 75 | 8% more patient, a few more customers, and sometimes a little *duit kopi* tip |
 | 👑 **Port Lepak** | 90 | 12% more patient, more customers, bigger tips. But the late-night crowd turns up more and the inspector takes more interest |
 
-A rank is only lost once reputation falls 3 points below its threshold.
+Your reputation score moves **all day** (a happy customer, a fixed problem and a good inspection push it up; walk-outs, accusations and a bad inspection pull it down), but your **rank only changes at the end of the day**, so the perks you opened with are the perks you keep for that shift. The little arrow next to the rank in the HUD (↑ or ↓) shows which way the score is pushing it.
+
+Climbing has to be **earned over time**. To move up, your reputation must stay at the next rank's mark at the end of several days **in a row**, each day meeting the target: **Kedai Best** needs 2 days, **Kedai Popular** 5 and **Port Lepak** 10 (the report shows the count, for example `Kedai Popular: reputasi 75+ untuk 3/5 hari berturut-turut`). A day with the score under the mark starts the count again; a day you miss is replayed, so it neither counts nor breaks the count. Even a perfect run therefore needs at least **17 days** to reach Port Lepak, and only players who keep the shop running well day after day get there. The **stars** give the day's reputation gain a boost: each star adds **20 %** of the points you gained that day (a ⭐⭐ day +40 %, a ⭐⭐⭐ day +60 %). The shift report shows the change (for example `Reputasi 55 → 72, termasuk +12 bonus ⭐⭐⭐`) and how far you are from the next rank. Falling is quicker than climbing: a rank is lost once reputation drops more than 3 points below its threshold (one step a day). The days needed are `days` in `TIERS` (`js/core/config.js`) if you want to tune them.
 
 Every shift report ends with **Sorotan hari**: a few highlights of the day (best hour, the PC that kept breaking, who stormed off, the biggest sale…). The menu, pause and settings screens show when the game was **last saved**.
 

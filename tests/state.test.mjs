@@ -1366,6 +1366,145 @@ test('Reputation tiers: Biasa → Best → Popular → Port Lepak, with a 3-poin
   assert.ok(s.shiftStats.tierMoves.length >= 5, 'each change is remembered for the recap');
 });
 
+/** A calm one-day run that ends with `sales` (sen) of rental income, starting from tier `tier` with the score at `rep` (the day's gain is measured from `repStart`). */
+function tierDay(ns, { tier = 'biasa', rep, repStart = rep, sales, day = 3, seed = 5 }) {
+  const s = calmShift(ns, { seed, day });
+  s.repTier = tier;
+  s.rep = rep;
+  s.repAtStart = repStart;
+  if (sales) ns.S.record(s, 'rental', sales, 'test');
+  return s;
+}
+
+/** Play the next day of a calm run to its end with `sales` sen of rental income; `rep` (if given) is the score for the whole day. */
+function nextTierDay(ns, s, { sales = 99900, rep } = {}) {
+  ns.State.proceed(s);
+  ns.State.startShift(s);
+  s.spawnCooldown = s.eventCooldown = 1e9; s.beatPlan = []; s.specialAt = []; s.inspectionScheduled = 1e9;
+  if (rep !== undefined) { s.rep = rep; s.repAtStart = rep; }
+  if (sales) ns.S.record(s, 'rental', sales, 'test');
+  run(ns, s, ns.CFG.SHIFT + 5);
+  return s.lastReport;
+}
+
+test('Reputation tiers settle once a day: the tier never moves in the middle of a shift, and going up needs the score to hold for several days in a row', () => {
+  const { ns } = fresh();
+  assert.deepEqual(plain(ns.TIERS.map((t) => t.days)), [null, 2, 5, 10], 'Kedai Biasa is where everyone starts; the higher the tier, the longer it takes');
+
+  // day 1 at 95: far above Kedai Best's mark, but the tier does not budge during the shift, or after one such day
+  const s = tierDay(ns, { rep: 95, sales: 99900 });
+  run(ns, s, 60);
+  assert.equal(s.repTier, 'biasa', 'still Kedai Biasa half way through the day');
+  assert.deepEqual(plain(s.shiftStats.tierMoves || []), [], 'no tier change was announced during the shift');
+  run(ns, s, ns.CFG.SHIFT);
+  assert.equal(s.lastReport.goalMet, true);
+  assert.equal(s.repTier, 'biasa', 'one day is not enough');
+  assert.equal(s.lastReport.tierStreak, 1);
+  assert.equal(s.lastReport.tierDays, 2, 'Kedai Best asks for two days in a row');
+
+  // day 2: the second day in a row, so up one step, even though 95 would also be Port Lepak's mark
+  const r2 = nextTierDay(ns, s, { rep: 95 });
+  assert.equal(s.repTier, 'best');
+  assert.equal(r2.tierBefore, 'biasa');
+  assert.equal(r2.tier, 'best');
+  assert.equal(r2.tierStreak, 0, 'the count starts again for the next tier');
+  assert.equal(r2.tierDays, 5);
+  assert.match(r2.recap.map((x) => x.title).join('|'), /Naik taraf: Kedai Best/);
+});
+
+test('Reputation tiers: a day with the score under the next mark starts the count again; a missed day neither counts nor breaks it', () => {
+  const { ns } = fresh();
+  const s = tierDay(ns, { tier: 'best', rep: 95, sales: 99900 });
+  run(ns, s, ns.CFG.SHIFT + 5);
+  assert.equal(s.lastReport.tierStreak, 1);
+  nextTierDay(ns, s, { rep: 95 });
+  assert.equal(s.tierStreak, 2);
+  nextTierDay(ns, s, { rep: 70 }); // 70 is still Kedai Best's, but short of Popular's 75
+  assert.equal(s.repTier, 'best');
+  assert.equal(s.tierStreak, 0, 'a day under the mark starts the count again');
+
+  // a missed day: not counted, and replayed, so the count is as it was
+  nextTierDay(ns, s, { rep: 95 });
+  assert.equal(s.tierStreak, 1);
+  const miss = nextTierDay(ns, s, { rep: 95, sales: 0 });
+  assert.equal(miss.goalMet, false);
+  assert.equal(s.tierStreak, 1, 'a missed day does not count');
+  assert.equal(s.repTier, 'best', 'and cannot promote');
+  assert.equal(miss.starBonus, 0, 'and no star bonus either');
+});
+
+test('Reputation tiers: Port Lepak takes ten days in a row at 90+, each meeting the target', () => {
+  const { ns } = fresh();
+  const s = tierDay(ns, { tier: 'popular', rep: 95, sales: 99900 });
+  run(ns, s, ns.CFG.SHIFT + 5);
+  for (let day = 2; day <= 9; day++) {
+    assert.equal(s.repTier, 'popular', `day ${day - 1}: still Kedai Popular`);
+    nextTierDay(ns, s, { rep: 95 });
+  }
+  assert.equal(s.repTier, 'popular', 'nine days in a row is not enough');
+  assert.equal(s.tierStreak, 9);
+  nextTierDay(ns, s, { rep: 95 });
+  assert.equal(s.repTier, 'lepak', 'the tenth day makes it');
+  assert.equal(s.tierStreak, 0);
+  assert.equal(s.lastReport.tierDays, 0, 'nothing above Port Lepak');
+});
+
+test('Reputation tiers: a tier is lost one step at a time, and only when the score is more than 3 points under its mark at the end of the day', () => {
+  const { ns } = fresh();
+  const after = (tier, rep, sales = 99900) => { const s = tierDay(ns, { tier, rep, sales }); run(ns, s, ns.CFG.SHIFT + 5); return s.repTier; };
+  assert.equal(after('lepak', 88), 'lepak', 'two under the mark: the cushion holds');
+  assert.equal(after('lepak', 80), 'popular', 'a long way under: one step down');
+  assert.equal(after('lepak', 20), 'popular', 'even a collapse costs only one tier a day');
+  assert.equal(after('popular', 20, 0), 'best', 'a missed day can still demote');
+  assert.equal(after('biasa', 20), 'biasa');
+});
+
+test('Star bonus: a day that met the target adds 20% of its reputation gain for each star; a missed day adds nothing', () => {
+  const { ns, S } = fresh();
+  const goal = S.goalFor({ preset: 'biasa', day: 3 }, 3);
+  const day = (sales) => { const s = tierDay(ns, { rep: 60, repStart: 40, sales }); run(ns, s, ns.CFG.SHIFT + 5); return s.lastReport; };
+
+  const two = day(Math.round(goal * 1.1));
+  assert.equal(two.stars, 2);
+  assert.equal(two.starBonus, 8, '20 points gained × 20% × 2 stars');
+  assert.equal(Math.round(two.rep), 68);
+  assert.equal(two.repStart, 40);
+
+  const three = day(Math.round(goal * 1.6));
+  assert.equal(three.stars, 3);
+  assert.equal(three.starBonus, 12, '20 × 20% × 3 stars');
+  assert.equal(Math.round(three.rep), 72);
+
+  assert.equal(day(0).starBonus, 0, 'a missed day (1 star) gets no bonus');
+
+  // only a gain is boosted: a day that lost reputation is not made worse
+  const s = tierDay(ns, { rep: 50, repStart: 60, sales: 99900 });
+  run(ns, s, ns.CFG.SHIFT + 5);
+  assert.equal(s.lastReport.starBonus, 0);
+  assert.equal(Math.round(s.rep), 50);
+
+  // and the score cannot pass 100
+  const top = tierDay(ns, { rep: 98, repStart: 70, sales: 99900 });
+  run(ns, top, ns.CFG.SHIFT + 5);
+  assert.equal(top.rep, 100);
+});
+
+test('Reputation tiers: a save from the middle of a shift keeps its tier and count, and one from before the rule (no start mark, no count) loads and plays on', () => {
+  const { ns, State } = fresh();
+  const s = tierDay(ns, { tier: 'best', rep: 80, sales: 99900 });
+  s.tierStreak = 3;
+  const copy = State.migrate(plain(s));
+  assert.equal(copy.repTier, 'best', 'loading does not re-evaluate the tier');
+  assert.equal(copy.tierStreak, 3);
+  delete copy.repAtStart;
+  delete copy.tierStreak; // a save from before the rule
+  copy.phase = 'active';
+  assert.equal(State.migrate(plain(copy)).tierStreak, 0, 'it starts the count at zero');
+  run(ns, copy, ns.CFG.SHIFT + 5);
+  assert.equal(copy.lastReport.starBonus, 0, 'no start mark, so no star bonus that day');
+  assert.equal(copy.tierStreak, 1, 'but the day counts towards the next tier');
+});
+
 test('Reputation tiers: higher tiers make people more patient, bring regulars and duit kopi — and Port Lepak draws the officer', () => {
   const { ns, State, S } = fresh();
   const drain = (rep) => { const s = calmShift(ns, { seed: 5 }); s.rep = rep; S.updateTier(s); return { drain: S.patienceDrain(s), tier: S.tierOf(s) }; };

@@ -33,7 +33,7 @@ Legend: ✅ Done · 🟡 Partly done · ⬜ To do
 
 | Status | Idea | Notes |
 |---|---|---|
-| ✅ Done | **Reputation tiers: Kedai Biasa → Best → Popular → Port Lepak** | Start at 60 / 75 / 90 reputation, 3-point cushion before a tier is lost. Best: 4% more patience. Popular: 8%, more customers, sometimes RM0.20 *duit kopi*. Port Lepak: 12%, bigger tips, but more night crowd and +2 inspection risk per night. Shown in the HUD; best tier is kept in Koleksi. Data: `TIERS` in `js/core/config.js`. |
+| ✅ Done | **Reputation tiers: Kedai Biasa → Best → Popular → Port Lepak** | Start at 60 / 75 / 90 reputation, 3-point cushion before a tier is lost. The tier changes only at the end of the day; going up needs the score to hold the mark for 2 / 5 / 10 days in a row (each meeting the target), so Port Lepak takes 17 days at the very least, and each star adds 20 % of the day's reputation gain. Best: 4% more patience. Popular: 8%, more customers, sometimes RM0.20 *duit kopi*. Port Lepak: 12%, bigger tips, but more night crowd and +2 inspection risk per night. Shown in the HUD; best tier is kept in Koleksi. Data: `TIERS` in `js/core/config.js`. |
 | ✅ Done | **End-of-day recap "Sorotan hari"** | Up to 5 highlights per report: best hour, who stormed off, the PC that kept breaking, biggest sale, near miss, tips, generator, combos, tier changes. Built by `State.buildRecap`. |
 | ⬜ To do | **Goals beyond day 20 / mid-game milestones** | The goal climbs RM5 a day. Milestones like "lunasi pinjaman" or "bil bulan ini" would break up the grind. |
 | ⬜ To do | **More hats with moment-based unlocks** | The 4 hats unlock by clearing days. Unlocks tied to moments, like "tolak 5 budak ponteng", would feel earned. |

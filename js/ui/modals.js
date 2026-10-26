@@ -129,6 +129,20 @@
       </div>`);
   }
 
+  /** After a day that met the target: how reputation moved (stars boost the gain), and the tier, which only changes here. */
+  function repNote(r, tier) {
+    if (!r.goalMet) return ''; // a missed day is played again from the start, so its reputation does not count
+    const tiers = ns.TIERS;
+    const was = tiers.findIndex((t) => t.id === r.tierBefore);
+    const now = tiers.indexOf(tier);
+    const gain = Math.round(r.rep - r.repStart);
+    const next = tiers[now + 1];
+    const bonus = r.starBonus ? `, termasuk <b>+${r.starBonus}</b> bonus ${'⭐'.repeat(r.stars)}` : '';
+    const move = now > was ? `<div class="notice unlock">🎉 <b>Taraf naik: ${safe(tier.emoji)} ${safe(tier.name)}!</b> ${safe(tier.perks)} Bermula esok.</div>` : now < was ? `<div class="notice">📉 <b>Taraf turun: ${safe(tier.emoji)} ${safe(tier.name)}.</b> Naikkan reputasi untuk dapat balik.</div>` : '';
+    const to = !next ? 'Taraf tertinggi.' : r.rep >= next.min ? `${safe(next.name)}: reputasi ${next.min}+ untuk <b>${r.tierStreak}/${r.tierDays}</b> hari berturut-turut.` : `${Math.ceil(next.min - r.rep)} lagi untuk ${safe(next.name)}, kemudian kekal ${next.days} hari berturut-turut.`;
+    return `${move}<div class="notice">⭐ Reputasi <b>${Math.round(r.repStart)} → ${Math.round(r.rep)}</b> (${gain >= 0 ? '+' : ''}${gain} hari ini${bonus}). ${to}</div>`;
+  }
+
   function renderResult() {
     const s = UI.s;
     const r = s.lastReport;
@@ -139,8 +153,8 @@
     const why = hl || (!r.goalMet && r.reasons?.length ? `<div class="notice why"><b>Kenapa gagal?</b><ul>${r.reasons.map((x) => `<li>${safe(x.icon)} ${safe(x.text)}</li>`).join('')}</ul></div>` : '') ;
     const unlocked = (r.unlocked || []).map((id) => ns.Meta.HATS.find((h) => h.id === id)).filter(Boolean);
     const unlockNote = unlocked.length ? `<div class="notice unlock">🔓 <b>Topi baru dibuka:</b> ${unlocked.map((h) => `${safe(h.emoji)} ${safe(h.name)}`).join(', ')}. Pakai di <b>🎩 Koleksi</b> (menu utama).</div>` : '';
-    const whyAll = unlockNote + why + (hl ? more : '');
     const tier = ns.TIERS.find((t) => t.id === r.tier) || ns.TIERS[0];
+    const whyAll = repNote(r, tier) + unlockNote + why + (hl ? more : '');
     const recap = r.recap?.length ? `<div class="recap"><h2>📸 Sorotan hari</h2><ul>${r.recap.map((x, i) => `<li style="--i:${i}"><span class="rc-ico" aria-hidden="true">${safe(x.icon)}</span><div><b>${safe(x.title)}</b><small>${safe(x.text)}</small></div></li>`).join('')}</ul></div>` : '';
     showModal(`
       <span class="modal-eyebrow">LAPORAN HARI ${s.day}</span>

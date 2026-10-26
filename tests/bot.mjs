@@ -115,7 +115,7 @@ export function playCampaign({ skill = 'good', days = 10, seed = 1, retries = 3,
     }
     const r = s.lastReport;
     attempts++;
-    rows.push({ day: r.day, attempt: attempts, goal: r.goal / 100, income: r.income / 100, rental: r.rental / 100, other: r.other / 100, refunds: r.refunds / 100, expense: r.expense / 100, met: r.goalMet, stars: r.stars, pcs: s.pcs.length, cash: s.cash / 100, startCash: startCash / 100, rep: Math.round(s.rep), served: r.served, perks: s.perks.length });
+    rows.push({ day: r.day, attempt: attempts, goal: r.goal / 100, income: r.income / 100, rental: r.rental / 100, other: r.other / 100, refunds: r.refunds / 100, expense: r.expense / 100, met: r.goalMet, tier: r.tier, stars: r.stars, pcs: s.pcs.length, cash: s.cash / 100, startCash: startCash / 100, rep: Math.round(s.rep), served: r.served, perks: s.perks.length });
     if (r.goalMet) {
       State.proceed(s);
       attempts = 0;

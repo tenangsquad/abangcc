@@ -27,6 +27,7 @@
       compliance: 75,
       risk: 20,
       preset: ns.DIRECTOR.presets[preset] ? preset : 'biasa', // chosen once at New Game and locked to this save
+      tierStreak: 0, // days in a row the reputation has stood at the next tier's mark (see settleTier)
       customerSequence: 0,
       ledgerSequence: 0,
       taskSequence: 0,
@@ -127,6 +128,7 @@
       eventTypes: [],
       shiftLedger: [],
       shiftStartCash: s.cash,
+      repAtStart: s.rep, // the day's reputation gain is measured from here (see the settlement in endShift)
       once: {},
       violationLog: [],
       inspectionDoneDay: false,
@@ -287,6 +289,17 @@
     // risk drifts with how the shop was run
     S.bump(s, 'risk', s.violationLog.length * 4 - (s.violationLog.length === 0 && s.compliance >= 70 ? 3 : 0) - (s.professionalism >= 70 ? 2 : 0) + S.tierOf(s).riskDrift); // Port Lepak draws the officer's eye
 
+    // Reputation settles once a day. The score has been moving all shift; now a day that met the target pays a bonus on what it gained
+    // (CFG.REP_STAR_BOOST per star), and only then may the tier move, one step at most. During the shift the tier never changed.
+    const stars = !goalMet ? 1 : income >= goal * 1.4 && s.rep >= 55 ? 3 : 2; // 1 = goal missed, 2 = goal met, 3 = goal beaten by 40% with a healthy reputation
+    const repStart = s.repAtStart ?? s.rep;
+    const repGain = s.rep - repStart;
+    const starBonus = goalMet && repGain > 0 ? Math.round(repGain * CFG.REP_STAR_BOOST * stars) : 0;
+    if (starBonus) S.bump(s, 'rep', starBonus);
+    const tierBefore = s.repTier;
+    S.settleTier(s, goalMet);
+    const nextTier = TIERS[S.tierIndex(s) + 1] || null;
+
     const after = S.breakdown(s);
     const report = {
       day: s.day,
@@ -311,14 +324,18 @@
       repairs: s.shiftStats.repairs,
       inspections: s.shiftStats.inspections,
       rep: s.rep,
+      repStart,
+      starBonus, // reputation points the stars added on top of the day's own gain
+      tierBefore,
+      tierStreak: s.tierStreak || 0, // days in a row at the next tier's mark, counting today
+      tierDays: nextTier ? nextTier.days : 0, // days in a row that tier asks for
       professionalism: s.professionalism,
       compliance: s.compliance,
       violations: s.violationLog.length,
       specialEvents: s.specialHandled || 0,
       tier: s.repTier,
       recap: buildRecap(s),
-      // 1–3 stars: 1 = goal missed, 2 = goal met, 3 = goal beaten by 40% with a healthy reputation.
-      stars: !goalMet ? 1 : income >= goal * 1.4 && s.rep >= 55 ? 3 : 2,
+      stars,
     };
     report.unlocked = goalMet && ns.Meta ? ns.Meta.recordDay(s.day, report.stars).map((h) => h.id) : []; // cosmetic hats kept across runs
     s.lastReport = report;
@@ -388,7 +405,6 @@
     }
     if (s.cleanupSlow > 0) s.cleanupSlow = Math.max(0, s.cleanupSlow - dt);
     if (s.peakRush > 0) s.peakRush -= dt;
-    S.updateTier(s);
 
     // Rush hour windows
     const peakIndex = (s.peakWindows || []).findIndex((w) => s.elapsed >= w.start && s.elapsed < w.end);

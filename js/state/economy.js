@@ -57,11 +57,10 @@
   const tierIndex = (s) => clampTier(TIERS.findIndex((t) => t.id === s.repTier));
   const clampTier = (i) => (i < 0 ? 0 : i);
   const tierOf = (s) => TIERS[tierIndex(s)];
-  /** Called every tick: moves the shop to the tier its reputation now deserves. Returns the new tier when it changed. */
-  function updateTier(s) {
+  /** Move the shop to tier `next`: say so, tell the UI, and remember it for the report and the Koleksi. Returns the new tier, or null when nothing changed. */
+  function moveTier(s, next) {
+    if (next === tierIndex(s)) return null;
     const now = tierIndex(s);
-    const next = tierIndexFor(s.rep, now);
-    if (next === now) return null;
     s.repTier = TIERS[next].id;
     const up = next > now;
     S.log(s, up ? `${TIERS[next].emoji} Taraf naik: ${TIERS[next].name}!` : `📉 Taraf turun: ${TIERS[next].name}.`);
@@ -69,6 +68,31 @@
     if (ns.Meta?.recordTier) ns.Meta.recordTier(next);
     (s.shiftStats.tierMoves = s.shiftStats.tierMoves || []).push({ id: TIERS[next].id, up });
     return TIERS[next];
+  }
+  /** Put the shop straight on the tier its reputation deserves, however many steps that is (used when a state is set up, not during play). */
+  const updateTier = (s) => moveTier(s, tierIndexFor(s.rep, tierIndex(s)));
+  /**
+   * Settle the tier once a day, at the end of the shift: the reputation score moves all day, but the tier (and its perks) never changes in the
+   * middle of one. Going up has to be earned: the score must stand at the next tier's mark at the end of TIERS[next].days days IN A ROW, each
+   * of them meeting the daily target (`s.tierStreak` counts them; a day below the mark starts the count again, a missed day is replayed so it
+   * does not count at all). Going down is faster: one step when the score has fallen more than the cushion under the tier's mark.
+   */
+  function settleTier(s, goalMet) {
+    const now = tierIndex(s);
+    const want = tierIndexFor(s.rep, now);
+    if (want < now) {
+      s.tierStreak = 0;
+      return moveTier(s, now - 1);
+    }
+    if (!goalMet) return null;
+    if (want === now) {
+      s.tierStreak = 0;
+      return null;
+    }
+    s.tierStreak = (s.tierStreak || 0) + 1;
+    if (s.tierStreak < TIERS[now + 1].days) return null;
+    s.tierStreak = 0;
+    return moveTier(s, now + 1);
   }
   const taskSpeedMult = (s) => 1 + mod(s, 'taskSpeed');
 
@@ -192,5 +216,5 @@
   const capBandwidth = (s) => 6 + mod(s, 'bandwidth');
   const bandwidth = (s) => s.pcs.reduce((sum, p) => sum + (p.status === 'busy' && byId(GAMES, p.sessionGame)?.online ? 1 : 0), 0);
 
-  Object.assign(S, { coolLevel, overheatMult, coolPatience, perkPrice, replacedBy, tierOf, tierIndex, updateTier, perkDef, perkCount, hasPerk, perkOwnedOut, perkMods, mod, taskSpeedMult, preset, extraPcs, pressure, spawnInterval, patienceDrain, troubleInterval, faultChance, goalFor, isTier2, priceFor, priceList, breakdown, shiftTakings, audit, isBillDay, daysToBills, monthlyBills, perkUpkeep, capBandwidth, bandwidth });
+  Object.assign(S, { coolLevel, overheatMult, coolPatience, perkPrice, replacedBy, tierOf, tierIndex, updateTier, settleTier, perkDef, perkCount, hasPerk, perkOwnedOut, perkMods, mod, taskSpeedMult, preset, extraPcs, pressure, spawnInterval, patienceDrain, troubleInterval, faultChance, goalFor, isTier2, priceFor, priceList, breakdown, shiftTakings, audit, isBillDay, daysToBills, monthlyBills, perkUpkeep, capBandwidth, bandwidth });
 })(window.ABCC);
